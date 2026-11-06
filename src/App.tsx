@@ -1,15 +1,49 @@
+import { useMemo, useState } from "react";
+
+const tools = [
+  { name: "ChatGPT", category: "Intelligence artificielle", description: "Assistant IA pour rédiger, apprendre, analyser et créer.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://chatgpt.com/" },
+  { name: "Gemini", category: "Intelligence artificielle", description: "Assistant IA de Google pour la recherche et la création.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://gemini.google.com/" },
+  { name: "Claude", category: "Intelligence artificielle", description: "Assistant IA pour écrire, analyser et travailler.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://claude.ai/" },
+  { name: "Canva", category: "Création de contenu", description: "Création de visuels, présentations et contenus graphiques.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.canva.com/" },
+  { name: "CapCut", category: "Création de contenu", description: "Montage vidéo et création de contenus pour les réseaux sociaux.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.capcut.com/" },
+  { name: "Photopea", category: "Création de contenu", description: "Éditeur graphique en ligne pour les images.", access: "Gratuit", platforms: "Web", url: "https://www.photopea.com/" },
+  { name: "Notion", category: "Productivité", description: "Organisation du travail, notes et gestion de projets.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.notion.com/" },
+  { name: "Trello", category: "Productivité", description: "Organisation des tâches et suivi des projets.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://trello.com/" },
+  { name: "Khan Academy", category: "Formation", description: "Cours et exercices pour apprendre gratuitement.", access: "Gratuit", platforms: "Web · Android · iOS", url: "https://www.khanacademy.org/" },
+  { name: "freeCodeCamp", category: "Formation", description: "Apprentissage gratuit de la programmation.", access: "Gratuit", platforms: "Web", url: "https://www.freecodecamp.org/" },
+];
+
 const categories = [
-  { name: 'Intelligence artificielle', description: 'Outils pour créer, apprendre et travailler.' },
-  { name: 'Création de contenu', description: 'Image, vidéo, audio et réseaux sociaux.' },
-  { name: 'Productivité', description: 'Organisation, automatisation et travail.' },
-  { name: 'Formation', description: 'Apprentissage et ressources numériques.' },
-]
+  "Toutes les catégories",
+  "Intelligence artificielle",
+  "Création de contenu",
+  "Productivité",
+  "Formation",
+];
 
 function App() {
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("Toutes les catégories");
+
+  const filteredTools = useMemo(() => {
+    return tools.filter((tool) => {
+      const matchesCategory =
+        category === "Toutes les catégories" || tool.category === category;
+
+      const term = search.toLowerCase();
+      const matchesSearch =
+        tool.name.toLowerCase().includes(term) ||
+        tool.description.toLowerCase().includes(term) ||
+        tool.category.toLowerCase().includes(term);
+
+      return matchesCategory && matchesSearch;
+    });
+  }, [search, category]);
+
   return (
     <main className="site-shell">
       <header className="topbar">
-        <a className="brand" href="/" aria-label="AQUI NET HUB, accueil">
+        <a className="brand" href="/">
           <span className="brand-mark">A</span>
           <span>AQUI <strong>NET HUB</strong></span>
         </a>
@@ -26,12 +60,15 @@ function App() {
         <p className="eyebrow">LE HUB DU NUMÉRIQUE</p>
         <h1>Le bon outil numérique.<br /><span>Au bon moment.</span></h1>
         <p className="hero-copy">
-          Découvrez des outils, comparez leurs possibilités et trouvez les ressources
-          adaptées à vos projets.
+          Découvrez des outils, comparez leurs possibilités et trouvez les ressources adaptées à vos projets.
         </p>
-        <form className="search" onSubmit={(event) => event.preventDefault()}>
-          <label className="sr-only" htmlFor="tool-search">Rechercher un outil</label>
-          <input id="tool-search" type="search" placeholder="Que souhaitez-vous faire ?" />
+        <form className="search" onSubmit={(e) => e.preventDefault()}>
+          <input
+            type="search"
+            placeholder="Rechercher un outil..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
           <button type="submit">Rechercher</button>
         </form>
         <p className="microcopy">Un répertoire accessible à tous, partout dans le monde.</p>
@@ -40,43 +77,96 @@ function App() {
       <section className="section" id="decouvrir">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">EXPLORER</p>
-            <h2>Découvrez les possibilités</h2>
+            <p className="eyebrow">AQUI NET TOOLS</p>
+            <h2>Explorez les outils numériques</h2>
           </div>
-          <span className="section-note">AQUI NET TOOLS</span>
         </div>
+
         <div className="category-grid">
-          {categories.map((category) => (
-            <article className="category-card" key={category.name}>
-              <span className="card-symbol" aria-hidden="true">✦</span>
-              <h3>{category.name}</h3>
-              <p>{category.description}</p>
+          {categories.slice(1).map((item) => (
+            <button
+              className="category-card"
+              key={item}
+              type="button"
+              onClick={() => setCategory(item)}
+            >
+              <span className="card-symbol">✦</span>
+              <h3>{item}</h3>
+              <p>Explorer les outils de cette catégorie.</p>
+            </button>
+          ))}
+        </div>
+
+        <div className="tool-filters">
+          <label htmlFor="category-filter">Filtrer par catégorie :</label>
+          <select
+            id="category-filter"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            {categories.map((item) => (
+              <option key={item} value={item}>{item}</option>
+            ))}
+          </select>
+          <button type="button" onClick={() => { setSearch(""); setCategory("Toutes les catégories"); }}>
+            Réinitialiser
+          </button>
+        </div>
+
+        <p className="results-count">{filteredTools.length} outil(s) trouvé(s)</p>
+
+        <div className="tools-grid">
+          {filteredTools.map((tool) => (
+            <article className="tool-card" key={tool.name}>
+              <p className="eyebrow">{tool.category}</p>
+              <h3>{tool.name}</h3>
+              <p>{tool.description}</p>
+              <p><strong>Accès :</strong> {tool.access}</p>
+              <p><strong>Plateformes :</strong> {tool.platforms}</p>
+              <a href={tool.url} target="_blank" rel="noreferrer">
+                Visiter le site officiel →
+              </a>
             </article>
           ))}
         </div>
+
+        {filteredTools.length === 0 && (
+          <p>Aucun outil trouvé. Essayez une autre recherche.</p>
+        )}
       </section>
 
       <section className="assist-panel" id="assist">
         <div>
           <p className="eyebrow">AQUI NET ASSIST</p>
           <h2>Vous avez un objectif ?<br />Trouvons le bon outil.</h2>
-          <p>Décrivez votre besoin en quelques mots. L'assistant vous orientera vers des solutions pertinentes.</p>
+          <p>Décrivez votre besoin pour découvrir des solutions pertinentes.</p>
         </div>
-        <span className="assist-icon" aria-hidden="true">✧</span>
+        <span className="assist-icon">✧</span>
       </section>
 
-      <section className="section modules" aria-label="Autres services">
-        <article id="academy"><p className="eyebrow">APPRENDRE</p><h2>AQUI NET ACADEMY</h2><p>Guides, tutoriels et ressources numériques.</p></article>
-        <article id="business"><p className="eyebrow">DÉVELOPPER</p><h2>AQUI NET BUSINESS</h2><p>Des services numériques pour vos projets.</p></article>
+      <section className="section modules">
+        <article id="academy">
+          <p className="eyebrow">APPRENDRE</p>
+          <h2>AQUI NET ACADEMY</h2>
+          <p>Guides, tutoriels et ressources numériques.</p>
+        </article>
+        <article id="business">
+          <p className="eyebrow">DÉVELOPPER</p>
+          <h2>AQUI NET BUSINESS</h2>
+          <p>Des services numériques pour vos projets.</p>
+        </article>
       </section>
 
       <footer>
-        <a className="brand footer-brand" href="/"><span className="brand-mark">A</span><span>AQUI <strong>NET HUB</strong></span></a>
+        <a className="brand footer-brand" href="/">
+          <span className="brand-mark">A</span>
+          <span>AQUI <strong>NET HUB</strong></span>
+        </a>
         <p>Découvrir. Créer. Progresser.</p>
         <small>© {new Date().getFullYear()} AQUI NET HUB</small>
       </footer>
     </main>
-  )
+  );
 }
 
-export default App
+export default App;
