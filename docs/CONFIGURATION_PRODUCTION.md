@@ -6,8 +6,9 @@ Dans Supabase > SQL Editor, exécuter les migrations dans cet ordre, une seule f
 
 1. `supabase/migrations/20261106_hub_features.sql` — comptes, synchronisation, demandes ADS/Partners, campagnes, formules et commandes.
 2. `supabase/migrations/20261106_hub_entitlements.sql` — abonnements et fonction de confirmation atomique des paiements.
+3. `supabase/migrations/20261106000100_hub_plan_snapshot.sql` — conserve le nom et la durée de la formule au moment de la commande et sécurise l’extension des abonnements.
 
-La seconde migration dépend des tables créées par la première. Elle est indispensable au traitement final des paiements.
+La troisième migration dépend des deux premières. Elle protège les commandes déjà initiées si une formule est ensuite désactivée ou modifiée.
 
 ## 2. Secrets Cloudflare Worker
 
@@ -31,6 +32,7 @@ Ajouter les formules et leurs prix exacts dans `public.hub_plans` depuis Supabas
 ## 4. Vérifications et paiement
 
 - Ouvrir `/api/health` sur le domaine de production : `ok` doit être `true`. Les indicateurs Supabase et CinetPay signalent seulement la présence des variables, pas la validité des identifiants.
+- L’espace membre affiche maintenant les abonnements et les cinq derniers paiements à partir de données serveur filtrées sur l’utilisateur connecté.
 - Effectuer les premiers essais uniquement avec les identifiants Sandbox CinetPay.
 - Configurer `https://aqui-net-hub.kobonaaquilas.workers.dev/api/payments/webhook` comme URL de notification du compte marchand.
 - Vérifier le statut auprès de CinetPay côté serveur avant de valider une commande. Le retour du navigateur ne constitue jamais une preuve de paiement.

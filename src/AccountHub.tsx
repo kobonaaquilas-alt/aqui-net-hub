@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createClient, type Session } from "@supabase/supabase-js";
 
 const db = createClient("https://xbobkysbtvtmepqgtnbt.supabase.co", "sb_publishable_AGtfBQyqyKbH5C_4f5cQgw_bm0MmusA");
 type Props = { favorites: string[]; progress: string[]; lang: "fr" | "en"; onRemoteSync: (favorites: string[], progress: string[]) => void };
 type Plan = { id: string; name: string; description: string; amount_xof: number; duration_days: number };
 type Campaign = { id: string; title: string; description: string; destination_url: string | null };
+type Subscription = { id: string; plan_id: string; plan_name: string; starts_at: string; ends_at: string; status: string };
+type Payment = { id: string; merchant_transaction_id: string; amount_xof: number; currency: string; status: string; created_at: string; paid_at: string | null };
+type AccountSummary = { subscriptions: Subscription[]; payments: Payment[] };
 
 export default function AccountHub({ favorites, progress, lang, onRemoteSync }: Props) {
   const fr = lang === "fr";
@@ -19,12 +22,35 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
   const [syncReady, setSyncReady] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [summary, setSummary] = useState<AccountSummary | null>(null);
+  const [summaryBusy, setSummaryBusy] = useState(false);
   const [ad, setAd] = useState({company_name:"",contact_name:"",email:"",phone:"",website:"",budget:"",message:""});
   const [partner, setPartner] = useState({organization:"",contact_name:"",email:"",phone:"",website:"",proposal:""});
 
+  const refreshSummary = useCallback(async () => {
+    if (!session?.access_token) return;
+    setSummaryBusy(true);
+    try {
+      const response = await fetch("/api/account/summary", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const data = await response.json() as AccountSummary & { error?: string };
+      if (!response.ok) throw new Error(data.error || "Account data unavailable");
+      setSummary(data);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Account data unavailable");
+    } finally {
+      setSummaryBusy(false);
+    }
+  }, [session?.access_token]);
+
   useEffect(() => {
     db.auth.getSession().then(({data}) => setSession(data.session));
-    const {data:{subscription}} = db.auth.onAuthStateChange((_event,next) => { setSession(next); setSyncReady(false); });
+    const {data:{subscription}} = db.auth.onAuthStateChange((_event,next) => {
+      setSession(next);
+      setSyncReady(false);
+      setSummary(null);
+    });
     db.from("hub_plans").select("id,name,description,amount_xof,duration_days").eq("is_active",true).then(({data}) => setPlans((data ?? []) as Plan[]));
     db.from("hub_campaigns").select("id,title,description,destination_url").eq("is_active",true).then(({data}) => setCampaigns((data ?? []) as Campaign[]));
     return () => subscription.unsubscribe();
@@ -51,6 +77,19 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
     db.from("hub_user_data").upsert({user_id:session.user.id,payload:{favorites,progress},updated_at:new Date().toISOString()},{onConflict:"user_id"})
       .then(({error}) => { if (error) setNotice(fr ? "Synchronisation impossible : vérifie la migration Supabase." : "Sync failed: check the Supabase migration."); });
   }, [session?.user.id,syncReady,favorites,progress,fr]);
+
+  useEffect(() => {
+    if (!session) { setSummary(null); return; }
+    void refreshSummary();
+  }, [session?.user.id, refreshSummary]);
+
+  useEffect(() => {
+    const paymentState = new URLSearchParams(window.location.search).get("payment");
+    if (paymentState === "return")
+      setNotice(fr ? "Retour de paiement reçu. Le statut définitif apparaîtra après confirmation par CinetPay. Actualise les informations du compte." : "Payment return received. Final status will appear after CinetPay confirmation. Refresh your account details.");
+    else if (paymentState === "failed")
+      setNotice(fr ? "Le paiement n'a pas été confirmé. Consulte son statut ci-dessous." : "Payment was not confirmed. Check its status below.");
+  }, [fr]);
 
   async function authenticate() {
     setBusy(true); setNotice("");
@@ -85,11 +124,15 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
       const r = await fetch("/api/payments/create",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({plan_id:plan.id,first_name:fullName || session.user.user_metadata?.full_name || "Client",last_name:"Hub",phone})});
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Payment unavailable");
+      if (typeof data.payment_url !== "string" || !data.payment_url.startsWith("https://"))
+        throw new Error("Adresse de paiement invalide.");
       window.location.assign(data.payment_url);
     } catch(e) { setNotice(e instanceof Error ? e.message : "Payment error"); setBusy(false); }
   }
 
   const input=(value:string,change:(v:string)=>void,placeholder:string,type="text",required=true)=><input type={type} value={value} onChange={e=>change(e.target.value)} placeholder={placeholder} required={required}/>;
+  const date=(value:string)=>new Date(value).toLocaleDateString(fr?"fr-FR":"en-GB");
+  const paymentLabel=(status:string)=>status==="paid"?(fr?"Payé":"Paid"):status==="failed"?(fr?"Échoué":"Failed"):(fr?"En attente":"Pending");
   return <section className="section account-hub" id="compte">
     <div className="section-heading"><div><span className="eyebrow">AQUI NET · MEMBER SPACE</span><h2>{fr ? "Espace membre" : "Member area"}</h2><p>{fr ? "Compte, sauvegarde, publicité et partenariats." : "Account, sync, advertising and partnerships."}</p></div></div>
     {!session ? <div className="account-card">
@@ -99,6 +142,18 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
       <button className="primary-button" disabled={busy||!email||password.length<8} onClick={()=>void authenticate()}>{busy?"…":mode==="login"?(fr?"Se connecter":"Sign in"):(fr?"Créer mon compte":"Create account")}</button>
     </div> : <div className="account-card"><p>{fr?"Connecté avec":"Signed in as"} <strong>{session.user.email}</strong></p><p className="sync-status">{fr?"Favoris et progression synchronisés sur ce compte.":"Favorites and progress synced to this account."}</p><button className="filter-button" onClick={()=>void db.auth.signOut()}>{fr?"Se déconnecter":"Sign out"}</button></div>}
     {notice && <p className="account-message" role="status">{notice}</p>}
+
+    {session && <div className="account-card account-summary">
+      <div className="account-summary-heading"><div><h3>{fr?"Mes abonnements et paiements":"My subscriptions and payments"}</h3><p>{fr?"Statuts confirmés par le serveur.":"Statuses confirmed by the server."}</p></div><button type="button" className="filter-button" disabled={summaryBusy} onClick={()=>void refreshSummary()}>{summaryBusy?"…":fr?"Actualiser":"Refresh"}</button></div>
+      <h4>{fr?"Abonnements":"Subscriptions"}</h4>
+      {summary?.subscriptions.length ? summary.subscriptions.map(item=>{
+        const isActive=item.status==="active" && new Date(item.ends_at).getTime()>Date.now();
+        return <article className="subscription-row" key={item.id}><div><strong>{item.plan_name}</strong><p>{fr?"Du":"From"} {date(item.starts_at)} {fr?"au":"to"} {date(item.ends_at)}</p></div><span className={isActive?"account-status active":"account-status"}>{isActive?(fr?"Actif":"Active"):(fr?"Expiré":"Expired")}</span></article>;
+      }) : <p>{fr?"Aucun abonnement confirmé pour le moment.":"No confirmed subscription yet."}</p>}
+      <h4>{fr?"Derniers paiements":"Recent payments"}</h4>
+      {summary?.payments.length ? summary.payments.map(item=><article className="payment-row" key={item.id}><div><strong>{item.amount_xof.toLocaleString(fr?"fr-FR":"en-GB")} FCFA</strong><p>{date(item.created_at)} · {item.merchant_transaction_id}</p></div><span className={`account-status ${item.status==="paid"?"active":item.status==="failed"?"failed":""}`}>{paymentLabel(item.status)}</span></article>) : <p>{fr?"Aucun paiement enregistré.":"No payment recorded."}</p>}
+    </div>}
+
     <div className="account-grid">
       <form className="account-card" onSubmit={e=>{e.preventDefault();void submit("ads");}}><h3>AQUI NET ADS</h3><p>{fr?"Proposer une campagne publicitaire.":"Submit an advertising campaign."}</p>
         {input(ad.company_name,v=>setAd(s=>({...s,company_name:v})),fr?"Entreprise / marque":"Company / brand")}
