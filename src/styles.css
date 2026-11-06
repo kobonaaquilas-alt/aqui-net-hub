@@ -277,38 +277,18 @@ footer p, footer small { color: #9eacc5; font-size: 12px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
-
-
 /* AQUI NET HUB — arrière-plan technologique animé */
-body::before {
-  content: "";
-  position: fixed;
-  inset: -4%;
-  z-index: -2;
-  pointer-events: none;
-  border-radius: 0;
-  filter: none;
-  opacity: .30;
-  background-image: url('../aqui-tech-bg.webp');
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
-  animation: tech-image-drift 65s ease-in-out infinite alternate;
-}
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  border-radius: 0;
-  filter: none;
-  opacity: 1;
-  background: linear-gradient(180deg, rgba(8, 18, 39, .42), rgba(8, 18, 39, .76));
-}
+
 @keyframes tech-image-drift {
-  0% { transform: scale(1.02) translate3d(-1%, 0, 0); }
-  :root {
+  0% {
+    transform: scale(1.02) translate3d(-1%, 0, 0);
+  }
+  100% {
+    transform: scale(1.12) translate3d(1%, -1.5%, 0);
+  }
+}
+
+:root {
   background: transparent !important;
 }
 
@@ -318,18 +298,32 @@ body {
 }
 
 body::before {
-  width: 100vw !important;
-  height: 100vh !important;
-  inset: 0 !important;
-  z-index: -2 !important;
-  opacity: .55 !important;
+  content: "";
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -2;
+  pointer-events: none;
+  opacity: .55;
+  border-radius: 0;
+  filter: none;
+  background: url('/aqui-tech-bg.webp') center center / cover no-repeat;
+  animation: tech-image-drift 65s ease-in-out infinite alternate;
 }
 
 body::after {
-  width: 100vw !important;
-  height: 100vh !important;
-  inset: 0 !important;
-  z-index: -1 !important;
-}
-  100% { transform: scale(1.12) translate3d(1%, -1.5%, 0); }
+  content: "";
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 18, 39, .42),
+    rgba(8, 18, 39, .76)
+  );
 }
