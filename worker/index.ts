@@ -10,7 +10,7 @@ async function createPayment(request:Request,env:Env){
  const body=await request.json() as {plan_id?:string;first_name?:string;last_name?:string;phone?:string};
  if(!body.plan_id||!body.first_name||!body.last_name||!user.email)return json({error:"Informations de paiement incomplètes."},400);
  const pr=await fetch(`${env.SUPABASE_URL}/rest/v1/hub_plans?id=eq.${encodeURIComponent(body.plan_id)}&is_active=eq.true&select=id,name,amount_xof`,{headers:headers(env)});
- const plans=await pr.json() as Array<{id:string;name:string;amount_xof:number}>;const plan=plans[0];if(!pr.ok||!plan)return json({error:"Formule indisponible."},404);
+ const plans=await pr.json() as Array<{id:string;name:string;amount_xof:number}>;const plan=plans[0];if(!pr.ok||!plan)return json({error:"Formule indisponible."},404);if(!Number.isInteger(plan.amount_xof)||plan.amount_xof<100||plan.amount_xof>2500000)return json({error:"Montant de formule invalide."},422);
  const merchantId=`ANH-${crypto.randomUUID().replace(/-/g,"").slice(0,20)}`;
  const order=await fetch(`${env.SUPABASE_URL}/rest/v1/hub_payment_orders`,{method:"POST",headers:headers(env),body:JSON.stringify({user_id:user.id,plan_id:plan.id,amount_xof:plan.amount_xof,merchant_transaction_id:merchantId})});
  if(!order.ok)return json({error:"Création de commande impossible."},500);
@@ -18,7 +18,8 @@ async function createPayment(request:Request,env:Env){
   const client=new CinetPayClient({credentials:{TG:{apiKey:env.CINETPAY_API_KEY,apiPassword:env.CINETPAY_API_PASSWORD}}});
   const base=env.APP_BASE_URL||new URL(request.url).origin;
   const payment=await client.payment.initialize({currency:"XOF",merchantTransactionId:merchantId,amount:plan.amount_xof,lang:"fr",designation:`AQUI NET HUB - ${plan.name}`,clientEmail:user.email,clientFirstName:body.first_name,clientLastName:body.last_name,...(body.phone?{clientPhoneNumber:body.phone}:{}),successUrl:`${base}/?payment=return`,failedUrl:`${base}/?payment=failed`,notifyUrl:`${base}/api/payments/webhook`,channel:"PUSH"},"TG");
-  await fetch(`${env.SUPABASE_URL}/rest/v1/hub_payment_orders?merchant_transaction_id=eq.${encodeURIComponent(merchantId)}`,{method:"PATCH",headers:headers(env),body:JSON.stringify({payment_url:payment.paymentUrl,notify_token:payment.notifyToken,cinetpay_transaction_id:payment.transactionId})});
+  const saved=await fetch(`${env.SUPABASE_URL}/rest/v1/hub_payment_orders?merchant_transaction_id=eq.${encodeURIComponent(merchantId)}`,{method:"PATCH",headers:headers(env),body:JSON.stringify({payment_url:payment.paymentUrl,notify_token:payment.notifyToken,cinetpay_transaction_id:payment.transactionId})});
+  if(!saved.ok)throw new Error("Unable to persist payment metadata");
   return json({payment_url:payment.paymentUrl});
  }catch{await fetch(`${env.SUPABASE_URL}/rest/v1/hub_payment_orders?merchant_transaction_id=eq.${encodeURIComponent(merchantId)}`,{method:"PATCH",headers:headers(env),body:JSON.stringify({status:"failed"})});return json({error:"CinetPay n'a pas pu initialiser le paiement."},502);}
 }
