@@ -50,6 +50,68 @@ function App() {
   const [search, setSearch] = useState("");
   const [language, setLanguage] = useState<"fr" | "en">("fr");
   const [category, setCategory] = useState("Toutes les catégories");
+  const ui = {
+  fr: {
+    navDiscover: "Découvrir",
+    navAssist: "NET ASSIST",
+    navAcademy: "Academy",
+    navBusiness: "Business",
+    eyebrow: "LE HUB DU NUMÉRIQUE",
+    heroTitle: "Le bon outil numérique.",
+    heroSubtitle: "Au bon moment.",
+    heroDescription: "Découvrez des outils, comparez leurs possibilités et trouvez les ressources adaptées à vos projets.",
+    searchPlaceholder: "Rechercher un outil...",
+    searchButton: "Rechercher",
+    microcopy: "Un répertoire accessible à tous, partout dans le monde.",
+    explore: "Explorez les outils numériques",
+    categoryDescription: "Explorer les outils de cette catégorie.",
+    filter: "Filtrer par catégorie :",
+    reset: "Réinitialiser",
+    found: "outil(s) trouvé(s)",
+    access: "Accès :",
+    platforms: "Plateformes :",
+    visit: "Visiter le site officiel →",
+    empty: "Aucun outil trouvé. Essayez une autre recherche.",
+    assistTitle: "Vous avez un objectif ?",
+    assistSubtitle: "Trouvons le bon outil.",
+    assistDescription: "Décrivez votre besoin pour découvrir des solutions pertinentes.",
+    learn: "APPRENDRE",
+    guides: "Guides, tutoriels et ressources numériques.",
+    develop: "DÉVELOPPER",
+    services: "Des services numériques pour vos projets.",
+    slogan: "Découvrir. Créer. Progresser."
+  },
+  en: {
+    navDiscover: "Discover",
+    navAssist: "NET ASSIST",
+    navAcademy: "Academy",
+    navBusiness: "Business",
+    eyebrow: "THE DIGITAL HUB",
+    heroTitle: "The right digital tool.",
+    heroSubtitle: "At the right time.",
+    heroDescription: "Discover tools, compare their features and find resources suited to your projects.",
+    searchPlaceholder: "Search for a tool...",
+    searchButton: "Search",
+    microcopy: "A directory accessible to everyone, everywhere.",
+    explore: "Explore digital tools",
+    categoryDescription: "Explore tools in this category.",
+    filter: "Filter by category:",
+    reset: "Reset",
+    found: "tool(s) found",
+    access: "Access:",
+    platforms: "Platforms:",
+    visit: "Visit official website →",
+    empty: "No tools found. Try another search.",
+    assistTitle: "Have a goal?",
+    assistSubtitle: "Let's find the right tool.",
+    assistDescription: "Describe your needs to discover relevant solutions.",
+    learn: "LEARN",
+    guides: "Guides, tutorials and digital resources.",
+    develop: "GROW",
+    services: "Digital services for your projects.",
+    slogan: "Discover. Create. Progress."
+  }
+}[language];
 
   const filteredTools = useMemo(() => {
     return tools.filter((tool) => {
@@ -74,10 +136,10 @@ function App() {
           <span>AQUI <strong>NET HUB</strong></span>
         </a>
         <nav aria-label="Navigation principale">
-          <a href="#decouvrir">Découvrir</a>
-          <a href="#assist">NET ASSIST</a>
-          <a href="#academy">Academy</a>
-          <a href="#business">Business</a>
+          <a href="#decouvrir">{ui.navDiscover}</a>
+<a href="#assist">{ui.navAssist}</a>
+<a href="#academy">{ui.navAcademy}</a>
+<a href="#business">{ui.navBusiness}</a>
         </nav>
         <button
   className="language-button"
@@ -89,6 +151,20 @@ function App() {
       </header>
 
       <section className="hero">
+  <p className="eyebrow">{ui.eyebrow}</p>
+  <h1>{ui.heroTitle}<br /><span>{ui.heroSubtitle}</span></h1>
+  <p className="hero-copy">{ui.heroDescription}</p>
+  <form className="search" onSubmit={(e) => e.preventDefault()}>
+    <input
+      type="search"
+      placeholder={ui.searchPlaceholder}
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
+    <button type="submit">{ui.searchButton}</button>
+  </form>
+  <p className="microcopy">{ui.microcopy}</p>
+</section>
         <p className="eyebrow">LE HUB DU NUMÉRIQUE</p>
         <h1>Le bon outil numérique.<br /><span>Au bon moment.</span></h1>
         <p className="hero-copy">
