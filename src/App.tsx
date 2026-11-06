@@ -182,7 +182,21 @@ function App() {
         <p className="microcopy">Un répertoire accessible à tous, partout dans le monde.</p>
       </section>
 
-      <section className="section" id="decouvrir">
+     <section className="hero">
+  <p className="eyebrow">{ui.eyebrow}</p>
+  <h1>{ui.heroTitle}<br /><span>{ui.heroSubtitle}</span></h1>
+  <p className="hero-copy">{ui.heroDescription}</p>
+  <form className="search" onSubmit={(e) => e.preventDefault()}>
+    <input
+      type="search"
+      placeholder={ui.searchPlaceholder}
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
+    <button type="submit">{ui.searchButton}</button>
+  </form>
+  <p className="microcopy">{ui.microcopy}</p>
+</section> id="decouvrir">
         <div className="section-heading">
           <div>
             <p className="eyebrow">AQUI NET TOOLS</p>
