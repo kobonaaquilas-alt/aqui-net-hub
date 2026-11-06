@@ -10,7 +10,14 @@ Dans Supabase > SQL Editor, exécuter les migrations dans cet ordre, une seule f
 
 La troisième migration dépend des deux premières. Elle protège les commandes déjà initiées si une formule est ensuite désactivée ou modifiée.
 
-## 2. Secrets Cloudflare Worker
+## 2. Authentification Supabase
+
+Dans Supabase > Authentication > URL Configuration :
+
+- Définir le Site URL sur `https://aqui-net-hub.kobonaaquilas.workers.dev`.
+- Ajouter `https://aqui-net-hub.kobonaaquilas.workers.dev/**` aux Redirect URLs autorisées pour les liens de confirmation et de réinitialisation du mot de passe.
+
+## 3. Secrets Cloudflare Worker
 
 Dans Cloudflare > Workers & Pages > aqui-net-hub > Settings > Variables and Secrets, créer les variables suivantes. Les clés privées doivent être de type **Secret**, pas du texte public.
 
@@ -25,11 +32,11 @@ Dans Cloudflare > Workers & Pages > aqui-net-hub > Settings > Variables and Secr
 
 Ne jamais placer la clé `service_role` ou les identifiants CinetPay dans le code frontend, dans GitHub ou dans une conversation. Ne pas les transmettre à une autre personne.
 
-## 3. Formules
+## 4. Formules
 
 Ajouter les formules et leurs prix exacts dans `public.hub_plans` depuis Supabase, puis mettre `is_active = true`. Aucun tarif n'est prérempli : le montant doit correspondre à l'offre réellement décidée et publiée par le responsable du service.
 
-## 4. Vérifications et paiement
+## 5. Vérifications et paiement
 
 - Ouvrir `/api/health` sur le domaine de production : `ok` doit être `true`. Les indicateurs Supabase et CinetPay signalent seulement la présence des variables, pas la validité des identifiants.
 - L’espace membre affiche maintenant les abonnements et les cinq derniers paiements à partir de données serveur filtrées sur l’utilisateur connecté.
