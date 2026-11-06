@@ -296,7 +296,7 @@ body::before {
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  background: url('/aqui-tech-bg.webp') center / cover no-repeat;
+  background: url('/aqui-tech-bg%20(1).webp') center / cover no-repeat;
   opacity: 1;
   animation: tech-image-drift 100s ease-in-out infinite alternate;
 }
