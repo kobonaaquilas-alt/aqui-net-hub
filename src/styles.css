@@ -325,5 +325,29 @@ body::after {
     180deg,
     rgba(8, 18, 39, .42),
     rgba(8, 18, 39, .76)
+    /* AQUI NET HUB — amélioration de la netteté et du confort visuel */
+
+body::before {
+  opacity: 1;
+  filter: none;
+  animation: tech-image-drift 100s ease-in-out infinite alternate;
+}
+
+body::after {
+  background: linear-gradient(
+    180deg,
+    rgba(8, 18, 39, .16),
+    rgba(8, 18, 39, .32)
+  );
+}
+
+@keyframes tech-image-drift {
+  0% {
+    transform: scale(1.01) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.04) translate3d(.3%, -.3%, 0);
+  }
+  }
   );
 }
