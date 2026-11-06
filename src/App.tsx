@@ -308,7 +308,7 @@ export default function App() {
           <article className="promotion-card partner-card">
             <span className="eyebrow">AQUI NET PARTNERS</span>
             <h2>{fr ? "Partenaires et collaborations" : "Partners and collaborations"}</h2>
-            <p>{fr ? "Un espace destiné aux collaborations et ressources professionnelles vérifiées." : "A space for verified collaborations and professional resources."}</p>
+            <p>{fr ? "Un espace pour proposer une collaboration à l’équipe AQUI NET HUB." : "A space for verified collaborations and professional resources."}</p>
             <span className="status-label">{fr ? "En préparation" : "Coming soon"}</span>
           </article>
         </section>
@@ -316,8 +316,8 @@ export default function App() {
         <section className="section faq-section" id="faq">
           <div className="section-heading"><span className="eyebrow">HELP CENTER</span><h2>{fr ? "Questions fréquentes" : "Frequently asked questions"}</h2></div>
           <details><summary>{fr ? "Les outils sont-ils gratuits ?" : "Are the tools free?"}</summary><p>{fr ? "Les outils référencés proposent un accès gratuit ou une formule gratuite. Certaines fonctions peuvent être payantes." : "Listed tools offer free access or a free plan. Some features may require payment."}</p></details>
-          <details><summary>{fr ? "Où sont enregistrés mes favoris ?" : "Where are my favorites saved?"}</summary><p>{fr ? "Ils sont conservés localement dans le navigateur de cet appareil." : "They are stored locally in this device's browser."}</p></details>
-          <details><summary>{fr ? "Ma progression est-elle synchronisée ?" : "Is my progress synchronized?"}</summary><p>{fr ? "Non. Elle est enregistrée localement sur cet appareil, sans compte en ligne." : "No. It is stored locally on this device, without an online account."}</p></details>
+          <details><summary>{fr ? "Où sont enregistrés mes favoris ?" : "Where are my favorites saved?"}</summary><p>{fr ? "Sans compte, ils restent sur cet appareil. Avec un compte, ils sont synchronisés en ligne." : "They are stored locally in this device's browser."}</p></details>
+          <details><summary>{fr ? "Ma progression est-elle synchronisée ?" : "Is my progress synchronized?"}</summary><p>{fr ? "Avec un compte, elle est synchronisée en ligne. Sans compte, elle reste enregistrée sur cet appareil." : "No. It is stored locally on this device, without an online account."}</p></details>
           <details><summary>{fr ? "AQUI NET HUB garantit-il des revenus ?" : "Does AQUI NET HUB guarantee income?"}</summary><p>{fr ? "Non. La plateforme fournit des ressources et des orientations, mais aucun revenu n'est garanti." : "No. The platform provides resources and guidance, but no income is guaranteed."}</p></details>
         </section>
       </main>
