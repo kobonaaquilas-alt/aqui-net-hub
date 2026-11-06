@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import AccountHub from "./AccountHub";
 
 const tools = [
   ["ChatGPT", "IA", "Assistant intelligent pour apprendre, écrire et créer.", "https://chatgpt.com/"],
@@ -79,6 +80,7 @@ export default function App() {
   const [answer, setAnswer] = useState("");
 
   const fr = lang === "fr";
+  const syncRemote = useCallback((nextFavorites: string[], nextProgress: string[]) => { setFavorites(nextFavorites); setProgress(nextProgress); }, []);
   const categories = ["Tous", ...Array.from(new Set(tools.map(t => t[1])))];
 
   const visibleTools = useMemo(() => {
@@ -151,6 +153,7 @@ export default function App() {
           <a href="#outils">{fr ? "Outils" : "Tools"}</a>
           <a href="#academy">Academy</a>
           <a href="#business">Business</a>
+          <a href="#compte">{fr ? "Compte" : "Account"}</a>
           <a href="#partenaires">{fr ? "Partenaires" : "Partners"}</a>
         </nav>
         <button className="language-button" onClick={() => setLang(fr ? "en" : "fr")}>
@@ -292,6 +295,8 @@ export default function App() {
           </div>
           <p className="business-note">{fr ? "AQUI NET HUB ne garantit aucun revenu. Les résultats dépendent du marché, du travail et de la qualité de l'offre." : "AQUI NET HUB does not guarantee income. Results depend on the market, effort and offer quality."}</p>
         </section>
+
+        <AccountHub favorites={favorites} progress={progress} lang={lang} onRemoteSync={syncRemote} />
 
         <section className="section promotion-grid" id="partenaires">
           <article className="promotion-card">
