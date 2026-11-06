@@ -1,16 +1,38 @@
 import { useMemo, useState } from "react";
 
+
 const tools = [
+  // Intelligence artificielle
   { name: "ChatGPT", category: "Intelligence artificielle", description: "Assistant IA pour rédiger, apprendre, analyser et créer.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://chatgpt.com/" },
   { name: "Gemini", category: "Intelligence artificielle", description: "Assistant IA de Google pour la recherche et la création.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://gemini.google.com/" },
   { name: "Claude", category: "Intelligence artificielle", description: "Assistant IA pour écrire, analyser et travailler.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://claude.ai/" },
+  { name: "Perplexity", category: "Intelligence artificielle", description: "Moteur de recherche IA qui fournit des réponses accompagnées de sources.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.perplexity.ai/" },
+  { name: "Microsoft Copilot", category: "Intelligence artificielle", description: "Assistant IA pour les questions, la rédaction et la création.", access: "Gratuit avec options payantes", platforms: "Web · Android · iOS · Windows", url: "https://copilot.microsoft.com/" },
+
+  // Création de contenu
   { name: "Canva", category: "Création de contenu", description: "Création de visuels, présentations et contenus graphiques.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.canva.com/" },
   { name: "CapCut", category: "Création de contenu", description: "Montage vidéo et création de contenus pour les réseaux sociaux.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.capcut.com/" },
-  { name: "Photopea", category: "Création de contenu", description: "Éditeur graphique en ligne pour les images.", access: "Gratuit", platforms: "Web", url: "https://www.photopea.com/" },
+  { name: "Photopea", category: "Création de contenu", description: "Éditeur graphique en ligne pour les images.", access: "Gratuit avec publicité", platforms: "Web", url: "https://www.photopea.com/" },
+  { name: "Adobe Express", category: "Création de contenu", description: "Création de visuels, affiches, vidéos et publications pour les réseaux sociaux.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.adobe.com/express/" },
+  { name: "OBS Studio", category: "Création de contenu", description: "Enregistrement vidéo et diffusion en direct depuis un ordinateur.", access: "Gratuit", platforms: "Windows · macOS · Linux", url: "https://obsproject.com/" },
+
+  // Productivité
   { name: "Notion", category: "Productivité", description: "Organisation du travail, notes et gestion de projets.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.notion.com/" },
   { name: "Trello", category: "Productivité", description: "Organisation des tâches et suivi des projets.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://trello.com/" },
+  { name: "Grammarly", category: "Productivité", description: "Correction grammaticale et amélioration de textes, notamment en anglais.", access: "Freemium", platforms: "Web · Extensions", url: "https://www.grammarly.com/" },
+  { name: "Google Drive", category: "Productivité", description: "Stockage, partage et organisation de fichiers en ligne.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://drive.google.com/" },
+
+  // Formation
   { name: "Khan Academy", category: "Formation", description: "Cours et exercices pour apprendre gratuitement.", access: "Gratuit", platforms: "Web · Android · iOS", url: "https://www.khanacademy.org/" },
   { name: "freeCodeCamp", category: "Formation", description: "Apprentissage gratuit de la programmation.", access: "Gratuit", platforms: "Web", url: "https://www.freecodecamp.org/" },
+  { name: "Coursera", category: "Formation", description: "Cours en ligne proposés par des universités et des entreprises.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.coursera.org/" },
+  { name: "Duolingo", category: "Formation", description: "Apprentissage des langues avec des exercices interactifs.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.duolingo.com/" },
+
+  // Traduction et langues
+  { name: "DeepL", category: "Traduction & langues", description: "Traduction de textes et de documents dans plusieurs langues.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.deepl.com/translator" },
+
+  // Développement
+  { name: "GitHub Copilot", category: "Développement", description: "Assistant IA pour écrire, comprendre et améliorer du code.", access: "Freemium", platforms: "Web · IDE", url: "https://github.com/features/copilot" },
 ];
 
 const categories = [
@@ -19,7 +41,10 @@ const categories = [
   "Création de contenu",
   "Productivité",
   "Formation",
+  "Traduction & langues",
+  "Développement",
 ];
+
 
 function App() {
   const [search, setSearch] = useState("");
