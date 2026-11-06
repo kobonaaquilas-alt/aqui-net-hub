@@ -20,7 +20,7 @@ const tools: Tool[] = [
   {
     name: 'ChatGPT', category: 'ai',
     description: 'Assistant IA pour rédiger, apprendre, analyser et créer.',
-    descriptionEn: 'AI assistant for writing, learning, analyzing and creating.',
+    descriptionEn: 'AI assistant for writing, learning, analysis and creativity.',
     access: 'Freemium', accessEn: 'Freemium',
     platforms: 'Web · Android · iOS', platformsEn: 'Web · Android · iOS',
     url: 'https://chatgpt.com/'
@@ -36,7 +36,7 @@ const tools: Tool[] = [
   {
     name: 'Claude', category: 'ai',
     description: 'Assistant IA pour écrire, analyser et travailler.',
-    descriptionEn: 'AI assistant for writing, analysis and professional work.',
+    descriptionEn: 'AI assistant for writing, analysis and productivity.',
     access: 'Freemium', accessEn: 'Freemium',
     platforms: 'Web · Android · iOS', platformsEn: 'Web · Android · iOS',
     url: 'https://claude.ai/'
@@ -44,7 +44,7 @@ const tools: Tool[] = [
   {
     name: 'Perplexity', category: 'ai',
     description: 'Recherche assistée par IA avec des réponses sourcées.',
-    descriptionEn: 'AI-powered search with cited answers and sources.',
+    descriptionEn: 'AI-powered search with sourced answers.',
     access: 'Freemium', accessEn: 'Freemium',
     platforms: 'Web · Android · iOS', platformsEn: 'Web · Android · iOS',
     url: 'https://www.perplexity.ai/'
@@ -52,7 +52,7 @@ const tools: Tool[] = [
   {
     name: 'Microsoft Copilot', category: 'ai',
     description: 'Assistant IA pour les questions, la rédaction et la création.',
-    descriptionEn: 'AI assistant for questions, writing and content creation.',
+    descriptionEn: 'AI assistant for questions, writing and creative tasks.',
     access: 'Gratuit avec options payantes', accessEn: 'Free with paid options',
     platforms: 'Web · Android · iOS · Windows', platformsEn: 'Web · Android · iOS · Windows',
     url: 'https://copilot.microsoft.com/'
@@ -60,7 +60,7 @@ const tools: Tool[] = [
   {
     name: 'Canva', category: 'content',
     description: 'Création de visuels, présentations, affiches et contenus graphiques.',
-    descriptionEn: 'Create visuals, presentations, posters and graphic content.',
+    descriptionEn: 'Create graphics, presentations, posters and visual content.',
     access: 'Freemium', accessEn: 'Freemium',
     platforms: 'Web · Android · iOS', platformsEn: 'Web · Android · iOS',
     url: 'https://www.canva.com/'
@@ -68,7 +68,7 @@ const tools: Tool[] = [
   {
     name: 'CapCut', category: 'content',
     description: 'Montage vidéo et création de contenus pour les réseaux sociaux.',
-    descriptionEn: 'Video editing and content creation for social media.',
+    descriptionEn: 'Video editing and social media content creation.',
     access: 'Freemium', accessEn: 'Freemium',
     platforms: 'Web · Android · iOS', platformsEn: 'Web · Android · iOS',
     url: 'https://www.capcut.com/'
@@ -76,15 +76,15 @@ const tools: Tool[] = [
   {
     name: 'Photopea', category: 'content',
     description: 'Éditeur graphique en ligne pour retoucher des images.',
-    descriptionEn: 'Online graphic editor for image retouching.',
-    access: 'Gratuit avec publicité', accessEn: 'Free with ads',
+    descriptionEn: 'Online graphic editor for image editing.',
+    access: 'Gratuit avec publicité', accessEn: 'Free with advertising',
     platforms: 'Web', platformsEn: 'Web',
     url: 'https://www.photopea.com/'
   },
   {
     name: 'Adobe Express', category: 'content',
     description: 'Création de visuels, affiches, vidéos et publications.',
-    descriptionEn: 'Create visuals, posters, videos and social media posts.',
+    descriptionEn: 'Create graphics, posters, videos and social posts.',
     access: 'Freemium', accessEn: 'Freemium',
     platforms: 'Web · Android · iOS', platformsEn: 'Web · Android · iOS',
     url: 'https://www.adobe.com/express/'
@@ -92,7 +92,7 @@ const tools: Tool[] = [
   {
     name: 'OBS Studio', category: 'content',
     description: 'Enregistrement vidéo et diffusion en direct sur ordinateur.',
-    descriptionEn: 'Video recording and live streaming on computers.',
+    descriptionEn: 'Desktop video recording and live streaming software.',
     access: 'Gratuit', accessEn: 'Free',
     platforms: 'Windows · macOS · Linux', platformsEn: 'Windows · macOS · Linux',
     url: 'https://obsproject.com/'
@@ -100,7 +100,7 @@ const tools: Tool[] = [
   {
     name: 'Notion', category: 'productivity',
     description: 'Organisation du travail, notes et gestion de projets.',
-    descriptionEn: 'Workspace organization, note-taking and project management.',
+    descriptionEn: 'Workspace for notes, organization and project management.',
     access: 'Freemium', accessEn: 'Freemium',
     platforms: 'Web · Android · iOS', platformsEn: 'Web · Android · iOS',
     url: 'https://www.notion.com/'
@@ -140,7 +140,7 @@ const tools: Tool[] = [
   {
     name: 'Coursera', category: 'learning',
     description: 'Cours en ligne proposés par des universités et entreprises.',
-    descriptionEn: 'Online courses offered by universities and companies.',
+    descriptionEn: 'Online courses from universities and companies.',
     access: 'Freemium', accessEn: 'Freemium',
     platforms: 'Web · Android · iOS', platformsEn: 'Web · Android · iOS',
     url: 'https://www.coursera.org/'
@@ -164,7 +164,7 @@ const tools: Tool[] = [
   {
     name: 'GitHub Copilot', category: 'development',
     description: 'Assistant IA pour écrire, comprendre et améliorer du code.',
-    descriptionEn: 'AI coding assistant for writing, understanding and improving code.',
+    descriptionEn: 'AI coding assistant for writing and improving code.',
     access: 'Freemium', accessEn: 'Freemium',
     platforms: 'Web · IDE', platformsEn: 'Web · IDE',
     url: 'https://github.com/features/copilot'
@@ -172,7 +172,7 @@ const tools: Tool[] = [
   {
     name: 'Google Trends', category: 'marketing',
     description: 'Repérez les sujets recherchés et comparez les tendances.',
-    descriptionEn: 'Discover popular search topics and compare trends.',
+    descriptionEn: 'Discover popular searches and compare trends.',
     access: 'Gratuit', accessEn: 'Free',
     platforms: 'Web', platformsEn: 'Web',
     url: 'https://trends.google.com/trends/'
@@ -180,7 +180,7 @@ const tools: Tool[] = [
   {
     name: 'Meta Business Suite', category: 'marketing',
     description: 'Gérez les publications, messages et statistiques de vos Pages Facebook et Instagram.',
-    descriptionEn: 'Manage posts, messages and insights for Facebook and Instagram Pages.',
+    descriptionEn: 'Manage Facebook and Instagram posts, messages and insights.',
     access: 'Gratuit', accessEn: 'Free',
     platforms: 'Web · Android · iOS', platformsEn: 'Web · Android · iOS',
     url: 'https://business.facebook.com/'
@@ -188,7 +188,7 @@ const tools: Tool[] = [
   {
     name: 'TikTok Studio', category: 'marketing',
     description: 'Gérez vos contenus TikTok et consultez les statistiques de votre compte.',
-    descriptionEn: 'Manage TikTok content and view your account analytics.',
+    descriptionEn: 'Manage TikTok content and view account analytics.',
     access: 'Gratuit', accessEn: 'Free',
     platforms: 'Web · Android', platformsEn: 'Web · Android',
     url: 'https://www.tiktok.com/tiktokstudio'
@@ -220,7 +220,7 @@ const tools: Tool[] = [
   {
     name: 'Systeme.io', category: 'business',
     description: 'Créez des pages de vente, tunnels, campagnes e-mail et formations.',
-    descriptionEn: 'Create sales pages, funnels, email campaigns and online courses.',
+    descriptionEn: 'Build sales pages, funnels, email campaigns and courses.',
     access: 'Freemium', accessEn: 'Freemium',
     platforms: 'Web', platformsEn: 'Web',
     url: 'https://systeme.io/'
@@ -235,7 +235,12 @@ const tools: Tool[] = [
   }
 ];
 
-const categories: { id: Category; fr: string; en: string; icon: string }[] = [
+const categories: {
+  id: Category;
+  fr: string;
+  en: string;
+  icon: string;
+}[] = [
   { id: 'ai', fr: 'Intelligence artificielle', en: 'Artificial intelligence', icon: '✧' },
   { id: 'content', fr: 'Création de contenu', en: 'Content creation', icon: '▧' },
   { id: 'productivity', fr: 'Productivité', en: 'Productivity', icon: '◈' },
@@ -271,19 +276,33 @@ const copy = {
     assistTitle: 'Quel est votre objectif ?',
     assistText: 'Choisissez votre besoin : NET ASSIST vous propose une sélection d’outils adaptés.',
     choose: 'Sélectionnez un objectif',
-    goals: ['Créer des vidéos et publications', 'Lancer une activité en ligne', 'Apprendre une compétence', 'Utiliser l’intelligence artificielle', 'Organiser mon travail', 'Créer un site ou une boutique'],
+    goals: [
+      'Créer des vidéos et publications',
+      'Lancer une activité en ligne',
+      'Apprendre une compétence',
+      'Utiliser l’intelligence artificielle',
+      'Organiser mon travail',
+      'Créer un site ou une boutique'
+    ],
     recommend: 'Voir les outils recommandés',
     recommendation: 'Votre sélection recommandée',
-    noRec: 'Choisissez un objectif pour afficher des outils pertinents.',
     academyLabel: 'APPRENDRE ET PROGRESSER',
     academyTitle: 'AQUI NET ACADEMY',
     academyText: 'Des parcours pratiques pour développer vos compétences numériques, à votre rythme.',
-    academyPoints: ['Guides pratiques et tutoriels', 'Compétences numériques essentielles', 'Méthodes de création et de productivité'],
+    academyPoints: [
+      'Guides pratiques et tutoriels',
+      'Compétences numériques essentielles',
+      'Méthodes de création et de productivité'
+    ],
     academyAction: 'Explorer les outils de formation',
     businessLabel: 'TRANSFORMER LES IDÉES EN PROJETS',
     businessTitle: 'AQUI NET BUSINESS',
     businessText: 'Des ressources pour structurer une activité, trouver des clients et développer une présence en ligne.',
-    businessPoints: ['Présenter et promouvoir une activité', 'Créer une présence et une boutique en ligne', 'Découvrir des solutions accessibles'],
+    businessPoints: [
+      'Présenter et promouvoir une activité',
+      'Créer une présence et une boutique en ligne',
+      'Découvrir des solutions accessibles'
+    ],
     businessAction: 'Découvrir les outils business',
     footer: 'Découvrir. Créer. Progresser.',
     backTop: 'Retour en haut'
@@ -299,7 +318,7 @@ const copy = {
     hint: 'Digital resources to learn, create and grow your projects.',
     toolsEyebrow: 'AQUI NET TOOLS',
     toolsTitle: 'Explore digital tools',
-    selected: 'tools selected',
+    selected: 'selected tools',
     all: 'All categories',
     filter: 'Filter by category',
     reset: 'Reset all',
@@ -312,19 +331,33 @@ const copy = {
     assistTitle: 'What is your goal?',
     assistText: 'Choose what you need and NET ASSIST will suggest relevant tools.',
     choose: 'Select a goal',
-    goals: ['Create videos and posts', 'Start an online business', 'Learn a skill', 'Use artificial intelligence', 'Organize my work', 'Build a website or store'],
+    goals: [
+      'Create videos and posts',
+      'Start an online business',
+      'Learn a skill',
+      'Use artificial intelligence',
+      'Organize my work',
+      'Build a website or store'
+    ],
     recommend: 'Show recommended tools',
     recommendation: 'Recommended selection',
-    noRec: 'Choose a goal to see relevant tools.',
     academyLabel: 'LEARN AND GROW',
     academyTitle: 'AQUI NET ACADEMY',
     academyText: 'Practical learning paths to build digital skills at your own pace.',
-    academyPoints: ['Practical guides and tutorials', 'Essential digital skills', 'Creation and productivity methods'],
+    academyPoints: [
+      'Practical guides and tutorials',
+      'Essential digital skills',
+      'Creation and productivity methods'
+    ],
     academyAction: 'Explore learning tools',
     businessLabel: 'TURN IDEAS INTO PROJECTS',
     businessTitle: 'AQUI NET BUSINESS',
     businessText: 'Resources to structure a business, find customers and build an online presence.',
-    businessPoints: ['Present and promote a business', 'Build an online presence and store', 'Discover accessible solutions'],
+    businessPoints: [
+      'Present and promote a business',
+      'Build an online presence and store',
+      'Discover accessible solutions'
+    ],
     businessAction: 'Explore business tools',
     footer: 'Discover. Create. Progress.',
     backTop: 'Back to top'
@@ -344,7 +377,8 @@ function App() {
     const term = search.trim().toLocaleLowerCase();
 
     return tools.filter(tool => {
-      const categoryName = categories.find(c => c.id === tool.category)?.[language] ?? '';
+      const categoryName =
+        categories.find(item => item.id === tool.category)?.[language] ?? '';
 
       const searchableText = [
         tool.name,
@@ -357,8 +391,10 @@ function App() {
         categoryName
       ].join(' ').toLocaleLowerCase();
 
-      return (category === 'all' || tool.category === category) &&
-        (!term || searchableText.includes(term));
+      return (
+        (category === 'all' || tool.category === category) &&
+        (!term || searchableText.includes(term))
+      );
     });
   }, [search, category, language]);
 
@@ -373,11 +409,13 @@ function App() {
     };
 
     const keys = mapping[goal] ?? [];
+
     return tools.filter(tool => keys.includes(tool.category)).slice(0, 6);
   }, [goal]);
 
   const scrollToTools = (nextCategory: Category | 'all') => {
     setCategory(nextCategory);
+
     document.getElementById('tool-results')?.scrollIntoView({
       behavior: 'smooth',
       block: 'start'
@@ -402,8 +440,11 @@ function App() {
         </a>
 
         <nav aria-label={language === 'fr' ? 'Navigation principale' : 'Main navigation'}>
-          {t.nav.map((label, i) => (
-            <a key={label} href={['#decouvrir', '#assist', '#academy', '#business'][i]}>
+          {t.nav.map((label, index) => (
+            <a
+              key={label}
+              href={['#decouvrir', '#assist', '#academy', '#business'][index]}
+            >
               {label}
             </a>
           ))}
@@ -422,13 +463,19 @@ function App() {
       <section className="hero" id="home">
         <div className="hero-content">
           <p className="eyebrow">{t.eyebrow}</p>
-          <h1>{t.title}<br /><span>{t.accent}</span></h1>
+
+          <h1>
+            {t.title}
+            <br />
+            <span>{t.accent}</span>
+          </h1>
+
           <p className="hero-copy">{t.intro}</p>
 
           <form
             className="search"
-            onSubmit={e => {
-              e.preventDefault();
+            onSubmit={event => {
+              event.preventDefault();
               scrollToTools('all');
             }}
           >
@@ -437,8 +484,9 @@ function App() {
               type="search"
               placeholder={t.search}
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={event => setSearch(event.target.value)}
             />
+
             <button type="submit">{t.searchBtn}</button>
           </form>
 
@@ -455,6 +503,7 @@ function App() {
             <p className="eyebrow">{t.toolsEyebrow}</p>
             <h2>{t.toolsTitle}</h2>
           </div>
+
           <span className="section-count">
             {tools.length} {t.selected}
           </span>
@@ -465,8 +514,4 @@ function App() {
             <button
               key={item.id}
               type="button"
-              className={`category-card${category === item.id ? ' is-active' : ''}`}
-              aria-pressed={category === item.id}
-              onClick={() => scrollToTools(item.id)}
-            >
-           
+              className={`category-card${category === item.id ?
