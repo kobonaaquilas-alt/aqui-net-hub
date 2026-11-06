@@ -1,5 +1,5 @@
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type Language = 'fr' | 'en';
 type Category = 'ai' | 'content' | 'productivity' | 'learning' | 'translation' | 'development' | 'marketing' | 'business';
@@ -10,7 +10,7 @@ const tools: Tool[] = [
   { name: 'Gemini', category: 'ai', description: 'Assistant IA de Google pour la recherche et la création.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://gemini.google.com/' },
   { name: 'Claude', category: 'ai', description: 'Assistant IA pour écrire, analyser et travailler.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://claude.ai/' },
   { name: 'Perplexity', category: 'ai', description: 'Recherche assistée par IA avec des réponses sourcées.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://www.perplexity.ai/' },
-  { name: 'Microsoft Copilot', category: 'ai', description: 'Assistant IA pour les questions, la rédaction et la création.', access: 'Gratuit avec options payantes', platforms: 'Web · Android · iOS · Windows', url: 'https://copilot.microsoft.com/' },
+  { name: 'Microsoft Copilot', category: 'ai', description: 'Assistant IA pour les questions, la rédaction et la création.', access: 'Freemium', platforms: 'Web · Android · iOS · Windows', url: 'https://copilot.microsoft.com/' },
   { name: 'Canva', category: 'content', description: 'Création de visuels, présentations, affiches et contenus graphiques.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://www.canva.com/' },
   { name: 'CapCut', category: 'content', description: 'Montage vidéo et création de contenus pour les réseaux sociaux.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://www.capcut.com/' },
   { name: 'Photopea', category: 'content', description: 'Éditeur graphique en ligne pour retoucher des images.', access: 'Gratuit avec publicité', platforms: 'Web', url: 'https://www.photopea.com/' },
@@ -46,12 +46,127 @@ const categories: { id: Category; fr: string; en: string; icon: string }[] = [
   { id: 'business', fr: 'Commerce & activité', en: 'Business & commerce', icon: '◇' }
 ];
 
+const learningPaths = [
+  {
+    title: 'Créer du contenu numérique',
+    description: 'Apprenez à concevoir des visuels, monter des vidéos et publier régulièrement.',
+    steps: ['Découvrir Canva et CapCut', 'Créer trois contenus originaux', 'Apprendre les bases du montage', 'Analyser les résultats de ses publications'],
+    category: 'content' as Category
+  },
+  {
+    title: 'Maîtriser les outils IA',
+    description: 'Utilisez les assistants IA pour rechercher, rédiger, apprendre et gagner du temps.',
+    steps: ['Comprendre les possibilités et limites de l’IA', 'Apprendre à formuler des instructions précises', 'Vérifier les informations obtenues', 'Réaliser un petit projet avec un assistant IA'],
+    category: 'ai' as Category
+  },
+  {
+    title: 'Apprendre le développement web',
+    description: 'Commencez par les bases avant de construire vos propres pages web.',
+    steps: ['Découvrir HTML et CSS', 'Apprendre les bases de JavaScript', 'Créer une page personnelle', 'Publier un premier projet'],
+    category: 'development' as Category
+  },
+  {
+    title: 'Développer ses compétences professionnelles',
+    description: 'Renforcez votre organisation, votre communication et votre autonomie numérique.',
+    steps: ['Organiser son travail avec Notion ou Trello', 'Améliorer sa communication écrite', 'Créer un portfolio simple', 'Présenter clairement ses compétences'],
+    category: 'productivity' as Category
+  }
+];
+
+const businessSteps = [
+  ['1. Trouver une idée utile', 'Identifiez un besoin réel autour de vous. Observez les difficultés des particuliers, commerçants et petites entreprises.'],
+  ['2. Vérifier la demande', 'Interrogez des clients potentiels. Vérifiez qu’ils souhaitent réellement payer pour la solution proposée.'],
+  ['3. Construire une offre simple', 'Définissez le service, le résultat attendu, le prix et les conditions de livraison.'],
+  ['4. Être visible en ligne', 'Présentez votre activité sur WhatsApp Business et les réseaux sociaux. Publiez des exemples concrets de votre travail.'],
+  ['5. Suivre les résultats', 'Notez les demandes, les ventes, les dépenses et les retours clients. Améliorez votre offre progressivement.']
+];
+
 const copy = {
   fr: {
-    nav: ['Découvrir', 'NET ASSIST', 'Academy', 'Business'], eyebrow: 'LE HUB DU NUMÉRIQUE', title: 'Le bon outil numérique.', accent: 'Au bon moment.', intro: 'Découvrez des outils, comparez leurs possibilités et trouvez les ressources adaptées à vos projets.', search: 'Rechercher un outil ou un besoin…', searchBtn: 'Rechercher', hint: 'Des ressources numériques pour apprendre, créer et développer vos projets.', toolsEyebrow: 'AQUI NET TOOLS', toolsTitle: 'Explorez les outils numériques', all: 'Toutes les catégories', filter: 'Filtrer par catégorie', reset: 'Tout réinitialiser', results: 'outil(s) trouvé(s)', access: 'Accès', platforms: 'Plateformes', visit: 'Site officiel', empty: 'Aucun résultat. Essayez un autre mot-clé ou réinitialisez les filtres.', assistEyebrow: 'VOTRE ASSISTANT D’ORIENTATION', assistTitle: 'Quel est votre objectif ?', assistText: 'Choisissez votre besoin : NET ASSIST vous propose une sélection d’outils adaptés.', choose: 'Sélectionnez un objectif', goals: ['Créer des vidéos et publications', 'Lancer une activité en ligne', 'Apprendre une compétence', 'Utiliser l’intelligence artificielle', 'Organiser mon travail', 'Créer un site ou une boutique'], recommend: 'Voir les outils recommandés', recommendation: 'Votre sélection recommandée', noRec: 'Choisissez un objectif pour afficher des outils pertinents.', academyLabel: 'APPRENDRE ET PROGRESSER', academyTitle: 'AQUI NET ACADEMY', academyText: 'Des parcours pratiques pour développer vos compétences numériques, à votre rythme.', academyPoints: ['Guides pratiques et tutoriels', 'Compétences numériques essentielles', 'Méthodes de création et de productivité'], academyAction: 'Explorer les outils de formation', businessLabel: 'TRANSFORMER LES IDÉES EN PROJETS', businessTitle: 'AQUI NET BUSINESS', businessText: 'Des ressources pour structurer une activité, trouver des clients et développer une présence en ligne.', businessPoints: ['Présenter et promouvoir une activité', 'Créer une présence et une boutique en ligne', 'Découvrir des solutions accessibles'], businessAction: 'Découvrir les outils business', footer: 'Découvrir. Créer. Progresser.', backTop: 'Retour en haut'
+    nav: ['Découvrir', 'NET ASSIST', 'Academy', 'Business', 'Ads & Partners'],
+    eyebrow: 'LE HUB DU NUMÉRIQUE', title: 'Le bon outil numérique.', accent: 'Au bon moment.',
+    intro: 'Découvrez des outils, comparez leurs possibilités et trouvez les ressources adaptées à vos projets.',
+    search: 'Rechercher un outil ou un besoin…', searchBtn: 'Rechercher',
+    hint: 'Des ressources numériques pour apprendre, créer et développer vos projets.',
+    toolsEyebrow: 'AQUI NET TOOLS', toolsTitle: 'Explorez les outils numériques',
+    all: 'Toutes les catégories', filter: 'Filtrer par catégorie', reset: 'Tout réinitialiser',
+    results: 'outil(s) trouvé(s)', access: 'Accès', platforms: 'Plateformes', visit: 'Site officiel',
+    empty: 'Aucun résultat. Essayez un autre mot-clé ou réinitialisez les filtres.',
+    favorites: 'Mes favoris', addFavorite: 'Ajouter aux favoris', removeFavorite: 'Retirer des favoris',
+    showAll: 'Tous les outils', showFavorites: 'Afficher uniquement mes favoris',
+    assistEyebrow: 'VOTRE ASSISTANT D’ORIENTATION', assistTitle: 'Quel est votre objectif ?',
+    assistText: 'Choisissez votre besoin : NET ASSIST vous propose une sélection d’outils adaptés.',
+    choose: 'Sélectionnez un objectif',
+    goals: ['Créer des vidéos et publications', 'Lancer une activité en ligne', 'Apprendre une compétence', 'Utiliser l’intelligence artificielle', 'Organiser mon travail', 'Créer un site ou une boutique'],
+    recommend: 'Voir les outils recommandés', recommendation: 'Votre sélection recommandée',
+    academyLabel: 'APPRENDRE ET PROGRESSER', academyTitle: 'AQUI NET ACADEMY',
+    academyText: 'Des parcours pratiques pour développer vos compétences numériques, à votre rythme.',
+    academyAction: 'Explorer les outils de formation',
+    businessLabel: 'TRANSFORMER LES IDÉES EN PROJETS', businessTitle: 'AQUI NET BUSINESS',
+    businessText: 'Des ressources pour structurer une activité, trouver des clients et développer une présence en ligne.',
+    businessAction: 'Découvrir les outils business',
+    footer: 'Découvrir. Créer. Progresser.', backTop: 'Retour en haut',
+    pathsTitle: 'Des parcours pour passer à la pratique',
+    pathsText: 'Chaque parcours propose des étapes simples. Avancez à votre rythme et réalisez des projets concrets.',
+    startPath: 'Voir les outils utiles', progressTitle: 'Votre progression',
+    businessRoadmap: 'Les étapes pour lancer une activité',
+    businessWarning: 'Aucun revenu n’est garanti. Testez votre idée à petite échelle et évitez les dépenses que vous ne pouvez pas supporter.',
+    adsTitle: 'AQUI NET ADS', adsText: 'Un espace destiné à présenter les possibilités de visibilité et de promotion sur AQUI NET HUB.',
+    adsStatus: 'Espace en préparation', adsInfo: 'Les campagnes publicitaires, statistiques annonceurs et paiements ne sont pas encore activés sur cette plateforme.',
+    partnersTitle: 'AQUI NET PARTNERS', partnersText: 'Un espace prévu pour les créateurs, formateurs, entreprises et partenaires qui souhaitent contribuer au hub.',
+    partnersStatus: 'Partenariats en préparation', partnersInfo: 'Les inscriptions partenaires et le suivi automatisé des collaborations ne sont pas encore disponibles.',
+    transparency: 'Transparence', transparencyText: 'Les espaces Ads et Partners sont présentés pour informer sur leur objectif. Aucun achat de publicité, paiement ou inscription partenaire ne peut être effectué depuis ces sections pour le moment.',
+    privacyTitle: 'Données et confidentialité', privacyText: 'Les favoris sont enregistrés uniquement dans le stockage local de votre navigateur. Ils ne sont pas synchronisés entre appareils et aucun compte utilisateur n’est créé par cette fonctionnalité.',
+    faqTitle: 'Questions fréquentes',
+    faq: [
+      ['Les outils présentés appartiennent-ils à AQUI NET HUB ?', 'Non. Ce sont des services externes. AQUI NET HUB les répertorie et renvoie vers leurs sites officiels.'],
+      ['Les outils sont-ils tous gratuits ?', 'Non. Certains sont gratuits, d’autres proposent des fonctions payantes. Vérifiez toujours les conditions sur le site officiel.'],
+      ['Mes favoris sont-ils accessibles sur un autre téléphone ?', 'Non. Ils sont conservés sur cet appareil et dans ce navigateur.'],
+      ['Puis-je déjà acheter une publicité sur AQUI NET HUB ?', 'Non. L’espace Ads est en préparation. Les commandes et paiements publicitaires ne sont pas encore activés.']
+    ]
   },
   en: {
-    nav: ['Discover', 'NET ASSIST', 'Academy', 'Business'], eyebrow: 'THE DIGITAL HUB', title: 'The right digital tool.', accent: 'At the right time.', intro: 'Discover tools, compare their features and find resources suited to your projects.', search: 'Search for a tool or a need…', searchBtn: 'Search', hint: 'Digital resources to learn, create and grow your projects.', toolsEyebrow: 'AQUI NET TOOLS', toolsTitle: 'Explore digital tools', all: 'All categories', filter: 'Filter by category', reset: 'Reset all', results: 'tool(s) found', access: 'Access', platforms: 'Platforms', visit: 'Official website', empty: 'No results. Try another keyword or reset the filters.', assistEyebrow: 'YOUR DIGITAL GUIDE', assistTitle: 'What is your goal?', assistText: 'Choose what you need and NET ASSIST will suggest relevant tools.', choose: 'Select a goal', goals: ['Create videos and posts', 'Start an online business', 'Learn a skill', 'Use artificial intelligence', 'Organize my work', 'Build a website or store'], recommend: 'Show recommended tools', recommendation: 'Recommended selection', noRec: 'Choose a goal to see relevant tools.', academyLabel: 'LEARN AND GROW', academyTitle: 'AQUI NET ACADEMY', academyText: 'Practical learning paths to build digital skills at your own pace.', academyPoints: ['Practical guides and tutorials', 'Essential digital skills', 'Creation and productivity methods'], academyAction: 'Explore learning tools', businessLabel: 'TURN IDEAS INTO PROJECTS', businessTitle: 'AQUI NET BUSINESS', businessText: 'Resources to structure a business, find customers and build an online presence.', businessPoints: ['Present and promote a business', 'Build an online presence and store', 'Discover accessible solutions'], businessAction: 'Explore business tools', footer: 'Discover. Create. Progress.', backTop: 'Back to top'
+    nav: ['Discover', 'NET ASSIST', 'Academy', 'Business', 'Ads & Partners'],
+    eyebrow: 'THE DIGITAL HUB', title: 'The right digital tool.', accent: 'At the right time.',
+    intro: 'Discover tools, compare their features and find resources suited to your projects.',
+    search: 'Search for a tool or a need…', searchBtn: 'Search',
+    hint: 'Digital resources to learn, create and grow your projects.',
+    toolsEyebrow: 'AQUI NET TOOLS', toolsTitle: 'Explore digital tools',
+    all: 'All categories', filter: 'Filter by category', reset: 'Reset all',
+    results: 'tool(s) found', access: 'Access', platforms: 'Platforms', visit: 'Official website',
+    empty: 'No results. Try another keyword or reset the filters.',
+    favorites: 'My favorites', addFavorite: 'Add to favorites', removeFavorite: 'Remove from favorites',
+    showAll: 'All tools', showFavorites: 'Show favorites only',
+    assistEyebrow: 'YOUR DIGITAL GUIDE', assistTitle: 'What is your goal?',
+    assistText: 'Choose what you need and NET ASSIST will suggest relevant tools.',
+    choose: 'Select a goal',
+    goals: ['Create videos and posts', 'Start an online business', 'Learn a skill', 'Use artificial intelligence', 'Organize my work', 'Build a website or store'],
+    recommend: 'Show recommended tools', recommendation: 'Recommended selection',
+    academyLabel: 'LEARN AND GROW', academyTitle: 'AQUI NET ACADEMY',
+    academyText: 'Practical learning paths to build digital skills at your own pace.',
+    academyAction: 'Explore learning tools',
+    businessLabel: 'TURN IDEAS INTO PROJECTS', businessTitle: 'AQUI NET BUSINESS',
+    businessText: 'Resources to structure a business, find customers and build an online presence.',
+    businessAction: 'Explore business tools',
+    footer: 'Discover. Create. Progress.', backTop: 'Back to top',
+    pathsTitle: 'Learning paths that lead to action',
+    pathsText: 'Follow practical steps at your own pace and build real projects.',
+    startPath: 'Explore useful tools', progressTitle: 'Your progress',
+    businessRoadmap: 'Steps to start a business',
+    businessWarning: 'Income is not guaranteed. Test your idea on a small scale and avoid expenses you cannot afford.',
+    adsTitle: 'AQUI NET ADS', adsText: 'A space intended to present visibility and promotion opportunities on AQUI NET HUB.',
+    adsStatus: 'Coming soon', adsInfo: 'Advertising campaigns, advertiser statistics and payments are not yet enabled.',
+    partnersTitle: 'AQUI NET PARTNERS', partnersText: 'A space planned for creators, educators, businesses and partners who want to contribute to the hub.',
+    partnersStatus: 'Coming soon', partnersInfo: 'Partner registration and automated collaboration tracking are not yet available.',
+    transparency: 'Transparency', transparencyText: 'Ads and Partners sections explain future services. Advertising purchases, payments and partner registration are not currently available.',
+    privacyTitle: 'Data and privacy', privacyText: 'Favorites are stored only in your browser on this device. They are not synced across devices and this feature does not create a user account.',
+    faqTitle: 'Frequently asked questions',
+    faq: [
+      ['Do the listed tools belong to AQUI NET HUB?', 'No. They are external services. AQUI NET HUB lists them and links to their official websites.'],
+      ['Are all tools free?', 'No. Some are free, while others offer paid features. Always check the official website.'],
+      ['Can I access my favorites on another phone?', 'No. They are stored on this device and browser.'],
+      ['Can I buy an ad on AQUI NET HUB now?', 'No. The Ads section is being prepared. Advertising orders and payments are not enabled yet.']
+    ]
   }
 };
 
@@ -61,16 +176,43 @@ function App() {
   const [category, setCategory] = useState<Category | 'all'>('all');
   const [goal, setGoal] = useState('');
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [completed, setCompleted] = useState<string[]>([]);
   const t = copy[language];
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('aqui-net-hub-favorites') || '[]');
+      if (Array.isArray(saved)) setFavorites(saved.filter((x): x is string => typeof x === 'string'));
+    } catch {
+      setFavorites([]);
+    }
+    try {
+      const savedProgress = JSON.parse(localStorage.getItem('aqui-net-hub-progress') || '[]');
+      if (Array.isArray(savedProgress)) setCompleted(savedProgress.filter((x): x is string => typeof x === 'string'));
+    } catch {
+      setCompleted([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('aqui-net-hub-favorites', JSON.stringify(favorites));
+  }, [favorites]);
+
+  useEffect(() => {
+    localStorage.setItem('aqui-net-hub-progress', JSON.stringify(completed));
+  }, [completed]);
 
   const filteredTools = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
     return tools.filter(tool => {
       const categoryName = categories.find(c => c.id === tool.category)?.[language] ?? '';
       return (category === 'all' || tool.category === category) &&
+        (!favoritesOnly || favorites.includes(tool.name)) &&
         (!term || `${tool.name} ${tool.description} ${categoryName} ${tool.access} ${tool.platforms}`.toLocaleLowerCase().includes(term));
     });
-  }, [search, category, language]);
+  }, [search, category, language, favoritesOnly, favorites]);
 
   const recommended = useMemo(() => {
     const mapping: Record<string, Category[]> = {
@@ -87,44 +229,12 @@ function App() {
 
   const scrollToTools = (nextCategory: Category | 'all') => {
     setCategory(nextCategory);
+    setFavoritesOnly(false);
     document.getElementById('tool-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const goalOptions = [
-    { value: 'video', label: t.goals[0] }, { value: 'business', label: t.goals[1] },
-    { value: 'learning', label: t.goals[2] }, { value: 'ai', label: t.goals[3] },
-    { value: 'work', label: t.goals[4] }, { value: 'website', label: t.goals[5] }
-  ];
+  const toggleFavorite = (name: string) => {
+    setFavorites(current => current.includes(name) ? current.filter(item => item !== name) : [...current, name]);
+  };
 
-  return <main className="site-shell" lang={language}>
-    <header className="topbar">
-      <a className="brand" href="#home" aria-label="AQUI NET HUB - accueil"><span className="brand-mark">A</span><span>AQUI <strong>NET HUB</strong></span></a>
-      <nav aria-label="Navigation principale">{t.nav.map((label, i) => <a key={label} href={['#decouvrir', '#assist', '#academy', '#business'][i]}>{label}</a>)}</nav>
-      <button className="language-button" type="button" onClick={() => setLanguage(language === 'fr' ? 'en' : 'fr')} aria-label={language === 'fr' ? 'Switch to English' : 'Passer en français'}>{language === 'fr' ? 'EN' : 'FR'}</button>
-    </header>
-
-    <section className="hero" id="home">
-      <div className="hero-content"><p className="eyebrow">{t.eyebrow}</p><h1>{t.title}<br/><span>{t.accent}</span></h1><p className="hero-copy">{t.intro}</p>
-        <form className="search" onSubmit={e => { e.preventDefault(); scrollToTools('all'); }}><input aria-label={t.search} type="search" placeholder={t.search} value={search} onChange={e => setSearch(e.target.value)}/><button type="submit">{t.searchBtn}</button></form>
-        <p className="microcopy">{t.hint}</p>
-      </div>
-      <div className="hero-orbit orbit-one"/><div className="hero-orbit orbit-two"/>
-    </section>
-
-    <section className="section" id="decouvrir">
-      <div className="section-heading"><div><p className="eyebrow">{t.toolsEyebrow}</p><h2>{t.toolsTitle}</h2></div><span className="section-count">{tools.length} outils sélectionnés</span></div>
-      <div className="category-grid">{categories.map(item => <button key={item.id} type="button" className={`category-card${category === item.id ? ' is-active' : ''}`} aria-pressed={category === item.id} onClick={() => scrollToTools(item.id)}><span className="card-symbol">{item.icon}</span><h3>{item[language]}</h3><span className="card-arrow">↗</span></button>)}</div>
-      <div className="tool-filters" id="tool-results"><label htmlFor="category-filter">{t.filter}</label><select id="category-filter" value={category} onChange={e => setCategory(e.target.value as Category | 'all')}><option value="all">{t.all}</option>{categories.map(item => <option key={item.id} value={item.id}>{item[language]}</option>)}</select><button type="button" onClick={() => { setSearch(''); setCategory('all'); }}>{t.reset}</button></div>
-      <p className="results-count" aria-live="polite"><strong>{filteredTools.length}</strong> {t.results}</p>
-      {filteredTools.length ? <div className="tools-grid">{filteredTools.map(tool => <article className="tool-card" key={tool.name}><div className="tool-card-top"><span className="tool-category">{categories.find(c => c.id === tool.category)?.[language]}</span><span className="tool-dot"/></div><h3>{tool.name}</h3><p className="tool-description">{tool.description}</p><div className="tool-meta"><p><strong>{t.access} :</strong> {tool.access}</p><p><strong>{t.platforms} :</strong> {tool.platforms}</p></div><a className="tool-link" href={tool.url} target="_blank" rel="noopener noreferrer">{t.visit} <span>↗</span></a></article>)}</div> : <div className="empty-state"><span>⌕</span><p>{t.empty}</p></div>}
-    </section>
-
-    <section className="assist-section" id="assist"><div className="assist-intro"><p className="eyebrow">{t.assistEyebrow}</p><h2>{t.assistTitle}</h2><p>{t.assistText}</p></div><div className="assist-box"><label htmlFor="goal-select">{t.choose}</label><select id="goal-select" value={goal} onChange={e => { setGoal(e.target.value); setShowRecommendations(false); }}><option value="">—</option>{goalOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select><button className="primary-button" type="button" disabled={!goal} onClick={() => setShowRecommendations(true)}>{t.recommend} <span>→</span></button>{showRecommendations && <div className="recommendations"><h3>{t.recommendation}</h3><div className="recommendation-list">{recommended.map(tool => <a key={tool.name} href={tool.url} target="_blank" rel="noopener noreferrer"><span>{tool.name}</span><span>↗</span></a>)}</div></div>}</div></section>
-
-    <section className="section modules"><article className="module-card academy-card" id="academy"><div className="module-icon">✦</div><p className="eyebrow">{t.academyLabel}</p><h2>{t.academyTitle}</h2><p className="module-copy">{t.academyText}</p><ul>{t.academyPoints.map(point => <li key={point}>{point}</li>)}</ul><button className="text-button" type="button" onClick={() => scrollToTools('learning')}>{t.academyAction} <span>→</span></button></article><article className="module-card business-card" id="business"><div className="module-icon">◇</div><p className="eyebrow">{t.businessLabel}</p><h2>{t.businessTitle}</h2><p className="module-copy">{t.businessText}</p><ul>{t.businessPoints.map(point => <li key={point}>{point}</li>)}</ul><button className="text-button" type="button" onClick={() => scrollToTools('business')}>{t.businessAction} <span>→</span></button></article></section>
-
-    <footer><a className="brand footer-brand" href="#home"><span className="brand-mark">A</span><span>AQUI <strong>NET HUB</strong></span></a><p>{t.footer}</p><small>© {new Date().getFullYear()} AQUI NET HUB · <a href="#home">{t.backTop} ↑</a></small></footer>
-  </main>;
-}
-
-export default App;
+  const toggleProgre
