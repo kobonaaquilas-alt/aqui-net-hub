@@ -171,7 +171,7 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
         {input(partner.email,v=>setPartner(s=>({...s,email:v})),"E-mail","email")}
         {input(partner.phone,v=>setPartner(s=>({...s,phone:v})),fr?"Téléphone":"Phone","tel",false)}
         {input(partner.website,v=>setPartner(s=>({...s,website:v})),"Site web","url",false)}
-        <textarea required value={partner.proposal} onChange={e=>setPartner(s=>({...s,proposal:v}))} placeholder={fr?"Présente ta proposition":"Describe your proposal"}/>
+        <textarea required value={partner.proposal} onChange={e=>setPartner(s=>({...s,proposal:e.target.value}))} placeholder={fr?"Présente ta proposition":"Describe your proposal"}/>
         <button className="primary-button" disabled={!session||busy}>{fr?"Envoyer la candidature":"Send application"}</button>
       </form>
     </div>
