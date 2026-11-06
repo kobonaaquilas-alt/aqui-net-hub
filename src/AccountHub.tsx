@@ -15,6 +15,8 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [recoveryMode, setRecoveryMode] = useState(false);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [notice, setNotice] = useState("");
@@ -46,7 +48,8 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
 
   useEffect(() => {
     db.auth.getSession().then(({data}) => setSession(data.session));
-    const {data:{subscription}} = db.auth.onAuthStateChange((_event,next) => {
+    const {data:{subscription}} = db.auth.onAuthStateChange((event,next) => {
+      if (event === "PASSWORD_RECOVERY") setRecoveryMode(true);
       setSession(next);
       setSyncReady(false);
       setSummary(null);
@@ -84,6 +87,10 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
   }, [session?.user.id, refreshSummary]);
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("password") === "recovery") setRecoveryMode(true);
+  }, []);
+
+  useEffect(() => {
     const paymentState = new URLSearchParams(window.location.search).get("payment");
     if (paymentState === "return")
       setNotice(fr ? "Retour de paiement reçu. Le statut définitif apparaîtra après confirmation par CinetPay. Actualise les informations du compte." : "Payment return received. Final status will appear after CinetPay confirmation. Refresh your account details.");
@@ -100,6 +107,31 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
     if (result.error) setNotice(result.error.message);
     else if (mode === "signup" && !result.data.session) setNotice(fr ? "Compte créé : confirme ton adresse e-mail." : "Account created: confirm your email.");
     else setNotice(fr ? "Connexion réussie." : "Signed in.");
+  }
+
+  async function sendPasswordReset() {
+    if (!email.trim()) {
+      setNotice(fr ? "Saisis ton adresse e-mail pour recevoir le lien." : "Enter your email address to receive the reset link.");
+      return;
+    }
+    setBusy(true); setNotice("");
+    const {error} = await db.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: window.location.origin + "/?password=recovery",
+    });
+    setBusy(false);
+    setNotice(error ? error.message : fr ? "Si cette adresse correspond à un compte, un lien de réinitialisation sera envoyé." : "If this address belongs to an account, a reset link will be sent.");
+  }
+
+  async function updatePassword() {
+    if (newPassword.length < 8) {
+      setNotice(fr ? "Le nouveau mot de passe doit contenir au moins 8 caractères." : "The new password must contain at least 8 characters.");
+      return;
+    }
+    setBusy(true); setNotice("");
+    const {error} = await db.auth.updateUser({password:newPassword});
+    setBusy(false);
+    if (error) setNotice(error.message);
+    else { setNewPassword(""); setRecoveryMode(false); setNotice(fr ? "Mot de passe mis à jour." : "Password updated."); }
   }
 
   async function submit(kind:"ads"|"partners") {
@@ -140,8 +172,11 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
       {mode==="signup" && <>{input(fullName,setFullName,fr?"Nom complet":"Full name")}{input(phone,setPhone,fr?"Téléphone (facultatif)":"Phone (optional)","tel",false)}</>}
       {input(email,setEmail,"E-mail","email")}{input(password,setPassword,fr?"Mot de passe (8 caractères minimum)":"Password (8 characters minimum)","password")}
       <button className="primary-button" disabled={busy||!email||password.length<8} onClick={()=>void authenticate()}>{busy?"…":mode==="login"?(fr?"Se connecter":"Sign in"):(fr?"Créer mon compte":"Create account")}</button>
+      {mode==="login" && <button type="button" className="text-button account-reset-link" disabled={busy} onClick={()=>void sendPasswordReset()}>{fr?"Mot de passe oublié ?":"Forgot password?"}</button>}
     </div> : <div className="account-card"><p>{fr?"Connecté avec":"Signed in as"} <strong>{session.user.email}</strong></p><p className="sync-status">{fr?"Favoris et progression synchronisés sur ce compte.":"Favorites and progress synced to this account."}</p><button className="filter-button" onClick={()=>void db.auth.signOut()}>{fr?"Se déconnecter":"Sign out"}</button></div>}
     {notice && <p className="account-message" role="status">{notice}</p>}
+
+    {session && recoveryMode && <div className="account-card password-recovery-card"><h3>{fr?"Définir un nouveau mot de passe":"Set a new password"}</h3>{input(newPassword,setNewPassword,fr?"Nouveau mot de passe (8 caractères minimum)":"New password (at least 8 characters)","password")}<button type="button" className="primary-button" disabled={busy||newPassword.length<8} onClick={()=>void updatePassword()}>{busy?"…":fr?"Mettre à jour le mot de passe":"Update password"}</button></div>}
 
     {session && <div className="account-card account-summary">
       <div className="account-summary-heading"><div><h3>{fr?"Mes abonnements et paiements":"My subscriptions and payments"}</h3><p>{fr?"Statuts confirmés par le serveur.":"Statuses confirmed by the server."}</p></div><button type="button" className="filter-button" disabled={summaryBusy} onClick={()=>void refreshSummary()}>{summaryBusy?"…":fr?"Actualiser":"Refresh"}</button></div>
