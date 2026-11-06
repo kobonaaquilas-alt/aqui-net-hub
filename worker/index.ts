@@ -2,7 +2,7 @@ import { CinetPayClient, parseNotification, verifyNotification } from "cinetpay-
 interface Env { ASSETS:{fetch(request:Request):Promise<Response>}; SUPABASE_URL:string; SUPABASE_ANON_KEY:string; SUPABASE_SERVICE_ROLE_KEY:string; CINETPAY_API_KEY:string; CINETPAY_API_PASSWORD:string; APP_BASE_URL?:string; }
 const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
 const headers=(env:Env)=>({apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:`Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,"Content-Type":"application/json",Prefer:"return=representation"});
-async function authUser(request:Request,env:Env){const token=request.headers.get("Authorization")?.replace(/^Bearer\\s+/i,"");if(!token)return null;const r=await fetch(`${env.SUPABASE_URL}/auth/v1/user`,{headers:{apikey:env.SUPABASE_ANON_KEY,Authorization:`Bearer ${token}`}});return r.ok?await r.json() as {id:string;email?:string}:null;}
+async function authUser(request:Request,env:Env){const token=request.headers.get("Authorization")?.replace(/^Bearer\s+/i,"");if(!token)return null;const r=await fetch(`${env.SUPABASE_URL}/auth/v1/user`,{headers:{apikey:env.SUPABASE_ANON_KEY,Authorization:`Bearer ${token}`}});return r.ok?await r.json() as {id:string;email?:string}:null;}
 async function createPayment(request:Request,env:Env){
  if(!env.SUPABASE_URL||!env.SUPABASE_ANON_KEY||!env.SUPABASE_SERVICE_ROLE_KEY)return json({error:"Backend Supabase non configuré."},503);
  if(!env.CINETPAY_API_KEY||!env.CINETPAY_API_PASSWORD)return json({error:"Paiement non configuré : identifiants marchands absents."},503);
@@ -31,7 +31,8 @@ async function webhook(request:Request,env:Env){
  const client=new CinetPayClient({credentials:{TG:{apiKey:env.CINETPAY_API_KEY,apiPassword:env.CINETPAY_API_PASSWORD}}});
  const verified=await client.payment.getStatus(n.transactionId,"TG");
  if(verified.status==="SUCCESS"&&verified.merchantTransactionId===n.merchantTransactionId&&verified.transactionId===n.transactionId&&order.cinetpay_transaction_id===n.transactionId){
-  await fetch(`${env.SUPABASE_URL}/rest/v1/hub_payment_orders?id=eq.${order.id}`,{method:"PATCH",headers:headers(env),body:JSON.stringify({status:"paid",paid_at:new Date().toISOString()})});
+  const confirmed=await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/confirm_hub_payment`,{method:"POST",headers:headers(env),body:JSON.stringify({p_order_id:order.id,p_transaction_id:n.transactionId})});
+  if(!confirmed.ok)return json({error:"Confirmation interne impossible."},500);
  }else if(verified.status==="FAILED"){
   await fetch(`${env.SUPABASE_URL}/rest/v1/hub_payment_orders?id=eq.${order.id}`,{method:"PATCH",headers:headers(env),body:JSON.stringify({status:"failed"})});
  }
