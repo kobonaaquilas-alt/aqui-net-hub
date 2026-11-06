@@ -1,240 +1,397 @@
+import { useMemo, useState } from "react";
 
-import { useEffect, useMemo, useState } from 'react';
-
-type Language = 'fr' | 'en';
-type Category = 'ai' | 'content' | 'productivity' | 'learning' | 'translation' | 'development' | 'marketing' | 'business';
-type Tool = { name: string; category: Category; description: string; access: string; platforms: string; url: string };
+type Tool = {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  url: string;
+  free: boolean;
+  tag?: string;
+};
 
 const tools: Tool[] = [
-  { name: 'ChatGPT', category: 'ai', description: 'Assistant IA pour rédiger, apprendre, analyser et créer.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://chatgpt.com/' },
-  { name: 'Gemini', category: 'ai', description: 'Assistant IA de Google pour la recherche et la création.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://gemini.google.com/' },
-  { name: 'Claude', category: 'ai', description: 'Assistant IA pour écrire, analyser et travailler.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://claude.ai/' },
-  { name: 'Perplexity', category: 'ai', description: 'Recherche assistée par IA avec des réponses sourcées.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://www.perplexity.ai/' },
-  { name: 'Microsoft Copilot', category: 'ai', description: 'Assistant IA pour les questions, la rédaction et la création.', access: 'Freemium', platforms: 'Web · Android · iOS · Windows', url: 'https://copilot.microsoft.com/' },
-  { name: 'Canva', category: 'content', description: 'Création de visuels, présentations, affiches et contenus graphiques.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://www.canva.com/' },
-  { name: 'CapCut', category: 'content', description: 'Montage vidéo et création de contenus pour les réseaux sociaux.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://www.capcut.com/' },
-  { name: 'Photopea', category: 'content', description: 'Éditeur graphique en ligne pour retoucher des images.', access: 'Gratuit avec publicité', platforms: 'Web', url: 'https://www.photopea.com/' },
-  { name: 'Adobe Express', category: 'content', description: 'Création de visuels, affiches, vidéos et publications.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://www.adobe.com/express/' },
-  { name: 'OBS Studio', category: 'content', description: 'Enregistrement vidéo et diffusion en direct sur ordinateur.', access: 'Gratuit', platforms: 'Windows · macOS · Linux', url: 'https://obsproject.com/' },
-  { name: 'Notion', category: 'productivity', description: 'Organisation du travail, notes et gestion de projets.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://www.notion.com/' },
-  { name: 'Trello', category: 'productivity', description: 'Organisation des tâches et suivi des projets.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://trello.com/' },
-  { name: 'Google Drive', category: 'productivity', description: 'Stockage, partage et organisation de fichiers en ligne.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://drive.google.com/' },
-  { name: 'Khan Academy', category: 'learning', description: 'Cours et exercices pour apprendre gratuitement.', access: 'Gratuit', platforms: 'Web · Android · iOS', url: 'https://www.khanacademy.org/' },
-  { name: 'freeCodeCamp', category: 'learning', description: 'Apprentissage gratuit de la programmation.', access: 'Gratuit', platforms: 'Web', url: 'https://www.freecodecamp.org/' },
-  { name: 'Coursera', category: 'learning', description: 'Cours en ligne proposés par des universités et entreprises.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://www.coursera.org/' },
-  { name: 'Duolingo', category: 'learning', description: 'Apprentissage des langues avec des exercices interactifs.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://www.duolingo.com/' },
-  { name: 'DeepL', category: 'translation', description: 'Traduction de textes et de documents dans plusieurs langues.', access: 'Freemium', platforms: 'Web · Android · iOS', url: 'https://www.deepl.com/translator' },
-  { name: 'GitHub Copilot', category: 'development', description: 'Assistant IA pour écrire, comprendre et améliorer du code.', access: 'Freemium', platforms: 'Web · IDE', url: 'https://github.com/features/copilot' },
-  { name: 'Google Trends', category: 'marketing', description: 'Repérez les sujets recherchés et comparez les tendances.', access: 'Gratuit', platforms: 'Web', url: 'https://trends.google.com/trends/' },
-  { name: 'Meta Business Suite', category: 'marketing', description: 'Gérez les publications, messages et statistiques de vos Pages Facebook et Instagram.', access: 'Gratuit', platforms: 'Web · Android · iOS', url: 'https://business.facebook.com/' },
-  { name: 'TikTok Studio', category: 'marketing', description: 'Gérez vos contenus TikTok et consultez les statistiques de votre compte.', access: 'Gratuit', platforms: 'Web · Android', url: 'https://www.tiktok.com/tiktokstudio' },
-  { name: 'Google Analytics', category: 'marketing', description: 'Mesurez la fréquentation de votre site et comprenez vos visiteurs.', access: 'Gratuit', platforms: 'Web', url: 'https://analytics.google.com/' },
-  { name: 'Google Search Console', category: 'marketing', description: 'Suivez la présence de votre site dans Google et repérez les problèmes.', access: 'Gratuit', platforms: 'Web', url: 'https://search.google.com/search-console/about' },
-  { name: 'WhatsApp Business', category: 'business', description: 'Présentez votre activité et échangez avec vos clients.', access: 'Gratuit au téléchargement', platforms: 'Android · iOS', url: 'https://www.whatsapp.com/business/' },
-  { name: 'Systeme.io', category: 'business', description: 'Créez des pages de vente, tunnels, campagnes e-mail et formations.', access: 'Freemium', platforms: 'Web', url: 'https://systeme.io/' },
-  { name: 'WooCommerce', category: 'business', description: 'Ajoutez une boutique en ligne à WordPress. Hébergement et services annexes payants.', access: 'Extension gratuite · coûts annexes', platforms: 'Web · WordPress', url: 'https://woocommerce.com/' }
+  { id: "chatgpt", name: "ChatGPT", category: "Intelligence artificielle", description: "Assistant IA pour écrire, apprendre, analyser et créer.", url: "https://chatgpt.com/", free: true, tag: "Populaire" },
+  { id: "gemini", name: "Google Gemini", category: "Intelligence artificielle", description: "Assistant intelligent de Google.", url: "https://gemini.google.com/", free: true },
+  { id: "copilot", name: "Microsoft Copilot", category: "Intelligence artificielle", description: "Assistant IA pour les recherches et la productivité.", url: "https://copilot.microsoft.com/", free: true },
+  { id: "perplexity", name: "Perplexity", category: "Intelligence artificielle", description: "Recherche intelligente avec des sources.", url: "https://www.perplexity.ai/", free: true },
+  { id: "claude", name: "Claude", category: "Intelligence artificielle", description: "Assistant IA pour la rédaction et l'analyse.", url: "https://claude.ai/", free: true },
+  { id: "deepseek", name: "DeepSeek", category: "Intelligence artificielle", description: "Assistant IA polyvalent.", url: "https://chat.deepseek.com/", free: true },
+
+  { id: "canva", name: "Canva", category: "Création graphique", description: "Conçois des affiches, visuels, présentations et publications.", url: "https://www.canva.com/", free: true },
+  { id: "photopea", name: "Photopea", category: "Création graphique", description: "Éditeur graphique en ligne.", url: "https://www.photopea.com/", free: true },
+  { id: "removebg", name: "Remove.bg", category: "Création graphique", description: "Supprime automatiquement l'arrière-plan d'une image.", url: "https://www.remove.bg/", free: true },
+  { id: "pixlr", name: "Pixlr", category: "Création graphique", description: "Retouche et création d'images en ligne.", url: "https://pixlr.com/", free: true },
+
+  { id: "capcut", name: "CapCut", category: "Vidéo et audio", description: "Montage vidéo pour les réseaux sociaux.", url: "https://www.capcut.com/", free: true, tag: "Créateurs" },
+  { id: "clipchamp", name: "Clipchamp", category: "Vidéo et audio", description: "Montage vidéo simple dans le navigateur.", url: "https://clipchamp.com/", free: true },
+  { id: "veed", name: "VEED", category: "Vidéo et audio", description: "Montage vidéo, sous-titres et outils IA.", url: "https://www.veed.io/", free: true },
+  { id: "audacity", name: "Audacity", category: "Vidéo et audio", description: "Logiciel gratuit d'enregistrement et de traitement audio.", url: "https://www.audacityteam.org/", free: true },
+  { id: "suno", name: "Suno", category: "Vidéo et audio", description: "Création musicale assistée par intelligence artificielle.", url: "https://suno.com/", free: true },
+
+  { id: "google-docs", name: "Google Docs", category: "Productivité", description: "Rédige et partage des documents en ligne.", url: "https://docs.google.com/", free: true },
+  { id: "google-sheets", name: "Google Sheets", category: "Productivité", description: "Crée des tableaux et réalise des calculs.", url: "https://sheets.google.com/", free: true },
+  { id: "notion", name: "Notion", category: "Productivité", description: "Organise tes projets, notes et activités.", url: "https://www.notion.so/", free: true },
+  { id: "trello", name: "Trello", category: "Productivité", description: "Organise le travail avec des tableaux de tâches.", url: "https://trello.com/", free: true },
+  { id: "drive", name: "Google Drive", category: "Productivité", description: "Stocke et partage tes fichiers en ligne.", url: "https://drive.google.com/", free: true },
+
+  { id: "wordpress", name: "WordPress", category: "Business et création web", description: "Crée un site web ou un blog.", url: "https://wordpress.com/", free: true },
+  { id: "google-sites", name: "Google Sites", category: "Business et création web", description: "Crée facilement un site vitrine.", url: "https://sites.google.com/", free: true },
+  { id: "github", name: "GitHub", category: "Business et création web", description: "Héberge et gère tes projets numériques.", url: "https://github.com/", free: true },
+  { id: "cloudflare", name: "Cloudflare", category: "Business et création web", description: "Services web, sécurité et hébergement.", url: "https://www.cloudflare.com/", free: true },
+
+  { id: "khan", name: "Khan Academy", category: "Formation", description: "Apprends gratuitement de nombreuses matières.", url: "https://fr.khanacademy.org/", free: true },
+  { id: "coursera", name: "Coursera", category: "Formation", description: "Cours en ligne proposés par des institutions.", url: "https://www.coursera.org/", free: true },
+  { id: "freecodecamp", name: "freeCodeCamp", category: "Formation", description: "Apprends gratuitement la programmation.", url: "https://www.freecodecamp.org/", free: true },
+  { id: "youtube", name: "YouTube", category: "Formation", description: "Trouve des tutoriels et des formations vidéo.", url: "https://www.youtube.com/", free: true }
 ];
 
-const categories: { id: Category; fr: string; en: string; icon: string }[] = [
-  { id: 'ai', fr: 'Intelligence artificielle', en: 'Artificial intelligence', icon: '✧' },
-  { id: 'content', fr: 'Création de contenu', en: 'Content creation', icon: '▧' },
-  { id: 'productivity', fr: 'Productivité', en: 'Productivity', icon: '◈' },
-  { id: 'learning', fr: 'Formation', en: 'Learning', icon: '⌘' },
-  { id: 'translation', fr: 'Traduction & langues', en: 'Translation & languages', icon: '文' },
-  { id: 'development', fr: 'Développement', en: 'Development', icon: '{ }' },
-  { id: 'marketing', fr: 'Marketing & visibilité', en: 'Marketing & visibility', icon: '↗' },
-  { id: 'business', fr: 'Commerce & activité', en: 'Business & commerce', icon: '◇' }
+const categories = [
+  "Toutes les catégories",
+  ...Array.from(new Set(tools.map((tool) => tool.category)))
 ];
 
 const learningPaths = [
   {
-    title: 'Créer du contenu numérique',
-    description: 'Apprenez à concevoir des visuels, monter des vidéos et publier régulièrement.',
-    steps: ['Découvrir Canva et CapCut', 'Créer trois contenus originaux', 'Apprendre les bases du montage', 'Analyser les résultats de ses publications'],
-    category: 'content' as Category
+    title: "Création de contenu",
+    description: "Apprends à produire des vidéos, des visuels et des publications.",
+    steps: ["Découvrir Canva", "Apprendre le montage avec CapCut", "Utiliser une IA pour préparer ses contenus", "Publier régulièrement"]
   },
   {
-    title: 'Maîtriser les outils IA',
-    description: 'Utilisez les assistants IA pour rechercher, rédiger, apprendre et gagner du temps.',
-    steps: ['Comprendre les possibilités et limites de l’IA', 'Apprendre à formuler des instructions précises', 'Vérifier les informations obtenues', 'Réaliser un petit projet avec un assistant IA'],
-    category: 'ai' as Category
+    title: "Compétences numériques",
+    description: "Développe des compétences utiles pour travailler sur Internet.",
+    steps: ["Découvrir les outils numériques", "Apprendre les bases du web", "Créer un premier projet", "Constituer un portfolio"]
   },
   {
-    title: 'Apprendre le développement web',
-    description: 'Commencez par les bases avant de construire vos propres pages web.',
-    steps: ['Découvrir HTML et CSS', 'Apprendre les bases de JavaScript', 'Créer une page personnelle', 'Publier un premier projet'],
-    category: 'development' as Category
-  },
-  {
-    title: 'Développer ses compétences professionnelles',
-    description: 'Renforcez votre organisation, votre communication et votre autonomie numérique.',
-    steps: ['Organiser son travail avec Notion ou Trello', 'Améliorer sa communication écrite', 'Créer un portfolio simple', 'Présenter clairement ses compétences'],
-    category: 'productivity' as Category
+    title: "Création d'activité en ligne",
+    description: "Prépare une activité numérique avec une approche progressive.",
+    steps: ["Identifier un besoin réel", "Définir une offre utile", "Créer une présence en ligne", "Tester son offre auprès de clients"]
   }
 ];
 
 const businessSteps = [
-  ['1. Trouver une idée utile', 'Identifiez un besoin réel autour de vous. Observez les difficultés des particuliers, commerçants et petites entreprises.'],
-  ['2. Vérifier la demande', 'Interrogez des clients potentiels. Vérifiez qu’ils souhaitent réellement payer pour la solution proposée.'],
-  ['3. Construire une offre simple', 'Définissez le service, le résultat attendu, le prix et les conditions de livraison.'],
-  ['4. Être visible en ligne', 'Présentez votre activité sur WhatsApp Business et les réseaux sociaux. Publiez des exemples concrets de votre travail.'],
-  ['5. Suivre les résultats', 'Notez les demandes, les ventes, les dépenses et les retours clients. Améliorez votre offre progressivement.']
+  "Identifier un problème réel à résoudre.",
+  "Étudier les personnes qui pourraient avoir besoin de la solution.",
+  "Construire une offre simple et compréhensible.",
+  "Créer une présence professionnelle en ligne.",
+  "Tester l'offre et recueillir les retours.",
+  "Améliorer le service avant d'investir davantage."
 ];
 
-const copy = {
-  fr: {
-    nav: ['Découvrir', 'NET ASSIST', 'Academy', 'Business', 'Ads & Partners'],
-    eyebrow: 'LE HUB DU NUMÉRIQUE', title: 'Le bon outil numérique.', accent: 'Au bon moment.',
-    intro: 'Découvrez des outils, comparez leurs possibilités et trouvez les ressources adaptées à vos projets.',
-    search: 'Rechercher un outil ou un besoin…', searchBtn: 'Rechercher',
-    hint: 'Des ressources numériques pour apprendre, créer et développer vos projets.',
-    toolsEyebrow: 'AQUI NET TOOLS', toolsTitle: 'Explorez les outils numériques',
-    all: 'Toutes les catégories', filter: 'Filtrer par catégorie', reset: 'Tout réinitialiser',
-    results: 'outil(s) trouvé(s)', access: 'Accès', platforms: 'Plateformes', visit: 'Site officiel',
-    empty: 'Aucun résultat. Essayez un autre mot-clé ou réinitialisez les filtres.',
-    favorites: 'Mes favoris', addFavorite: 'Ajouter aux favoris', removeFavorite: 'Retirer des favoris',
-    showAll: 'Tous les outils', showFavorites: 'Afficher uniquement mes favoris',
-    assistEyebrow: 'VOTRE ASSISTANT D’ORIENTATION', assistTitle: 'Quel est votre objectif ?',
-    assistText: 'Choisissez votre besoin : NET ASSIST vous propose une sélection d’outils adaptés.',
-    choose: 'Sélectionnez un objectif',
-    goals: ['Créer des vidéos et publications', 'Lancer une activité en ligne', 'Apprendre une compétence', 'Utiliser l’intelligence artificielle', 'Organiser mon travail', 'Créer un site ou une boutique'],
-    recommend: 'Voir les outils recommandés', recommendation: 'Votre sélection recommandée',
-    academyLabel: 'APPRENDRE ET PROGRESSER', academyTitle: 'AQUI NET ACADEMY',
-    academyText: 'Des parcours pratiques pour développer vos compétences numériques, à votre rythme.',
-    academyAction: 'Explorer les outils de formation',
-    businessLabel: 'TRANSFORMER LES IDÉES EN PROJETS', businessTitle: 'AQUI NET BUSINESS',
-    businessText: 'Des ressources pour structurer une activité, trouver des clients et développer une présence en ligne.',
-    businessAction: 'Découvrir les outils business',
-    footer: 'Découvrir. Créer. Progresser.', backTop: 'Retour en haut',
-    pathsTitle: 'Des parcours pour passer à la pratique',
-    pathsText: 'Chaque parcours propose des étapes simples. Avancez à votre rythme et réalisez des projets concrets.',
-    startPath: 'Voir les outils utiles', progressTitle: 'Votre progression',
-    businessRoadmap: 'Les étapes pour lancer une activité',
-    businessWarning: 'Aucun revenu n’est garanti. Testez votre idée à petite échelle et évitez les dépenses que vous ne pouvez pas supporter.',
-    adsTitle: 'AQUI NET ADS', adsText: 'Un espace destiné à présenter les possibilités de visibilité et de promotion sur AQUI NET HUB.',
-    adsStatus: 'Espace en préparation', adsInfo: 'Les campagnes publicitaires, statistiques annonceurs et paiements ne sont pas encore activés sur cette plateforme.',
-    partnersTitle: 'AQUI NET PARTNERS', partnersText: 'Un espace prévu pour les créateurs, formateurs, entreprises et partenaires qui souhaitent contribuer au hub.',
-    partnersStatus: 'Partenariats en préparation', partnersInfo: 'Les inscriptions partenaires et le suivi automatisé des collaborations ne sont pas encore disponibles.',
-    transparency: 'Transparence', transparencyText: 'Les espaces Ads et Partners sont présentés pour informer sur leur objectif. Aucun achat de publicité, paiement ou inscription partenaire ne peut être effectué depuis ces sections pour le moment.',
-    privacyTitle: 'Données et confidentialité', privacyText: 'Les favoris sont enregistrés uniquement dans le stockage local de votre navigateur. Ils ne sont pas synchronisés entre appareils et aucun compte utilisateur n’est créé par cette fonctionnalité.',
-    faqTitle: 'Questions fréquentes',
-    faq: [
-      ['Les outils présentés appartiennent-ils à AQUI NET HUB ?', 'Non. Ce sont des services externes. AQUI NET HUB les répertorie et renvoie vers leurs sites officiels.'],
-      ['Les outils sont-ils tous gratuits ?', 'Non. Certains sont gratuits, d’autres proposent des fonctions payantes. Vérifiez toujours les conditions sur le site officiel.'],
-      ['Mes favoris sont-ils accessibles sur un autre téléphone ?', 'Non. Ils sont conservés sur cet appareil et dans ce navigateur.'],
-      ['Puis-je déjà acheter une publicité sur AQUI NET HUB ?', 'Non. L’espace Ads est en préparation. Les commandes et paiements publicitaires ne sont pas encore activés.']
-    ]
-  },
-  en: {
-    nav: ['Discover', 'NET ASSIST', 'Academy', 'Business', 'Ads & Partners'],
-    eyebrow: 'THE DIGITAL HUB', title: 'The right digital tool.', accent: 'At the right time.',
-    intro: 'Discover tools, compare their features and find resources suited to your projects.',
-    search: 'Search for a tool or a need…', searchBtn: 'Search',
-    hint: 'Digital resources to learn, create and grow your projects.',
-    toolsEyebrow: 'AQUI NET TOOLS', toolsTitle: 'Explore digital tools',
-    all: 'All categories', filter: 'Filter by category', reset: 'Reset all',
-    results: 'tool(s) found', access: 'Access', platforms: 'Platforms', visit: 'Official website',
-    empty: 'No results. Try another keyword or reset the filters.',
-    favorites: 'My favorites', addFavorite: 'Add to favorites', removeFavorite: 'Remove from favorites',
-    showAll: 'All tools', showFavorites: 'Show favorites only',
-    assistEyebrow: 'YOUR DIGITAL GUIDE', assistTitle: 'What is your goal?',
-    assistText: 'Choose what you need and NET ASSIST will suggest relevant tools.',
-    choose: 'Select a goal',
-    goals: ['Create videos and posts', 'Start an online business', 'Learn a skill', 'Use artificial intelligence', 'Organize my work', 'Build a website or store'],
-    recommend: 'Show recommended tools', recommendation: 'Recommended selection',
-    academyLabel: 'LEARN AND GROW', academyTitle: 'AQUI NET ACADEMY',
-    academyText: 'Practical learning paths to build digital skills at your own pace.',
-    academyAction: 'Explore learning tools',
-    businessLabel: 'TURN IDEAS INTO PROJECTS', businessTitle: 'AQUI NET BUSINESS',
-    businessText: 'Resources to structure a business, find customers and build an online presence.',
-    businessAction: 'Explore business tools',
-    footer: 'Discover. Create. Progress.', backTop: 'Back to top',
-    pathsTitle: 'Learning paths that lead to action',
-    pathsText: 'Follow practical steps at your own pace and build real projects.',
-    startPath: 'Explore useful tools', progressTitle: 'Your progress',
-    businessRoadmap: 'Steps to start a business',
-    businessWarning: 'Income is not guaranteed. Test your idea on a small scale and avoid expenses you cannot afford.',
-    adsTitle: 'AQUI NET ADS', adsText: 'A space intended to present visibility and promotion opportunities on AQUI NET HUB.',
-    adsStatus: 'Coming soon', adsInfo: 'Advertising campaigns, advertiser statistics and payments are not yet enabled.',
-    partnersTitle: 'AQUI NET PARTNERS', partnersText: 'A space planned for creators, educators, businesses and partners who want to contribute to the hub.',
-    partnersStatus: 'Coming soon', partnersInfo: 'Partner registration and automated collaboration tracking are not yet available.',
-    transparency: 'Transparency', transparencyText: 'Ads and Partners sections explain future services. Advertising purchases, payments and partner registration are not currently available.',
-    privacyTitle: 'Data and privacy', privacyText: 'Favorites are stored only in your browser on this device. They are not synced across devices and this feature does not create a user account.',
-    faqTitle: 'Frequently asked questions',
-    faq: [
-      ['Do the listed tools belong to AQUI NET HUB?', 'No. They are external services. AQUI NET HUB lists them and links to their official websites.'],
-      ['Are all tools free?', 'No. Some are free, while others offer paid features. Always check the official website.'],
-      ['Can I access my favorites on another phone?', 'No. They are stored on this device and browser.'],
-      ['Can I buy an ad on AQUI NET HUB now?', 'No. The Ads section is being prepared. Advertising orders and payments are not enabled yet.']
-    ]
-  }
-};
-
 function App() {
-  const [language, setLanguage] = useState<Language>('fr');
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<Category | 'all'>('all');
-  const [goal, setGoal] = useState('');
-  const [showRecommendations, setShowRecommendations] = useState(false);
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
-  const [completed, setCompleted] = useState<string[]>([]);
-  const t = copy[language];
-
-  useEffect(() => {
+  const [language, setLanguage] = useState<"fr" | "en">("fr");
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("Toutes les catégories");
+  const [favorites, setFavorites] = useState<string[]>(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem('aqui-net-hub-favorites') || '[]');
-      if (Array.isArray(saved)) setFavorites(saved.filter((x): x is string => typeof x === 'string'));
+      return JSON.parse(localStorage.getItem("aqui-favorites") || "[]");
     } catch {
-      setFavorites([]);
+      return [];
     }
+  });
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [completed, setCompleted] = useState<string[]>(() => {
     try {
-      const savedProgress = JSON.parse(localStorage.getItem('aqui-net-hub-progress') || '[]');
-      if (Array.isArray(savedProgress)) setCompleted(savedProgress.filter((x): x is string => typeof x === 'string'));
+      return JSON.parse(localStorage.getItem("aqui-progress") || "[]");
     } catch {
-      setCompleted([]);
+      return [];
     }
-  }, []);
+  });
+  const [activePath, setActivePath] = useState(0);
+  const [assistQuestion, setAssistQuestion] = useState("");
+  const [assistResult, setAssistResult] = useState("");
 
-  useEffect(() => {
-    localStorage.setItem('aqui-net-hub-favorites', JSON.stringify(favorites));
-  }, [favorites]);
-
-  useEffect(() => {
-    localStorage.setItem('aqui-net-hub-progress', JSON.stringify(completed));
-  }, [completed]);
+  const isFr = language === "fr";
 
   const filteredTools = useMemo(() => {
-    const term = search.trim().toLocaleLowerCase();
-    return tools.filter(tool => {
-      const categoryName = categories.find(c => c.id === tool.category)?.[language] ?? '';
-      return (category === 'all' || tool.category === category) &&
-        (!favoritesOnly || favorites.includes(tool.name)) &&
-        (!term || `${tool.name} ${tool.description} ${categoryName} ${tool.access} ${tool.platforms}`.toLocaleLowerCase().includes(term));
+    const query = search.trim().toLowerCase();
+
+    return tools.filter((tool) => {
+      const matchesSearch =
+        !query ||
+        tool.name.toLowerCase().includes(query) ||
+        tool.description.toLowerCase().includes(query) ||
+        tool.category.toLowerCase().includes(query);
+
+      const matchesCategory =
+        category === "Toutes les catégories" || tool.category === category;
+
+      const matchesFavorite =
+        !showFavorites || favorites.includes(tool.id);
+
+      return matchesSearch && matchesCategory && matchesFavorite;
     });
-  }, [search, category, language, favoritesOnly, favorites]);
+  }, [search, category, showFavorites, favorites]);
 
-  const recommended = useMemo(() => {
-    const mapping: Record<string, Category[]> = {
-      video: ['content', 'ai', 'marketing'],
-      business: ['business', 'marketing', 'productivity'],
-      learning: ['learning', 'ai', 'translation'],
-      ai: ['ai', 'content', 'productivity'],
-      work: ['productivity', 'ai'],
-      website: ['development', 'business', 'marketing']
-    };
-    const keys = mapping[goal] ?? [];
-    return tools.filter(tool => keys.includes(tool.category)).slice(0, 6);
-  }, [goal]);
+  function toggleFavorite(id: string) {
+    setFavorites((previous) => {
+      const next = previous.includes(id)
+        ? previous.filter((item) => item !== id)
+        : [...previous, id];
 
-  const scrollToTools = (nextCategory: Category | 'all') => {
-    setCategory(nextCategory);
-    setFavoritesOnly(false);
-    document.getElementById('tool-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      localStorage.setItem("aqui-favorites", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function toggleProgress(id: string) {
+    setCompleted((previous) => {
+      const next = previous.includes(id)
+        ? previous.filter((item) => item !== id)
+        : [...previous, id];
+
+      localStorage.setItem("aqui-progress", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function getRecommendation() {
+    const question = assistQuestion.trim();
+
+    if (!question) {
+      setAssistResult(
+        isFr
+          ? "Décris ton objectif pour recevoir une orientation."
+          : "Describe your goal to receive guidance."
+      );
+      return;
+    }
+
+    const q = question.toLowerCase();
+
+    if (/vidéo|video|tiktok|youtube|montage|film/.test(q)) {
+      setAssistResult(
+        isFr
+          ? "Pour créer des vidéos, commence avec CapCut pour le montage, Canva pour les visuels et ChatGPT pour préparer tes scripts."
+          : "For video creation, start with CapCut for editing, Canva for visuals and ChatGPT for scripts."
+      );
+    } else if (/argent|revenu|business|commerce|vente|entreprise/.test(q)) {
+      setAssistResult(
+        isFr
+          ? "Commence par identifier une compétence que tu peux proposer, un besoin réel et des clients potentiels. Utilise Canva pour présenter ton offre et Google Docs pour préparer ton plan. Les revenus ne sont jamais garantis."
+          : "Start by identifying a skill you can offer, a real need and potential customers. Use Canva to present your offer and Google Docs to prepare your plan. Income is never guaranteed."
+      );
+    } else if (/site|web|application|code|program/.test(q)) {
+      setAssistResult(
+        isFr
+          ? "Pour créer un projet web, découvre freeCodeCamp, GitHub et Cloudflare. Commence par un petit projet fonctionnel avant d'ajouter des fonctionnalités."
+          : "To build a web project, explore freeCodeCamp, GitHub and Cloudflare. Start with a small working project before adding features."
+      );
+    } else if (/étud|etud|cours|formation|apprendre|school/.test(q)) {
+      setAssistResult(
+        isFr
+          ? "Pour apprendre, utilise Khan Academy pour les cours, YouTube pour les tutoriels et Notion pour organiser tes révisions."
+          : "For learning, use Khan Academy for lessons, YouTube for tutorials and Notion to organize your study."
+      );
+    } else if (/image|photo|design|affiche|logo/.test(q)) {
+      setAssistResult(
+        isFr
+          ? "Pour créer des visuels, commence avec Canva. Photopea et Pixlr peuvent ensuite t'aider à retoucher tes images."
+          : "For visuals, start with Canva. Photopea and Pixlr can help you edit images."
+      );
+    } else {
+      setAssistResult(
+        isFr
+          ? "Décompose ton objectif en petites étapes. Explore les outils de la plateforme, compare leurs possibilités et commence par une solution gratuite adaptée à ton besoin."
+          : "Break your goal into small steps. Explore the platform's tools, compare their features and start with a free solution that fits your needs."
+      );
+    }
+  }
+
+  const translations = {
+    home: isFr ? "Accueil" : "Home",
+    tools: isFr ? "Outils" : "Tools",
+    academy: isFr ? "Académie" : "Academy",
+    business: isFr ? "Business" : "Business",
+    partners: isFr ? "Partenaires" : "Partners",
+    heroTitle: isFr ? "Le numérique ouvre des possibilités." : "Digital opens up possibilities.",
+    heroText: isFr
+      ? "Découvre des outils, développe tes compétences et construis tes projets avec AQUI NET HUB."
+      : "Discover tools, develop your skills and build your projects with AQUI NET HUB.",
+    explore: isFr ? "Explorer les outils" : "Explore tools",
+    discover: isFr ? "Découvrir l'académie" : "Explore the academy",
+    search: isFr ? "Rechercher un outil..." : "Search for a tool...",
+    all: isFr ? "Toutes les catégories" : "All categories",
+    favorites: isFr ? "Mes favoris" : "My favorites",
+    allTools: isFr ? "Tous les outils" : "All tools",
+    noResults: isFr ? "Aucun outil trouvé." : "No tools found.",
+    free: isFr ? "Accès gratuit" : "Free access",
+    open: isFr ? "Ouvrir l'outil" : "Open tool",
+    assistant: isFr ? "NET ASSIST" : "NET ASSIST",
+    assistantText: isFr
+      ? "Décris ce que tu souhaites accomplir. NET ASSIST te propose une première orientation."
+      : "Describe what you want to achieve. NET ASSIST will suggest a starting point.",
+    send: isFr ? "Obtenir une orientation" : "Get guidance",
+    academyTitle: isFr ? "AQUI NET ACADEMY" : "AQUI NET ACADEMY",
+    businessTitle: isFr ? "Construis ton projet." : "Build your project.",
+    businessText: isFr
+      ? "Une démarche progressive pour transformer une idée en activité structurée."
+      : "A gradual approach to turn an idea into a structured activity.",
+    partnersTitle: isFr ? "Partenaires et collaborations" : "Partners and collaborations",
+    partnersText: isFr
+      ? "Cette rubrique est destinée à accueillir des collaborations, ressources et offres professionnelles vérifiées."
+      : "This section is intended for verified collaborations, resources and professional offers.",
+    adsTitle: isFr ? "AQUI NET ADS" : "AQUI NET ADS",
+    adsText: isFr
+      ? "Un espace prévu pour présenter des offres et des services utiles. Les campagnes publicitaires ne sont pas encore ouvertes."
+      : "A space planned for useful offers and services. Advertising campaigns are not yet open.",
+    faqTitle: isFr ? "Questions fréquentes" : "Frequently asked questions",
+    footer: isFr
+      ? "Une plateforme pour apprendre, créer et avancer dans le monde numérique."
+      : "A platform to learn, create and move forward in the digital world."
   };
 
-  const toggleFavorite = (name: string) => {
-    setFavorites(current => current.includes(name) ? current.filter(item => item !== name) : [...current, name]);
-  };
+  return (
+    <div className="site-shell">
+      <header className="topbar">
+        <a className="brand" href="#accueil" aria-label="AQUI NET HUB">
+          <span className="brand-mark">A</span>
+          <span>AQUI NET <strong>HUB</strong></span>
+        </a>
 
-  const toggleProgre
+        <nav className="main-nav">
+          <a href="#accueil">{translations.home}</a>
+          <a href="#outils">{translations.tools}</a>
+          <a href="#academy">{translations.academy}</a>
+          <a href="#business">{translations.business}</a>
+          <a href="#partenaires">{translations.partners}</a>
+        </nav>
+
+        <button
+          className="language-button"
+          onClick={() => setLanguage(isFr ? "en" : "fr")}
+          type="button"
+        >
+          {isFr ? "EN" : "FR"}
+        </button>
+      </header>
+
+      <main>
+        <section className="hero" id="accueil">
+          <div className="hero-content">
+            <span className="eyebrow">AQUI NET HUB · DIGITAL OPPORTUNITIES</span>
+            <h1>{translations.heroTitle}</h1>
+            <p>{translations.heroText}</p>
+            <div className="hero-actions">
+              <a className="primary-button" href="#outils">{translations.explore}</a>
+              <a className="secondary-button" href="#academy">{translations.discover}</a>
+            </div>
+          </div>
+          <div className="hero-visual" aria-hidden="true">
+            <div className="visual-orbit orbit-one" />
+            <div className="visual-orbit orbit-two" />
+            <div className="visual-center">AQUI<br />NET<br /><strong>HUB</strong></div>
+            <span className="visual-chip chip-one">AI</span>
+            <span className="visual-chip chip-two">WEB</span>
+            <span className="visual-chip chip-three">CREATE</span>
+          </div>
+        </section>
+
+        <section className="stats-section">
+          <div className="stat-card">
+            <strong>{tools.length}+</strong>
+            <span>{isFr ? "Outils numériques" : "Digital tools"}</span>
+          </div>
+          <div className="stat-card">
+            <strong>{categories.length - 1}</strong>
+            <span>{isFr ? "Domaines" : "Categories"}</span>
+          </div>
+          <div className="stat-card">
+            <strong>100%</strong>
+            <span>{isFr ? "Accessible en ligne" : "Available online"}</span>
+          </div>
+        </section>
+
+        <section className="section tools-section" id="outils">
+          <div className="section-heading">
+            <span className="eyebrow">AQUI NET TOOLS</span>
+            <h2>{translations.tools}</h2>
+            <p>
+              {isFr
+                ? "Une sélection d'outils pour apprendre, créer et développer tes projets."
+                : "A selection of tools to learn, create and develop your projects."}
+            </p>
+          </div>
+
+          <div className="tools-controls">
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={translations.search}
+              aria-label={translations.search}
+            />
+
+            <select
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              aria-label={translations.all}
+            >
+              {categories.map((item) => (
+                <option key={item} value={item}>
+                  {item === "Toutes les catégories" ? translations.all : item}
+                </option>
+              ))}
+            </select>
+
+            <button
+              className={showFavorites ? "filter-button active" : "filter-button"}
+              onClick={() => setShowFavorites((value) => !value)}
+              type="button"
+            >
+              ♥ {translations.favorites} ({favorites.length})
+            </button>
+          </div>
+
+          <div className="tools-count">
+            {filteredTools.length} {isFr ? "outil(s) disponible(s)" : "tool(s) available"}
+          </div>
+
+          {filteredTools.length > 0 ? (
+            <div className="tools-grid">
+              {filteredTools.map((tool) => (
+                <article className="tool-card" key={tool.id}>
+                  <div className="tool-card-top">
+                    <span className="tool-icon">{tool.name.charAt(0)}</span>
+                    <button
+                      className={favorites.includes(tool.id) ? "favorite-button selected" : "favorite-button"}
+                      onClick={() => toggleFavorite(tool.id)}
+                      type="button"
+                      aria-label={isFr ? "Ajouter ou retirer des favoris" : "Toggle favorite"}
+                    >
+                      {favorites.includes(tool.id) ? "♥" : "♡"}
+                    </button>
+                  </div>
+                  <span className="tool-category">{tool.category}</span>
+                  <h3>{tool.name}</h3>
+                  <p>{tool.description}</p>
+                  <div className="tool-card-bottom">
+                    <span className="free-label">{translations.free}</span>
+                    <a href={tool.url} target="_blank" rel="noopener noreferrer">
+                      {translations.open} ↗
+                    </a>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">{translations.noResults}</div>
+          )}
+        </section>
+
+        <section className="section assist-section" id="assistant">
+          <div className="assist-content">
+            <span className="eyebrow">YOUR DIGITAL GUIDE</span>
+            <h2>{translations.assistant}</h2>
+            <p>{translations.assistantText}</p>
+            <textarea
+              value={assistQuestion}
+              onChange={(event) => setAssistQuestion(event.target.value)}
+              placeholder={
+                isFr
+                  ? "Exemple : je veux créer des vidéos pour TikTok..."
+                  : "Example: I want to create videos for TikTok..."
+              }
+              rows={3}
+            />
+            <button className="primary-button" t
