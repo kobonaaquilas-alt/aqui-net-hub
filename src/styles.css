@@ -73,3 +73,90 @@ footer p, footer small { color: #aab8cc; font-size: 12px; }
   .assist-icon { display: none; }
   footer { flex-direction: column; align-items: flex-start; }
 }
+.tool-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 35px 0 20px;
+}
+
+.tool-filters select,
+.tool-filters button {
+  padding: 12px 16px;
+  border: 1px solid #dce2ec;
+  border-radius: 10px;
+  background: white;
+  color: #101c32;
+  font: inherit;
+}
+
+.tool-filters button {
+  cursor: pointer;
+}
+
+.results-count {
+  margin-bottom: 18px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.tool-card {
+  padding: 24px;
+  border: 1px solid #e5eaf1;
+  border-radius: 16px;
+  background: white;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tool-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(16, 28, 50, 0.08);
+}
+
+.tool-card h3 {
+  margin: 8px 0 12px;
+  font-size: 21px;
+}
+
+.tool-card p {
+  margin: 9px 0;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.tool-card a {
+  display: inline-block;
+  margin-top: 14px;
+  color: #2878ff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tool-card a:hover {
+  text-decoration: underline;
+}
+
+.category-card {
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+@media (max-width: 600px) {
+  .tool-filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tool-filters select,
+  .tool-filters button {
+    width: 100%;
+  }
+}
