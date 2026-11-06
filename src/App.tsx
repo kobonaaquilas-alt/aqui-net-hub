@@ -447,6 +447,17 @@ function App() {
     });
   }, [search, category, language]);
 
+  const selectCategory = (item: CategoryKey) => {
+    setCategory(item);
+
+    window.setTimeout(() => {
+      document.getElementById("tool-results")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }, 50);
+  };
+
   return (
     <main className="site-shell" lang={language}>
       <header className="topbar">
@@ -505,10 +516,11 @@ function App() {
         <div className="category-grid">
           {categoryKeys.map((item) => (
             <button
-              className="category-card"
+              className={`category-card${category === item ? " is-active" : ""}`}
               key={item}
               type="button"
-              onClick={() => setCategory(item)}
+              aria-pressed={category === item}
+              onClick={() => selectCategory(item)}
             >
               <span className="card-symbol">✦</span>
               <h3>{categoryNames[item][language]}</h3>
@@ -517,7 +529,7 @@ function App() {
           ))}
         </div>
 
-        <div className="tool-filters">
+        <div className="tool-filters" id="tool-results">
           <label htmlFor="category-filter">{ui.filter}</label>
           <select
             id="category-filter"
@@ -545,7 +557,7 @@ function App() {
           </button>
         </div>
 
-        <p className="results-count">
+        <p className="results-count" aria-live="polite">
           {filteredTools.length} {ui.found}
         </p>
 
