@@ -2,7 +2,16 @@
 import { useMemo, useState } from "react";
 
 type Language = "fr" | "en";
-type CategoryKey = "ai" | "content" | "productivity" | "learning" | "translation" | "development";
+
+type CategoryKey =
+  | "ai"
+  | "content"
+  | "productivity"
+  | "learning"
+  | "translation"
+  | "development"
+  | "marketing"
+  | "business";
 
 type Tool = {
   name: string;
@@ -233,6 +242,94 @@ const tools: Tool[] = [
     access: { fr: "Freemium", en: "Freemium" },
     platforms: "Web · IDE",
     url: "https://github.com/features/copilot"
+  },
+  {
+    name: "Google Trends",
+    category: "marketing",
+    description: {
+      fr: "Repérez les sujets recherchés et comparez l'intérêt pour des idées de contenu ou de produits.",
+      en: "Discover searched topics and compare interest in content or product ideas."
+    },
+    access: { fr: "Gratuit", en: "Free" },
+    platforms: "Web",
+    url: "https://trends.google.com/trends/"
+  },
+  {
+    name: "Meta Business Suite",
+    category: "marketing",
+    description: {
+      fr: "Gérez les publications, messages et statistiques de vos Pages Facebook et comptes Instagram.",
+      en: "Manage posts, messages and insights for Facebook Pages and Instagram accounts."
+    },
+    access: { fr: "Gratuit", en: "Free" },
+    platforms: "Web · Android · iOS",
+    url: "https://business.facebook.com/"
+  },
+  {
+    name: "TikTok Studio",
+    category: "marketing",
+    description: {
+      fr: "Gérez vos contenus TikTok et consultez les statistiques de votre compte.",
+      en: "Manage TikTok content and review account analytics."
+    },
+    access: { fr: "Gratuit", en: "Free" },
+    platforms: "Web · Android",
+    url: "https://www.tiktok.com/tiktokstudio"
+  },
+  {
+    name: "Google Analytics",
+    category: "marketing",
+    description: {
+      fr: "Mesurez la fréquentation de votre site et comprenez le comportement des visiteurs.",
+      en: "Measure website traffic and understand visitor behavior."
+    },
+    access: { fr: "Gratuit", en: "Free" },
+    platforms: "Web",
+    url: "https://analytics.google.com/"
+  },
+  {
+    name: "Google Search Console",
+    category: "marketing",
+    description: {
+      fr: "Suivez la présence de votre site dans les résultats de recherche Google et repérez les problèmes.",
+      en: "Monitor your site's presence in Google Search and identify issues."
+    },
+    access: { fr: "Gratuit", en: "Free" },
+    platforms: "Web",
+    url: "https://search.google.com/search-console/about"
+  },
+  {
+    name: "WhatsApp Business",
+    category: "business",
+    description: {
+      fr: "Présentez votre activité et échangez avec vos clients grâce aux outils professionnels de messagerie.",
+      en: "Present your business and communicate with customers using business messaging tools."
+    },
+    access: { fr: "Gratuit au téléchargement", en: "Free to download" },
+    platforms: "Android · iOS",
+    url: "https://www.whatsapp.com/business/"
+  },
+  {
+    name: "Systeme.io",
+    category: "business",
+    description: {
+      fr: "Créez des pages de vente, tunnels, campagnes e-mail et formations en ligne.",
+      en: "Build sales pages, funnels, email campaigns and online courses."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web",
+    url: "https://systeme.io/"
+  },
+  {
+    name: "WooCommerce",
+    category: "business",
+    description: {
+      fr: "Ajoutez une boutique en ligne à WordPress. L'extension est gratuite, mais l'hébergement et certains services sont payants.",
+      en: "Add an online store to WordPress. The plugin is free, but hosting and some services cost extra."
+    },
+    access: { fr: "Gratuit · coûts annexes", en: "Free · additional costs" },
+    platforms: "Web · WordPress",
+    url: "https://woocommerce.com/"
   }
 ];
 
@@ -311,7 +408,9 @@ const categoryNames: Record<CategoryKey, { fr: string; en: string }> = {
   productivity: { fr: "Productivité", en: "Productivity" },
   learning: { fr: "Formation", en: "Education" },
   translation: { fr: "Traduction & langues", en: "Translation & languages" },
-  development: { fr: "Développement", en: "Development" }
+  development: { fr: "Développement", en: "Development" },
+  marketing: { fr: "Marketing & visibilité", en: "Marketing & visibility" },
+  business: { fr: "Commerce & activité en ligne", en: "E-commerce & online business" }
 };
 
 const categoryKeys: CategoryKey[] = [
@@ -320,7 +419,9 @@ const categoryKeys: CategoryKey[] = [
   "productivity",
   "learning",
   "translation",
-  "development"
+  "development",
+  "marketing",
+  "business"
 ];
 
 function App() {
