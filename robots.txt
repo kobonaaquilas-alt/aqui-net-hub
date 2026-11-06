@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://aqui-net-hub.kobonaaquilas.workers.dev/sitemap.xml
