@@ -48,6 +48,7 @@ const categories = [
 
 function App() {
   const [search, setSearch] = useState("");
+  const [language, setLanguage] = useState<"fr" | "en">("fr");
   const [category, setCategory] = useState("Toutes les catégories");
 
   const filteredTools = useMemo(() => {
@@ -78,7 +79,13 @@ function App() {
           <a href="#academy">Academy</a>
           <a href="#business">Business</a>
         </nav>
-        <button className="language-button" type="button">FR / EN</button>
+        <button
+  className="language-button"
+  type="button"
+  onClick={() => setLanguage(language === "fr" ? "en" : "fr")}
+>
+  {language === "fr" ? "FR / EN" : "EN / FR"}
+</button>
       </header>
 
       <section className="hero">
