@@ -1,0 +1,19 @@
+{
+  "name": "AQUI NET HUB",
+  "short_name": "AQUI NET",
+  "description": "Le hub du numérique : outils et ressources pour apprendre, créer et développer vos projets.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d1729",
+  "theme_color": "#101c32",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
