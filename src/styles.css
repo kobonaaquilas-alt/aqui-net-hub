@@ -308,5 +308,28 @@ body::after {
 }
 @keyframes tech-image-drift {
   0% { transform: scale(1.02) translate3d(-1%, 0, 0); }
+  :root {
+  background: transparent !important;
+}
+
+body {
+  background: transparent !important;
+  isolation: isolate;
+}
+
+body::before {
+  width: 100vw !important;
+  height: 100vh !important;
+  inset: 0 !important;
+  z-index: -2 !important;
+  opacity: .55 !important;
+}
+
+body::after {
+  width: 100vw !important;
+  height: 100vh !important;
+  inset: 0 !important;
+  z-index: -1 !important;
+}
   100% { transform: scale(1.12) translate3d(1%, -1.5%, 0); }
 }
