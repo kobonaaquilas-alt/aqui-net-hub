@@ -1,61 +1,248 @@
+
 import { useMemo, useState } from "react";
 
+type Language = "fr" | "en";
+type CategoryKey = "ai" | "content" | "productivity" | "learning" | "translation" | "development";
 
-const tools = [
-  // Intelligence artificielle
-  { name: "ChatGPT", category: "Intelligence artificielle", description: "Assistant IA pour rédiger, apprendre, analyser et créer.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://chatgpt.com/" },
-  { name: "Gemini", category: "Intelligence artificielle", description: "Assistant IA de Google pour la recherche et la création.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://gemini.google.com/" },
-  { name: "Claude", category: "Intelligence artificielle", description: "Assistant IA pour écrire, analyser et travailler.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://claude.ai/" },
-  { name: "Perplexity", category: "Intelligence artificielle", description: "Moteur de recherche IA qui fournit des réponses accompagnées de sources.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.perplexity.ai/" },
-  { name: "Microsoft Copilot", category: "Intelligence artificielle", description: "Assistant IA pour les questions, la rédaction et la création.", access: "Gratuit avec options payantes", platforms: "Web · Android · iOS · Windows", url: "https://copilot.microsoft.com/" },
+type Tool = {
+  name: string;
+  category: CategoryKey;
+  description: { fr: string; en: string };
+  access: { fr: string; en: string };
+  platforms: string;
+  url: string;
+};
 
-  // Création de contenu
-  { name: "Canva", category: "Création de contenu", description: "Création de visuels, présentations et contenus graphiques.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.canva.com/" },
-  { name: "CapCut", category: "Création de contenu", description: "Montage vidéo et création de contenus pour les réseaux sociaux.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.capcut.com/" },
-  { name: "Photopea", category: "Création de contenu", description: "Éditeur graphique en ligne pour les images.", access: "Gratuit avec publicité", platforms: "Web", url: "https://www.photopea.com/" },
-  { name: "Adobe Express", category: "Création de contenu", description: "Création de visuels, affiches, vidéos et publications pour les réseaux sociaux.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.adobe.com/express/" },
-  { name: "OBS Studio", category: "Création de contenu", description: "Enregistrement vidéo et diffusion en direct depuis un ordinateur.", access: "Gratuit", platforms: "Windows · macOS · Linux", url: "https://obsproject.com/" },
-
-  // Productivité
-  { name: "Notion", category: "Productivité", description: "Organisation du travail, notes et gestion de projets.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.notion.com/" },
-  { name: "Trello", category: "Productivité", description: "Organisation des tâches et suivi des projets.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://trello.com/" },
-  { name: "Grammarly", category: "Productivité", description: "Correction grammaticale et amélioration de textes, notamment en anglais.", access: "Freemium", platforms: "Web · Extensions", url: "https://www.grammarly.com/" },
-  { name: "Google Drive", category: "Productivité", description: "Stockage, partage et organisation de fichiers en ligne.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://drive.google.com/" },
-
-  // Formation
-  { name: "Khan Academy", category: "Formation", description: "Cours et exercices pour apprendre gratuitement.", access: "Gratuit", platforms: "Web · Android · iOS", url: "https://www.khanacademy.org/" },
-  { name: "freeCodeCamp", category: "Formation", description: "Apprentissage gratuit de la programmation.", access: "Gratuit", platforms: "Web", url: "https://www.freecodecamp.org/" },
-  { name: "Coursera", category: "Formation", description: "Cours en ligne proposés par des universités et des entreprises.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.coursera.org/" },
-  { name: "Duolingo", category: "Formation", description: "Apprentissage des langues avec des exercices interactifs.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.duolingo.com/" },
-
-  // Traduction et langues
-  { name: "DeepL", category: "Traduction & langues", description: "Traduction de textes et de documents dans plusieurs langues.", access: "Freemium", platforms: "Web · Android · iOS", url: "https://www.deepl.com/translator" },
-
-  // Développement
-  { name: "GitHub Copilot", category: "Développement", description: "Assistant IA pour écrire, comprendre et améliorer du code.", access: "Freemium", platforms: "Web · IDE", url: "https://github.com/features/copilot" },
+const tools: Tool[] = [
+  {
+    name: "ChatGPT",
+    category: "ai",
+    description: {
+      fr: "Assistant IA pour rédiger, apprendre, analyser et créer.",
+      en: "AI assistant for writing, learning, analysis and creation."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web · Android · iOS",
+    url: "https://chatgpt.com/"
+  },
+  {
+    name: "Gemini",
+    category: "ai",
+    description: {
+      fr: "Assistant IA de Google pour la recherche et la création.",
+      en: "Google AI assistant for research and creative tasks."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web · Android · iOS",
+    url: "https://gemini.google.com/"
+  },
+  {
+    name: "Claude",
+    category: "ai",
+    description: {
+      fr: "Assistant IA pour écrire, analyser et travailler.",
+      en: "AI assistant for writing, analysis and productivity."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web · Android · iOS",
+    url: "https://claude.ai/"
+  },
+  {
+    name: "Perplexity",
+    category: "ai",
+    description: {
+      fr: "Moteur de recherche IA avec des réponses accompagnées de sources.",
+      en: "AI search engine providing answers with sources."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web · Android · iOS",
+    url: "https://www.perplexity.ai/"
+  },
+  {
+    name: "Microsoft Copilot",
+    category: "ai",
+    description: {
+      fr: "Assistant IA pour les questions, la rédaction et la création.",
+      en: "AI assistant for questions, writing and creative tasks."
+    },
+    access: { fr: "Gratuit avec options payantes", en: "Free with paid options" },
+    platforms: "Web · Android · iOS · Windows",
+    url: "https://copilot.microsoft.com/"
+  },
+  {
+    name: "Canva",
+    category: "content",
+    description: {
+      fr: "Création de visuels, présentations et contenus graphiques.",
+      en: "Create visuals, presentations and graphic content."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web · Android · iOS",
+    url: "https://www.canva.com/"
+  },
+  {
+    name: "CapCut",
+    category: "content",
+    description: {
+      fr: "Montage vidéo et création de contenus pour les réseaux sociaux.",
+      en: "Video editing and social media content creation."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web · Android · iOS",
+    url: "https://www.capcut.com/"
+  },
+  {
+    name: "Photopea",
+    category: "content",
+    description: {
+      fr: "Éditeur graphique en ligne pour les images.",
+      en: "Online graphic editor for images."
+    },
+    access: { fr: "Gratuit avec publicité", en: "Free with advertising" },
+    platforms: "Web",
+    url: "https://www.photopea.com/"
+  },
+  {
+    name: "Adobe Express",
+    category: "content",
+    description: {
+      fr: "Création de visuels, affiches, vidéos et publications.",
+      en: "Create visuals, posters, videos and social media posts."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web · Android · iOS",
+    url: "https://www.adobe.com/express/"
+  },
+  {
+    name: "OBS Studio",
+    category: "content",
+    description: {
+      fr: "Enregistrement vidéo et diffusion en direct depuis un ordinateur.",
+      en: "Video recording and live streaming from a computer."
+    },
+    access: { fr: "Gratuit", en: "Free" },
+    platforms: "Windows · macOS · Linux",
+    url: "https://obsproject.com/"
+  },
+  {
+    name: "Notion",
+    category: "productivity",
+    description: {
+      fr: "Organisation du travail, notes et gestion de projets.",
+      en: "Workspace organization, notes and project management."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web · Android · iOS",
+    url: "https://www.notion.com/"
+  },
+  {
+    name: "Trello",
+    category: "productivity",
+    description: {
+      fr: "Organisation des tâches et suivi des projets.",
+      en: "Task organization and project tracking."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web · Android · iOS",
+    url: "https://trello.com/"
+  },
+  {
+    name: "Grammarly",
+    category: "productivity",
+    description: {
+      fr: "Correction grammaticale et amélioration de textes.",
+      en: "Grammar correction and writing improvement."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web · Extensions",
+    url: "https://www.grammarly.com/"
+  },
+  {
+    name: "Google Drive",
+    category: "productivity",
+    description: {
+      fr: "Stockage, partage et organisation de fichiers en ligne.",
+      en: "Online file storage, sharing and organization."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web · Android · iOS",
+    url: "https://drive.google.com/"
+  },
+  {
+    name: "Khan Academy",
+    category: "learning",
+    description: {
+      fr: "Cours et exercices pour apprendre gratuitement.",
+      en: "Free courses and exercises for learning."
+    },
+    access: { fr: "Gratuit", en: "Free" },
+    platforms: "Web · Android · iOS",
+    url: "https://www.khanacademy.org/"
+  },
+  {
+    name: "freeCodeCamp",
+    category: "learning",
+    description: {
+      fr: "Apprentissage gratuit de la programmation.",
+      en: "Free programming education."
+    },
+    access: { fr: "Gratuit", en: "Free" },
+    platforms: "Web",
+    url: "https://www.freecodecamp.org/"
+  },
+  {
+    name: "Coursera",
+    category: "learning",
+    description: {
+      fr: "Cours en ligne proposés par des universités et entreprises.",
+      en: "Online courses offered by universities and companies."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web · Android · iOS",
+    url: "https://www.coursera.org/"
+  },
+  {
+    name: "Duolingo",
+    category: "learning",
+    description: {
+      fr: "Apprentissage des langues avec des exercices interactifs.",
+      en: "Learn languages through interactive exercises."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web · Android · iOS",
+    url: "https://www.duolingo.com/"
+  },
+  {
+    name: "DeepL",
+    category: "translation",
+    description: {
+      fr: "Traduction de textes et de documents dans plusieurs langues.",
+      en: "Translate texts and documents into multiple languages."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web · Android · iOS",
+    url: "https://www.deepl.com/translator"
+  },
+  {
+    name: "GitHub Copilot",
+    category: "development",
+    description: {
+      fr: "Assistant IA pour écrire, comprendre et améliorer du code.",
+      en: "AI assistant for writing, understanding and improving code."
+    },
+    access: { fr: "Freemium", en: "Freemium" },
+    platforms: "Web · IDE",
+    url: "https://github.com/features/copilot"
+  }
 ];
 
-const categories = [
-  "Toutes les catégories",
-  "Intelligence artificielle",
-  "Création de contenu",
-  "Productivité",
-  "Formation",
-  "Traduction & langues",
-  "Développement",
-];
-
-
-function App() {
-  const [search, setSearch] = useState("");
-  const [language, setLanguage] = useState<"fr" | "en">("fr");
-  const [category, setCategory] = useState("Toutes les catégories");
-  const ui = {
+const translations = {
   fr: {
     navDiscover: "Découvrir",
     navAssist: "NET ASSIST",
     navAcademy: "Academy",
     navBusiness: "Business",
+    navLabel: "Navigation principale",
     eyebrow: "LE HUB DU NUMÉRIQUE",
     heroTitle: "Le bon outil numérique.",
     heroSubtitle: "Au bon moment.",
@@ -63,8 +250,10 @@ function App() {
     searchPlaceholder: "Rechercher un outil...",
     searchButton: "Rechercher",
     microcopy: "Un répertoire accessible à tous, partout dans le monde.",
+    toolsEyebrow: "AQUI NET TOOLS",
     explore: "Explorez les outils numériques",
     categoryDescription: "Explorer les outils de cette catégorie.",
+    allCategories: "Toutes les catégories",
     filter: "Filtrer par catégorie :",
     reset: "Réinitialiser",
     found: "outil(s) trouvé(s)",
@@ -86,6 +275,7 @@ function App() {
     navAssist: "NET ASSIST",
     navAcademy: "Academy",
     navBusiness: "Business",
+    navLabel: "Main navigation",
     eyebrow: "THE DIGITAL HUB",
     heroTitle: "The right digital tool.",
     heroSubtitle: "At the right time.",
@@ -93,8 +283,10 @@ function App() {
     searchPlaceholder: "Search for a tool...",
     searchButton: "Search",
     microcopy: "A directory accessible to everyone, everywhere.",
+    toolsEyebrow: "AQUI NET TOOLS",
     explore: "Explore digital tools",
     categoryDescription: "Explore tools in this category.",
+    allCategories: "All categories",
     filter: "Filter by category:",
     reset: "Reset",
     found: "tool(s) found",
@@ -111,101 +303,106 @@ function App() {
     services: "Digital services for your projects.",
     slogan: "Discover. Create. Progress."
   }
-}[language];
+};
+
+const categoryNames: Record<CategoryKey, { fr: string; en: string }> = {
+  ai: { fr: "Intelligence artificielle", en: "Artificial intelligence" },
+  content: { fr: "Création de contenu", en: "Content creation" },
+  productivity: { fr: "Productivité", en: "Productivity" },
+  learning: { fr: "Formation", en: "Education" },
+  translation: { fr: "Traduction & langues", en: "Translation & languages" },
+  development: { fr: "Développement", en: "Development" }
+};
+
+const categoryKeys: CategoryKey[] = [
+  "ai",
+  "content",
+  "productivity",
+  "learning",
+  "translation",
+  "development"
+];
+
+function App() {
+  const [search, setSearch] = useState("");
+  const [language, setLanguage] = useState<Language>("fr");
+  const [category, setCategory] = useState<CategoryKey | "all">("all");
+
+  const ui = translations[language];
 
   const filteredTools = useMemo(() => {
+    const term = search.trim().toLowerCase();
+
     return tools.filter((tool) => {
       const matchesCategory =
-        category === "Toutes les catégories" || tool.category === category;
+        category === "all" || tool.category === category;
 
-      const term = search.toLowerCase();
       const matchesSearch =
         tool.name.toLowerCase().includes(term) ||
-        tool.description.toLowerCase().includes(term) ||
-        tool.category.toLowerCase().includes(term);
+        tool.description[language].toLowerCase().includes(term) ||
+        categoryNames[tool.category][language].toLowerCase().includes(term);
 
       return matchesCategory && matchesSearch;
     });
-  }, [search, category]);
+  }, [search, category, language]);
 
   return (
-    <main className="site-shell">
+    <main className="site-shell" lang={language}>
       <header className="topbar">
         <a className="brand" href="/">
           <span className="brand-mark">A</span>
           <span>AQUI <strong>NET HUB</strong></span>
         </a>
-        <nav aria-label="Navigation principale">
+
+        <nav aria-label={ui.navLabel}>
           <a href="#decouvrir">{ui.navDiscover}</a>
-<a href="#assist">{ui.navAssist}</a>
-<a href="#academy">{ui.navAcademy}</a>
-<a href="#business">{ui.navBusiness}</a>
+          <a href="#assist">{ui.navAssist}</a>
+          <a href="#academy">{ui.navAcademy}</a>
+          <a href="#business">{ui.navBusiness}</a>
         </nav>
+
         <button
-  className="language-button"
-  type="button"
-  onClick={() => setLanguage(language === "fr" ? "en" : "fr")}
->
-  {language === "fr" ? "FR / EN" : "EN / FR"}
-</button>
+          className="language-button"
+          type="button"
+          onClick={() => setLanguage(language === "fr" ? "en" : "fr")}
+          aria-label={language === "fr" ? "Switch to English" : "Passer en français"}
+        >
+          {language === "fr" ? "EN" : "FR"}
+        </button>
       </header>
 
       <section className="hero">
-  <p className="eyebrow">{ui.eyebrow}</p>
-  <h1>{ui.heroTitle}<br /><span>{ui.heroSubtitle}</span></h1>
-  <p className="hero-copy">{ui.heroDescription}</p>
-  <form className="search" onSubmit={(e) => e.preventDefault()}>
-    <input
-      type="search"
-      placeholder={ui.searchPlaceholder}
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-    />
-    <button type="submit">{ui.searchButton}</button>
-  </form>
-  <p className="microcopy">{ui.microcopy}</p>
-</section>
-        <p className="eyebrow">LE HUB DU NUMÉRIQUE</p>
-        <h1>Le bon outil numérique.<br /><span>Au bon moment.</span></h1>
-        <p className="hero-copy">
-          Découvrez des outils, comparez leurs possibilités et trouvez les ressources adaptées à vos projets.
-        </p>
+        <p className="eyebrow">{ui.eyebrow}</p>
+        <h1>
+          {ui.heroTitle}
+          <br />
+          <span>{ui.heroSubtitle}</span>
+        </h1>
+        <p className="hero-copy">{ui.heroDescription}</p>
+
         <form className="search" onSubmit={(e) => e.preventDefault()}>
           <input
             type="search"
-            placeholder="Rechercher un outil..."
+            placeholder={ui.searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button type="submit">Rechercher</button>
+          <button type="submit">{ui.searchButton}</button>
         </form>
-        <p className="microcopy">Un répertoire accessible à tous, partout dans le monde.</p>
+
+        <p className="microcopy">{ui.microcopy}</p>
       </section>
 
-     <section className="hero">
-  <p className="eyebrow">{ui.eyebrow}</p>
-  <h1>{ui.heroTitle}<br /><span>{ui.heroSubtitle}</span></h1>
-  <p className="hero-copy">{ui.heroDescription}</p>
-  <form className="search" onSubmit={(e) => e.preventDefault()}>
-    <input
-      type="search"
-      placeholder={ui.searchPlaceholder}
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-    />
-    <button type="submit">{ui.searchButton}</button>
-  </form>
-  <p className="microcopy">{ui.microcopy}</p>
-</section> id="decouvrir">
+      <section className="section" id="decouvrir">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">AQUI NET TOOLS</p>
-            <h2>Explorez les outils numériques</h2>
+            <p className="eyebrow">{ui.toolsEyebrow}</p>
+            <h2>{ui.explore}</h2>
           </div>
         </div>
 
         <div className="category-grid">
-          {categories.slice(1).map((item) => (
+          {categoryKeys.map((item) => (
             <button
               className="category-card"
               key={item}
@@ -213,69 +410,94 @@ function App() {
               onClick={() => setCategory(item)}
             >
               <span className="card-symbol">✦</span>
-              <h3>{item}</h3>
-              <p>Explorer les outils de cette catégorie.</p>
+              <h3>{categoryNames[item][language]}</h3>
+              <p>{ui.categoryDescription}</p>
             </button>
           ))}
         </div>
 
         <div className="tool-filters">
-          <label htmlFor="category-filter">Filtrer par catégorie :</label>
+          <label htmlFor="category-filter">{ui.filter}</label>
           <select
             id="category-filter"
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) =>
+              setCategory(e.target.value as CategoryKey | "all")
+            }
           >
-            {categories.map((item) => (
-              <option key={item} value={item}>{item}</option>
+            <option value="all">{ui.allCategories}</option>
+            {categoryKeys.map((item) => (
+              <option key={item} value={item}>
+                {categoryNames[item][language]}
+              </option>
             ))}
           </select>
-          <button type="button" onClick={() => { setSearch(""); setCategory("Toutes les catégories"); }}>
-            Réinitialiser
+
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setCategory("all");
+            }}
+          >
+            {ui.reset}
           </button>
         </div>
 
-        <p className="results-count">{filteredTools.length} outil(s) trouvé(s)</p>
+        <p className="results-count">
+          {filteredTools.length} {ui.found}
+        </p>
 
         <div className="tools-grid">
           {filteredTools.map((tool) => (
             <article className="tool-card" key={tool.name}>
-              <p className="eyebrow">{tool.category}</p>
+              <p className="eyebrow">
+                {categoryNames[tool.category][language]}
+              </p>
               <h3>{tool.name}</h3>
-              <p>{tool.description}</p>
-              <p><strong>Accès :</strong> {tool.access}</p>
-              <p><strong>Plateformes :</strong> {tool.platforms}</p>
+              <p>{tool.description[language]}</p>
+              <p>
+                <strong>{ui.access}</strong> {tool.access[language]}
+              </p>
+              <p>
+                <strong>{ui.platforms}</strong> {tool.platforms}
+              </p>
               <a href={tool.url} target="_blank" rel="noreferrer">
-                Visiter le site officiel →
+                {ui.visit}
               </a>
             </article>
           ))}
         </div>
 
         {filteredTools.length === 0 && (
-          <p>Aucun outil trouvé. Essayez une autre recherche.</p>
+          <p>{ui.empty}</p>
         )}
       </section>
 
       <section className="assist-panel" id="assist">
         <div>
           <p className="eyebrow">AQUI NET ASSIST</p>
-          <h2>Vous avez un objectif ?<br />Trouvons le bon outil.</h2>
-          <p>Décrivez votre besoin pour découvrir des solutions pertinentes.</p>
+          <h2>
+            {ui.assistTitle}
+            <br />
+            {ui.assistSubtitle}
+          </h2>
+          <p>{ui.assistDescription}</p>
         </div>
         <span className="assist-icon">✧</span>
       </section>
 
       <section className="section modules">
         <article id="academy">
-          <p className="eyebrow">APPRENDRE</p>
+          <p className="eyebrow">{ui.learn}</p>
           <h2>AQUI NET ACADEMY</h2>
-          <p>Guides, tutoriels et ressources numériques.</p>
+          <p>{ui.guides}</p>
         </article>
+
         <article id="business">
-          <p className="eyebrow">DÉVELOPPER</p>
+          <p className="eyebrow">{ui.develop}</p>
           <h2>AQUI NET BUSINESS</h2>
-          <p>Des services numériques pour vos projets.</p>
+          <p>{ui.services}</p>
         </article>
       </section>
 
@@ -284,7 +506,7 @@ function App() {
           <span className="brand-mark">A</span>
           <span>AQUI <strong>NET HUB</strong></span>
         </a>
-        <p>Découvrir. Créer. Progresser.</p>
+        <p>{ui.slogan}</p>
         <small>© {new Date().getFullYear()} AQUI NET HUB</small>
       </footer>
     </main>
