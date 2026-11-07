@@ -306,13 +306,13 @@ export default function App() {
           <article className="promotion-card">
             <span className="eyebrow">AQUI NET ADS</span>
             <h2>{fr ? "Publicité" : "Advertising"}</h2>
-            <p>{fr ? "Un espace destiné à présenter des offres et services utiles. Les campagnes ne sont pas encore ouvertes." : "A space for useful offers and services. Campaigns are not open yet."}</p>
-            <span className="status-label">{fr ? "En préparation" : "Coming soon"}</span>
+            <p>{fr ? "Propose une campagne depuis ton espace membre. Chaque demande est examinée par notre équipe avant publication." : "A space for useful offers and services. Campaigns are not open yet."}</p>
+            <span className="status-label">{fr ? "Demandes ouvertes" : "Requests open"}</span>
           </article>
           <article className="promotion-card partner-card">
             <span className="eyebrow">AQUI NET PARTNERS</span>
             <h2>{fr ? "Partenaires et collaborations" : "Partners and collaborations"}</h2>
-            <p>{fr ? "Un espace pour proposer une collaboration à l’équipe AQUI NET HUB." : "A space for verified collaborations and professional resources."}</p>
+            <p>{fr ? "Propose une collaboration depuis ton espace membre. Notre équipe examinera ta candidature." : "A space for verified collaborations and professional resources."}</p>
             <span className="status-label">{fr ? "En préparation" : "Coming soon"}</span>
           </article>
         </section>
