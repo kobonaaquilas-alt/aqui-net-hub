@@ -21,7 +21,7 @@ const headers = (env: Env) => ({
   Prefer: "return=representation",
 });
 async function authUser(request: Request, env: Env): Promise<AuthUser | null> {
-  const token = request.headers.get("Authorization")?.replace(/^Bearer\\s+/i, "");
+  const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "").trim();
   if (!token || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return null;
   const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
     headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` },
