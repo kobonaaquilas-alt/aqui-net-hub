@@ -149,19 +149,6 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
     }
   }
 
-  async function pay(plan:Plan) {
-    if (!session) { setNotice(fr ? "Connecte-toi d'abord." : "Sign in first."); return; }
-    setBusy(true); setNotice("");
-    try {
-      const r = await fetch("/api/payments/create",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({plan_id:plan.id,first_name:fullName || session.user.user_metadata?.full_name || "Client",last_name:"Hub",phone})});
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || "Payment unavailable");
-      if (typeof data.payment_url !== "string" || !data.payment_url.startsWith("https://"))
-        throw new Error("Adresse de paiement invalide.");
-      window.location.assign(data.payment_url);
-    } catch(e) { setNotice(e instanceof Error ? e.message : "Payment error"); setBusy(false); }
-  }
-
   const input=(value:string,change:(v:string)=>void,placeholder:string,type="text",required=true)=><input type={type} value={value} onChange={e=>change(e.target.value)} placeholder={placeholder} required={required}/>;
   const date=(value:string)=>new Date(value).toLocaleDateString(fr?"fr-FR":"en-GB");
   const paymentLabel=(status:string)=>status==="paid"?(fr?"Payé":"Paid"):status==="failed"?(fr?"Échoué":"Failed"):(fr?"En attente":"Pending");
