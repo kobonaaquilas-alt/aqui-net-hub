@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import AccountHub from "./AccountHub";
+import AdminPanel from "./AdminPanel";
 
 const tools = [
   ["ChatGPT", "IA", "Assistant intelligent pour apprendre, écrire et créer.", "https://chatgpt.com/"],
@@ -155,6 +156,7 @@ export default function App() {
           <a href="#business">Business</a>
           <a href="#compte">{fr ? "Compte" : "Account"}</a>
           <a href="#partenaires">{fr ? "Partenaires" : "Partners"}</a>
+          <a href="#administration">{fr ? "Administration" : "Admin"}</a>
         </nav>
         <button className="language-button" onClick={() => setLang(fr ? "en" : "fr")}>
           {fr ? "EN" : "FR"}
@@ -297,6 +299,8 @@ export default function App() {
         </section>
 
         <AccountHub favorites={favorites} progress={progress} lang={lang} onRemoteSync={syncRemote} />
+
+        <AdminPanel />
 
         <section className="section promotion-grid" id="partenaires">
           <article className="promotion-card">
