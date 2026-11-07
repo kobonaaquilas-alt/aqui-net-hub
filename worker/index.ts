@@ -1,4 +1,5 @@
 import { CinetPayClient, parseNotification, verifyNotification } from "cinetpay-js";
+import { handleAdmin } from "./admin";
 
 interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -230,6 +231,11 @@ export default {
         return webhook(request, env);
       if (request.method === "GET" && url.pathname === "/api/account/summary")
         return accountSummary(request, env);
+      if (url.pathname.startsWith("/api/admin/")) {
+        const user = await authUser(request, env);
+        if (!user) return json({ error: "Connexion requise." }, 401);
+        return handleAdmin(request, env, user);
+      }
       if (url.pathname.startsWith("/api/")) return json({ error: "Route introuvable." }, 404);
       return env.ASSETS.fetch(request);
     } catch {
