@@ -100,13 +100,18 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
 
   async function authenticate() {
     setBusy(true); setNotice("");
-    const result = mode === "signup"
-      ? await db.auth.signUp({email,password,options:{data:{full_name:fullName,phone}}})
-      : await db.auth.signInWithPassword({email,password});
-    setBusy(false);
-    if (result.error) setNotice(result.error.message);
-    else if (mode === "signup" && !result.data.session) setNotice(fr ? "Compte créé : confirme ton adresse e-mail." : "Account created: confirm your email.");
-    else setNotice(fr ? "Connexion réussie." : "Signed in.");
+    try {
+      const result = mode === "signup"
+        ? await db.auth.signUp({email,password,options:{data:{full_name:fullName,phone}}})
+        : await db.auth.signInWithPassword({email,password});
+      if (result.error) setNotice(result.error.message);
+      else if (mode === "signup" && !result.data.session) setNotice(fr ? "Compte créé : confirme ton adresse e-mail." : "Account created: confirm your email.");
+      else setNotice(fr ? "Connexion réussie." : "Signed in.");
+    } catch {
+      setNotice(fr ? "Connexion impossible pour le moment. Vérifie ta connexion Internet puis réessaie." : "Unable to connect right now. Check your internet connection and try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function sendPasswordReset() {
@@ -115,11 +120,16 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
       return;
     }
     setBusy(true); setNotice("");
-    const {error} = await db.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: window.location.origin + "/?password=recovery",
-    });
-    setBusy(false);
-    setNotice(error ? error.message : fr ? "Si cette adresse correspond à un compte, un lien de réinitialisation sera envoyé." : "If this address belongs to an account, a reset link will be sent.");
+    try {
+      const {error} = await db.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: window.location.origin + "/?password=recovery",
+      });
+      setNotice(error ? error.message : fr ? "Si cette adresse correspond à un compte, un lien de réinitialisation sera envoyé." : "If this address belongs to an account, a reset link will be sent.");
+    } catch {
+      setNotice(fr ? "Impossible d'envoyer le lien pour le moment. Réessaie plus tard." : "Unable to send the link right now. Please try again later.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function updatePassword() {
@@ -128,10 +138,15 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
       return;
     }
     setBusy(true); setNotice("");
-    const {error} = await db.auth.updateUser({password:newPassword});
-    setBusy(false);
-    if (error) setNotice(error.message);
-    else { setNewPassword(""); setRecoveryMode(false); setNotice(fr ? "Mot de passe mis à jour." : "Password updated."); }
+    try {
+      const {error} = await db.auth.updateUser({password:newPassword});
+      if (error) setNotice(error.message);
+      else { setNewPassword(""); setRecoveryMode(false); setNotice(fr ? "Mot de passe mis à jour." : "Password updated."); }
+    } catch {
+      setNotice(fr ? "Mise à jour impossible pour le moment. Réessaie plus tard." : "Unable to update the password right now. Please try again later.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function submit(kind:"ads"|"partners") {
@@ -139,13 +154,18 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
     setBusy(true); setNotice("");
     const table = kind === "ads" ? "hub_ad_requests" : "hub_partner_applications";
     const values = kind === "ads" ? ad : partner;
-    const {error} = await db.from(table).insert({...values,user_id:session.user.id});
-    setBusy(false);
-    if (error) setNotice(error.message);
-    else {
-      setNotice(fr ? "Demande envoyée à l'équipe AQUI NET HUB." : "Request sent to the AQUI NET HUB team.");
-      if (kind === "ads") setAd({company_name:"",contact_name:"",email:"",phone:"",website:"",budget:"",message:""});
-      else setPartner({organization:"",contact_name:"",email:"",phone:"",website:"",proposal:""});
+    try {
+      const {error} = await db.from(table).insert({...values,user_id:session.user.id});
+      if (error) setNotice(error.message);
+      else {
+        setNotice(fr ? "Demande envoyée à l'équipe AQUI NET HUB." : "Request sent to the AQUI NET HUB team.");
+        if (kind === "ads") setAd({company_name:"",contact_name:"",email:"",phone:"",website:"",budget:"",message:""});
+        else setPartner({organization:"",contact_name:"",email:"",phone:"",website:"",proposal:""});
+      }
+    } catch {
+      setNotice(fr ? "Envoi impossible pour le moment. Vérifie ta connexion Internet puis réessaie." : "Unable to submit right now. Check your internet connection and try again.");
+    } finally {
+      setBusy(false);
     }
   }
 
