@@ -240,3 +240,75 @@ footer, .site-footer {
 .social-audit .primary-button{width:auto;padding:0 18px}
 @media(max-width:1050px){.service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.hub-hero{padding:62px 6% 48px}.hub-hero h1{font-size:clamp(36px,10vw,49px)}.hub-hero p{font-size:15px}.service-grid,.recommended-grid,.tool-detail-columns{grid-template-columns:1fr}.service-card{min-height:285px}.recommendation-results,.tool-detail-page{padding:18px}.recommendation-heading{align-items:flex-start;flex-direction:column}.tool-request-form .primary-button{width:100%}}
+
+
+/* AQUI NET HUB — accueil premium compact, quatre services immédiatement visibles */
+.hub-hero{
+  max-width:1380px;
+  padding:38px 7% 30px!important;
+  min-height:0!important;
+  margin:0 auto;
+  background:
+    radial-gradient(ellipse at 78% 15%,rgba(84,130,211,.18),transparent 38%),
+    linear-gradient(115deg,rgba(24,42,68,.96),rgba(17,29,48,.92))!important;
+  border:0!important;
+  border-bottom:1px solid rgba(166,190,231,.12)!important;
+}
+.hub-hero .eyebrow{font-size:10px;letter-spacing:.18em;font-weight:800}
+.hub-hero h1{max-width:900px;margin:10px 0 9px;font-size:clamp(30px,4vw,49px);line-height:1.08;letter-spacing:-.045em}
+.hub-hero p{max-width:760px;margin:0 0 15px;font-size:14px;line-height:1.55;color:#cbd8eb}
+.hub-hero .primary-button{min-height:40px;padding:0 17px;border-radius:10px;font-size:12px}
+.hub-services{max-width:1380px;margin:0 auto;padding:25px 7% 30px!important}
+.hub-services .section-heading{max-width:100%}
+.hub-services .section-heading .eyebrow{font-size:10px;letter-spacing:.16em}
+.hub-services .section-heading h2{margin:4px 0 5px;font-size:clamp(22px,2.5vw,30px)}
+.hub-services .section-heading>p{font-size:12px;line-height:1.45}
+.service-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-top:16px}
+.service-card{
+  position:relative;min-height:0;height:100%;padding:17px 17px 15px;
+  border:1px solid rgba(145,176,222,.24);border-radius:15px;
+  background:linear-gradient(155deg,#20334f 0%,#192940 100%);
+  box-shadow:0 9px 24px rgba(0,0,0,.13);
+  transition:transform .2s ease,border-color .2s ease,background .2s ease;
+}
+.service-card:hover{transform:translateY(-3px);border-color:#7ba9ed;background:linear-gradient(155deg,#263e60,#1b2e49)}
+.service-number{font-size:10px;letter-spacing:.15em}
+.service-symbol{width:38px;height:38px;margin:10px 0 10px;border-radius:11px;font-size:20px}
+.service-card h3{font-size:16px;line-height:1.25;margin:0 0 7px}
+.service-card p{font-size:11px;line-height:1.5;margin:0 0 12px}
+.service-card .primary-button,.service-card .secondary-button{min-height:37px;padding:8px 9px;font-size:11px;border-radius:9px}
+.service-card small{margin-top:8px;font-size:9px}
+.request-section{max-width:1240px;margin:0 auto;padding:34px 7% 55px}
+@media(max-width:1050px){
+ .service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .service-card{min-height:205px}
+}
+@media(max-width:620px){
+ .topbar{min-height:58px;padding:0 4%;gap:10px}
+ .brand{font-size:12px;gap:7px}
+ .brand-mark{width:31px;height:31px;border-radius:10px}
+ .main-nav{gap:11px;font-size:10px}
+ .language-button{padding:7px 9px;font-size:11px}
+ .hub-hero{padding:27px 5% 20px!important}
+ .hub-hero h1{font-size:clamp(27px,7.4vw,36px);max-width:600px;margin:8px 0}
+ .hub-hero p{font-size:12px;line-height:1.45;margin-bottom:12px}
+ .hub-hero .primary-button{min-height:36px;font-size:11px}
+ .hub-services{padding:17px 5% 24px!important}
+ .hub-services .section-heading h2{font-size:21px}
+ .hub-services .section-heading>p{font-size:10px}
+ .service-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}
+ .service-card{min-height:195px;padding:12px 11px;border-radius:12px}
+ .service-symbol{width:32px;height:32px;margin:8px 0;border-radius:9px;font-size:17px}
+ .service-card h3{font-size:13px;line-height:1.22}
+ .service-card p{font-size:10px;line-height:1.4;margin-bottom:9px}
+ .service-card .primary-button,.service-card .secondary-button{min-height:34px;font-size:9px;padding:6px}
+ .service-card small{font-size:8px;margin-top:6px}
+ .request-section{padding:25px 5% 40px}
+}
+@media(max-width:370px){
+ .main-nav{gap:7px;font-size:9px}
+ .service-card{min-height:205px;padding:10px 9px}
+ .service-card h3{font-size:12px}
+ .service-card p{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){.service-card{transition:none}.service-card:hover{transform:none}}
