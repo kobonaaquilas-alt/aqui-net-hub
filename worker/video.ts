@@ -69,8 +69,16 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
     if (![2, 3, 4, 5].includes(duration))
       return reply({ error: "Durée actuellement disponible : 2 à 5 secondes." }, 400);
 
-    const requestId = crypto.randomUUID();
     const jobsUrl = `${env.SUPABASE_URL}/rest/v1/hub_video_jobs`;
+    const activeJobs = await fetch(
+      `${jobsUrl}?user_id=eq.${user.id}&status=in.(queued,running)&select=request_id&limit=1`,
+      { headers: serviceHeaders(env) },
+    );
+    if (!activeJobs.ok) return reply({ error: "Impossible de vérifier les demandes en cours." }, 502);
+    const active = await activeJobs.json() as Array<{ request_id: string }>;
+    if (active.length) return reply({ error: "Une génération est déjà en cours sur ce compte. Attends sa fin avant d'en lancer une autre." }, 429);
+
+    const requestId = crypto.randomUUID();
     const saved = await fetch(jobsUrl, {
       method: "POST",
       headers: serviceHeaders(env),
