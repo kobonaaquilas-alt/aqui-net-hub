@@ -28,6 +28,14 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
   const [summaryBusy, setSummaryBusy] = useState(false);
   const [ad, setAd] = useState({company_name:"",contact_name:"",email:"",phone:"",website:"",budget:"",message:""});
   const [partner, setPartner] = useState({organization:"",contact_name:"",email:"",phone:"",website:"",proposal:""});
+  const [videoImageUrl, setVideoImageUrl] = useState("");
+  const [videoPrompt, setVideoPrompt] = useState("");
+  const [videoDuration, setVideoDuration] = useState("3");
+  const [videoRequestId, setVideoRequestId] = useState("");
+  const [videoStatus, setVideoStatus] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [videoBusy, setVideoBusy] = useState(false);
+  const [videoNotice, setVideoNotice] = useState("");
 
   const refreshSummary = useCallback(async () => {
     if (!session?.access_token) return;
@@ -149,6 +157,54 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
     }
   }
 
+  async function startVideo() {
+    if (!session?.access_token) {
+      setVideoNotice(fr ? "Connecte-toi pour utiliser le générateur." : "Sign in to use the generator.");
+      return;
+    }
+    setVideoBusy(true); setVideoNotice(""); setVideoUrl(""); setVideoStatus("");
+    try {
+      const response = await fetch("/api/video/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ image_url: videoImageUrl.trim(), prompt: videoPrompt.trim(), duration: Number(videoDuration) }),
+      });
+      const data = await response.json() as { request_id?: string; status?: string; error?: string };
+      if (!response.ok || !data.request_id) throw new Error(data.error || "Video request failed.");
+      setVideoRequestId(data.request_id);
+      setVideoStatus(data.status || "queued");
+      setVideoNotice(fr ? "Demande envoyée. La génération peut prendre plusieurs minutes." : "Request submitted. Generation may take several minutes.");
+    } catch (error) {
+      setVideoNotice(error instanceof Error ? error.message : (fr ? "Impossible de lancer la génération." : "Unable to start generation."));
+    } finally {
+      setVideoBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!session?.access_token || !videoRequestId || videoStatus === "completed" || videoStatus === "failed") return;
+    let active = true;
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/video/jobs/${videoRequestId}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const data = await response.json() as { status?: string; video_url?: string; error_message?: string; error?: string };
+        if (!response.ok) throw new Error(data.error || "Status check failed.");
+        if (!active) return;
+        setVideoStatus(data.status || "running");
+        if (data.video_url) setVideoUrl(data.video_url);
+        if (data.status === "completed") setVideoNotice(fr ? "Vidéo prête. Le lien sécurisé reste valable une heure." : "Video ready. The secure link is valid for one hour.");
+        else if (data.status === "failed") setVideoNotice(data.error_message || (fr ? "La génération a échoué." : "Generation failed."));
+      } catch (error) {
+        if (active) setVideoNotice(error instanceof Error ? error.message : "Status unavailable.");
+      }
+    };
+    void poll();
+    const timer = window.setInterval(() => { void poll(); }, 7000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [session?.access_token, videoRequestId, videoStatus, fr]);
+
   async function submit(kind:"ads"|"partners") {
     if (!session) return;
     setBusy(true); setNotice("");
@@ -194,6 +250,26 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
       }) : <p>{fr?"Aucun abonnement confirmé pour le moment.":"No confirmed subscription yet."}</p>}
       <h4>{fr?"Derniers paiements":"Recent payments"}</h4>
       {summary?.payments.length ? summary.payments.map(item=><article className="payment-row" key={item.id}><div><strong>{item.amount_xof.toLocaleString(fr?"fr-FR":"en-GB")} FCFA</strong><p>{date(item.created_at)} · {item.merchant_transaction_id}</p></div><span className={`account-status ${item.status==="paid"?"active":item.status==="failed"?"failed":""}`}>{paymentLabel(item.status)}</span></article>) : <p>{fr?"Aucun paiement enregistré.":"No payment recorded."}</p>}
+    </div>}
+
+    {session && <div className="account-card video-studio">
+      <span className="eyebrow">AQUI VIDEO AI</span>
+      <h3>{fr ? "Créer une vidéo à partir d'une image" : "Create a video from an image"}</h3>
+      <p>{fr ? "Moteur Wan 2.2 expérimental. Pour le moment : lien public HTTPS vers une image et clips de 2 à 5 secondes. La génération dépend des quotas et de la disponibilité du service." : "Experimental Wan 2.2 engine. Currently: public HTTPS image URL and 2–5 second clips. Generation depends on service availability and quotas."}</p>
+      <input type="url" value={videoImageUrl} onChange={e=>setVideoImageUrl(e.target.value)} placeholder={fr ? "Lien direct public de l'image (JPG, PNG, WEBP)" : "Public direct image URL (JPG, PNG, WEBP)"} required />
+      <textarea value={videoPrompt} onChange={e=>setVideoPrompt(e.target.value)} placeholder={fr ? "Décris précisément le mouvement souhaité…" : "Describe the motion you want…"} required />
+      <label>{fr ? "Durée du clip" : "Clip duration"}
+        <select value={videoDuration} onChange={e=>setVideoDuration(e.target.value)}>
+          <option value="2">2 secondes</option><option value="3">3 secondes</option><option value="4">4 secondes</option><option value="5">5 secondes</option>
+        </select>
+      </label>
+      <button type="button" className="primary-button" disabled={videoBusy || !videoImageUrl.trim() || videoPrompt.trim().length<3} onClick={()=>void startVideo()}>
+        {videoBusy ? "…" : (fr ? "Lancer la génération" : "Generate video")}
+      </button>
+      {videoRequestId && <p className="video-status">{fr ? "État :" : "Status:"} {videoStatus || "queued"} · {videoRequestId}</p>}
+      {videoNotice && <p className="account-message" role="status">{videoNotice}</p>}
+      {videoUrl && <div className="video-result"><video controls playsInline src={videoUrl} /><a href={videoUrl} target="_blank" rel="noreferrer">{fr ? "Ouvrir / enregistrer le MP4" : "Open / save MP4"} ↗</a></div>}
+      <small className="account-footnote">{fr ? "L'audio IA, les sous-titres automatiques, les clips de 10 secondes et la tarification ne sont pas encore activés. Aucun paiement n'est déclenché ici." : "AI audio, automatic subtitles, 10-second clips and pricing are not enabled yet. No payment is triggered here."}</small>
     </div>}
 
     <div className="account-grid">

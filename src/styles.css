@@ -98,3 +98,17 @@
 .admin-actions button:disabled{opacity:.45;cursor:wait}
 @media(max-width:900px){.hero{padding:76px 6%}.hero-visual{right:3%;opacity:.5}.hero-content{max-width:620px}.tools-controls{grid-template-columns:1fr 1fr}.tools-controls input{grid-column:1/-1}.academy-layout{grid-template-columns:1fr}.business-steps{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:620px){.hero{min-height:520px;padding:65px 6%}.hero-visual{right:-75px;top:60%;transform:translateY(-50%) scale(.8);opacity:.23}.hero-content{max-width:100%}.hero-content h1{font-size:clamp(36px,10vw,48px)}.stats-section{padding:22px 5%;gap:8px}.stat-card strong{font-size:22px}.stat-card span{font-size:10px}.tools-controls{grid-template-columns:1fr}.tools-controls input{grid-column:auto}.assist-section{grid-template-columns:1fr}.assist-symbol{display:none}.business-steps,.promotion-grid{grid-template-columns:1fr}.admin-request-row{grid-template-columns:1fr}.admin-actions{justify-content:flex-start}.site-footer{align-items:flex-start;flex-direction:column}}
+
+
+/* AQUI VIDEO AI studio */
+.video-studio{margin-top:22px}
+.video-studio h3{margin:0;color:#f3f6ff;font-size:22px}
+.video-studio>input,.video-studio>textarea,.video-studio select{width:100%;min-width:0;padding:12px 13px;border:1px solid var(--line);border-radius:10px;color:#edf3ff;background:#101d33}
+.video-studio>textarea{min-height:110px;resize:vertical}
+.video-studio label{display:grid;gap:8px;color:#dce8ff;font-size:13px;font-weight:700}
+.video-studio select option{color:#17243b;background:#fff}
+.video-studio .primary-button{max-width:280px}
+.video-status{overflow-wrap:anywhere;color:#9fc4ff;font-size:12px}
+.video-result{display:grid;gap:10px;max-width:680px}
+.video-result video{width:100%;max-height:440px;border-radius:14px;background:#080e18}
+.video-result a{color:#a6c8ff;font-weight:700}
