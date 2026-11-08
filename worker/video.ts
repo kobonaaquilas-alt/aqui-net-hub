@@ -20,7 +20,6 @@ function reply(data: unknown, status = 200) {
 function serviceHeaders(env: VideoEnv) {
   return {
     apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-    Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
     "Content-Type": "application/json",
     Prefer: "return=representation",
   };
@@ -188,7 +187,6 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
       method: "POST",
       headers: {
         apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
         "Content-Type": "video/mp4",
         "x-upsert": "true",
       },
