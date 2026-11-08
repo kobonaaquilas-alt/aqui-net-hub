@@ -36,6 +36,9 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
   const [videoUrl, setVideoUrl] = useState("");
   const [videoBusy, setVideoBusy] = useState(false);
   const [videoNotice, setVideoNotice] = useState("");
+  const [socialUrl, setSocialUrl] = useState("");
+  const [socialGoal, setSocialGoal] = useState("");
+  const [socialResult, setSocialResult] = useState("");
 
   const refreshSummary = useCallback(async () => {
     if (!session?.access_token) return;
@@ -252,6 +255,20 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
       {summary?.payments.length ? summary.payments.map(item=><article className="payment-row" key={item.id}><div><strong>{item.amount_xof.toLocaleString(fr?"fr-FR":"en-GB")} FCFA</strong><p>{date(item.created_at)} · {item.merchant_transaction_id}</p></div><span className={`account-status ${item.status==="paid"?"active":item.status==="failed"?"failed":""}`}>{paymentLabel(item.status)}</span></article>) : <p>{fr?"Aucun paiement enregistré.":"No payment recorded."}</p>}
     </div>}
 
+    {session && <div className="account-card social-audit">
+      <span className="eyebrow">AQUI SOCIAL AUDIT</span>
+      <h3>{fr ? "Analyser un compte de réseau social" : "Analyze a social media account"}</h3>
+      <p>{fr ? "Ajoute le lien public de ton profil et précise ton objectif. Le pré-diagnostic identifie la plateforme et fournit une grille d'amélioration. Les statistiques privées (vues, portée, rétention) nécessitent les données Analytics officielles." : "Add your public profile link and goal. The preliminary review identifies the platform and provides an improvement checklist. Private metrics (views, reach, retention) require official Analytics data."}</p>
+      <input type="url" value={socialUrl} onChange={e=>setSocialUrl(e.target.value)} placeholder="https://www.tiktok.com/@toncompte" />
+      <input type="text" value={socialGoal} onChange={e=>setSocialGoal(e.target.value)} placeholder={fr ? "Objectif : gagner des abonnés, vues, ventes…" : "Goal: grow followers, views, sales…"} />
+      <button type="button" className="primary-button" disabled={!socialUrl.trim()} onClick={()=>{
+        let platform="Réseau social";
+        try { const host=new URL(socialUrl).hostname.toLowerCase(); if(host.includes("tiktok")) platform="TikTok"; else if(host.includes("instagram")) platform="Instagram"; else if(host.includes("facebook")||host.includes("fb.")) platform="Facebook"; else if(host.includes("youtube")) platform="YouTube"; else if(host.includes("linkedin")) platform="LinkedIn"; else if(host.includes("x.com")||host.includes("twitter")) platform="X"; } catch { setSocialResult(fr ? "Adresse invalide. Colle le lien public complet de ton profil." : "Invalid URL. Paste the full public profile link."); return; }
+        setSocialResult((fr ? "Plateforme détectée : " : "Detected platform: ")+platform+". "+(fr ? "Vérifie que le profil est public. Pour un audit réel des performances, connecte ou fournis les données Analytics : vues par publication, portée, abonnés gagnés, taux d'engagement et rétention. Objectif déclaré : " : "Make sure the profile is public. For a real performance audit, connect or provide Analytics data: views per post, reach, followers gained, engagement rate and retention. Stated goal: ")+(socialGoal.trim()|| (fr?"croissance et engagement":"growth and engagement"))+".");
+      }}>{fr ? "Préparer mon diagnostic" : "Prepare my review"}</button>
+      {socialResult && <p className="account-message" role="status">{socialResult}</p>}
+    </div>}
+
     {session && <div className="account-card video-studio">
       <span className="eyebrow">AQUI VIDEO AI</span>
       <h3>{fr ? "Créer une vidéo à partir d'une image" : "Create a video from an image"}</h3>
@@ -272,7 +289,7 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
       <small className="account-footnote">{fr ? "L'audio IA, les sous-titres automatiques, les clips de 10 secondes et la tarification ne sont pas encore activés. Aucun paiement n'est déclenché ici." : "AI audio, automatic subtitles, 10-second clips and pricing are not enabled yet. No payment is triggered here."}</small>
     </div>}
 
-    <div className="account-grid">
+    {session && <div className="account-grid">
       <form className="account-card" onSubmit={e=>{e.preventDefault();void submit("ads");}}><h3>AQUI NET ADS</h3><p>{fr?"Proposer une campagne publicitaire.":"Submit an advertising campaign."}</p>
         {input(ad.company_name,v=>setAd(s=>({...s,company_name:v})),fr?"Entreprise / marque":"Company / brand")}
         {input(ad.contact_name,v=>setAd(s=>({...s,contact_name:v})),fr?"Nom du contact":"Contact name")}
@@ -293,8 +310,10 @@ export default function AccountHub({ favorites, progress, lang, onRemoteSync }: 
         <button className="primary-button" disabled={!session||busy}>{fr?"Envoyer la candidature":"Send application"}</button>
       </form>
     </div>
-    {campaigns.length>0 && <div className="account-card"><h3>{fr?"Campagnes actives":"Active campaigns"}</h3>{campaigns.map(c=><article key={c.id}><strong>{c.title}</strong><p>{c.description}</p>{c.destination_url&&<a href={c.destination_url} target="_blank" rel="noreferrer">{fr?"Découvrir":"Learn more"} ↗</a>}</article>)}</div>}
-    <div className="account-card"><h3>{fr?"Formules disponibles":"Available plans"}</h3>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled title={fr ? "Le paiement sera activé ultérieurement." : "Payments will be enabled later."}>{fr ? "Paiement bientôt disponible" : "Payments coming soon"}</button></article>):<p>{fr?"Aucune formule n'est publiée pour le moment.":"No plans are published yet."}</p>}</div>
-    <small className="account-footnote">{fr?"Les paiements réels nécessitent un compte marchand vérifié, géré par son titulaire adulte.":"Live payments require a verified merchant account managed by its adult holder."}</small>
+    {session && campaigns.length>0 && <div className="account-card"><h3>{fr?"Campagnes actives":"Active campaigns"}</h3>{campaigns.map(c=><article key={c.id}><strong>{c.title}</strong><p>{c.description}</p>{c.destination_url&&<a href={c.destination_url} target="_blank" rel="noreferrer">{fr?"Découvrir":"Learn more"} ↗</a>}</article>)}</div>}
+    {session && <div className="account-card"><h3>{fr?"Formules disponibles":"Available plans"}</h3>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled title={fr ? "Le paiement sera activé ultérieurement." : "Payments will be enabled later."}>{fr ? "Paiement bientôt disponible" : "Payments coming soon"}</button></article>):<p>{fr?"Aucune formule n'est publiée pour le moment.":"No plans are published yet."}</p>}</div>
+    <small className="account-footnote">{fr?"Les paiements réels nécessitent un compte marchand vérifié, géré par son titulaire adulte.":"Live payments require a verified merchant account managed by its adult holder."}</small>}
+    {!session && <p className="account-footnote">{fr?"Connecte-toi pour accéder au générateur vidéo, à l’analyse des réseaux sociaux et aux partenariats.":"Sign in to access video generation, social analysis and partnerships."}</p>}
+    </>
   </section>;
 }
