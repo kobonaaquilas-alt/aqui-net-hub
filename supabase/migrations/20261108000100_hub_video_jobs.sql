@@ -36,8 +36,3 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 values ('aqui-video-results', 'aqui-video-results', false, 104857600, array['video/mp4'])
 on conflict (id) do update
 set public = false, file_size_limit = 104857600, allowed_mime_types = array['video/mp4'];
-
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('aqui-video-results', 'aqui-video-results', false, 104857600, array['video/mp4'])
-on conflict (id) do update
-set public = false, file_size_limit = 104857600, allowed_mime_types = array['video/mp4'];
