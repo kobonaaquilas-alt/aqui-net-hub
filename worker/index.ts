@@ -1,5 +1,6 @@
 import { CinetPayClient, parseNotification, verifyNotification } from "cinetpay-js";
 import { handleAdmin } from "./admin";
+import { handleVideo } from "./video";
 
 interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -9,6 +10,8 @@ interface Env {
   CINETPAY_API_KEY: string;
   CINETPAY_API_PASSWORD: string;
   APP_BASE_URL?: string;
+  GITHUB_TOKEN?: string;
+  VIDEO_WORKFLOW_REF?: string;
 }
 type AuthUser = { id: string; email?: string };
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), {
@@ -225,6 +228,10 @@ export default {
           supabase: !!env.SUPABASE_URL && !!env.SUPABASE_ANON_KEY && !!env.SUPABASE_SERVICE_ROLE_KEY,
           cinetpay: !!env.CINETPAY_API_KEY && !!env.CINETPAY_API_PASSWORD,
         });
+      if (url.pathname === "/api/video/jobs" && request.method === "POST")
+        return handleVideo(request, env);
+      if (url.pathname.startsWith("/api/video/jobs/") && request.method === "GET")
+        return handleVideo(request, env);
       if (request.method === "POST" && url.pathname === "/api/payments/create")
         return createPayment(request, env);
       if (request.method === "POST" && url.pathname === "/api/payments/webhook")
