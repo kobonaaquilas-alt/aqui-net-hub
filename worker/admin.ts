@@ -40,7 +40,7 @@ export async function handleAdmin(
       if (!ads.ok || !partners.ok) return json({ error: "Impossible de charger les demandes." }, 502);
       return json({ ads: await ads.json(), partners: await partners.json() });
     }
-    const match = url.pathname.match(/^\\/api\\/admin\\/requests\\/(ads|partners)\\/([0-9a-f-]{36})$/i);
+    const match = url.pathname.match(/^\/api\/admin\/requests\/(ads|partners)\/([0-9a-f-]{36})$/i);
     if (request.method === "PATCH" && match) {
       let body: { status?: string };
       try { body = await request.json() as typeof body; }
