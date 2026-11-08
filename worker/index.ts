@@ -10,7 +10,7 @@ interface Env {
   CINETPAY_API_KEY: string;
   CINETPAY_API_PASSWORD: string;
   APP_BASE_URL?: string;
-  GITHUB_TOKEN?: string;
+  GITHUB_TOKEN: string;
   VIDEO_WORKFLOW_REF?: string;
 }
 type AuthUser = { id: string; email?: string };
