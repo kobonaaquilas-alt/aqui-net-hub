@@ -18,6 +18,10 @@ create table if not exists public.hub_video_jobs (
 create index if not exists hub_video_jobs_user_created_idx
   on public.hub_video_jobs (user_id, created_at desc);
 
+create unique index if not exists hub_video_jobs_one_active_per_user
+  on public.hub_video_jobs (user_id)
+  where status in ('queued', 'running');
+
 alter table public.hub_video_jobs enable row level security;
 
 drop policy if exists "Users read own video jobs" on public.hub_video_jobs;
