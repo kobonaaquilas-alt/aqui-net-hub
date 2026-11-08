@@ -7,9 +7,9 @@ const json = (data: unknown, status = 200) => new Response(JSON.stringify(data),
   status,
   headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
 });
+// Supabase sb_secret_* keys are API keys, not JWTs: send them only as apikey.
 const headers = (env: Env) => ({
   apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-  Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
   "Content-Type": "application/json",
   Prefer: "return=representation",
 });
@@ -40,7 +40,7 @@ export async function handleAdmin(
       if (!ads.ok || !partners.ok) return json({ error: "Impossible de charger les demandes." }, 502);
       return json({ ads: await ads.json(), partners: await partners.json() });
     }
-    const match = url.pathname.match(/^\/api\/admin\/requests\/(ads|partners)\/([0-9a-f-]{36})$/i);
+    const match = url.pathname.match(/^\\/api\\/admin\\/requests\\/(ads|partners)\\/([0-9a-f-]{36})$/i);
     if (request.method === "PATCH" && match) {
       let body: { status?: string };
       try { body = await request.json() as typeof body; }
