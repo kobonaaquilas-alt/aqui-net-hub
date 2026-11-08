@@ -112,3 +112,86 @@
 .video-result{display:grid;gap:10px;max-width:680px}
 .video-result video{width:100%;max-height:440px;border-radius:14px;background:#080e18}
 .video-result a{color:#a6c8ff;font-weight:700}
+
+
+/* AQUI NET HUB — fond uni, lisibilité renforcée */
+body {
+  background: #111b2c !important;
+  color: #f4f7ff;
+}
+body::before {
+  background: linear-gradient(135deg, #111b2c 0%, #17243a 52%, #121d30 100%) !important;
+  animation: none !important;
+  transform: none !important;
+}
+body::after {
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(65, 105, 170, .13), transparent 42%),
+    radial-gradient(ellipse at 92% 35%, rgba(104, 76, 160, .10), transparent 38%) !important;
+}
+.site-shell { background: transparent; }
+.topbar {
+  background: #101a2b !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.hero {
+  background: linear-gradient(135deg, #1a2a43 0%, #1b2c48 55%, #202b49 100%) !important;
+}
+.hero:before {
+  opacity: .10 !important;
+}
+.hero-visual .visual-center {
+  background: linear-gradient(145deg, #34558a, #4b407c) !important;
+  box-shadow: 0 12px 35px rgba(0,0,0,.18) !important;
+}
+.stats-section { background: #152238 !important; }
+.category-card, .tool-card, .module-card, .account-card {
+  background: #1b2a40 !important;
+  border-color: #344761 !important;
+  box-shadow: 0 8px 22px rgba(0,0,0,.14) !important;
+}
+.category-card:hover, .tool-card:hover {
+  background: #21344f !important;
+  border-color: #719fe0 !important;
+}
+.assist-section {
+  background: linear-gradient(120deg, #203858, #293653) !important;
+  border-color: #405779 !important;
+}
+.assist-box { background: #17283e !important; }
+.business-card { background: #1b2a40 !important; }
+.promotion-card, .academy-detail, .academy-paths, .faq-section details {
+  background: #1b2a40 !important;
+  border-color: #344761 !important;
+}
+footer, .site-footer {
+  background: #0e1828 !important;
+}
+.section-heading h2, .assist-content h2, .module-card h2,
+.promotion-card h2, .academy-detail h3, .faq-section summary {
+  color: #f5f7ff !important;
+}
+.section-heading > p, .hero-content > p, .tool-card > p,
+.module-copy, .business-step p, .promotion-card p,
+.academy-detail p, .faq-section details p {
+  color: #d3deed !important;
+}
+.eyebrow { color: #a8c8ff !important; }
+.tool-category, .tool-card-bottom a, .text-button { color: #b5d0ff !important; }
+.microcopy, .stat-card span, .tools-count, .business-note,
+.progress-summary, footer p, footer small { color: #c3d0e2 !important; }
+.tools-controls input, .tools-controls select,
+.assist-content textarea, .account-card input,
+.account-card textarea, .tool-filters select {
+  background: #101d30 !important;
+  color: #f4f7ff !important;
+  border-color: #40536d !important;
+}
+.tools-controls input::placeholder, .assist-content textarea::placeholder,
+.account-card input::placeholder, .account-card textarea::placeholder {
+  color: #aabbd1 !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none !important; }
+}
