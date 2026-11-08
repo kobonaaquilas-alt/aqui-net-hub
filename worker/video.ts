@@ -87,7 +87,7 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
         method: "POST",
         headers: { ...githubHeaders(env), "Content-Type": "application/json" },
         body: JSON.stringify({
-          ref: env.VIDEO_WORKFLOW_REF || "feature/aqui-video-api",
+          ref: env.VIDEO_WORKFLOW_REF || "main",
           inputs: { request_id: requestId, image_url: imageUrl, prompt, duration: String(duration) },
         }),
       },
