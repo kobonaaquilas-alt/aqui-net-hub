@@ -2,341 +2,90 @@ import { useCallback, useMemo, useState } from "react";
 import AccountHub from "./AccountHub";
 import AdminPanel from "./AdminPanel";
 
-const tools = [
-  ["ChatGPT", "IA", "Assistant intelligent pour apprendre, écrire et créer.", "https://chatgpt.com/"],
-  ["Gemini", "IA", "Assistant IA de Google.", "https://gemini.google.com/"],
-  ["Copilot", "IA", "Assistant numérique de Microsoft.", "https://copilot.microsoft.com/"],
-  ["Perplexity", "IA", "Recherche avec réponses et sources.", "https://www.perplexity.ai/"],
-  ["Claude", "IA", "Assistant pour rédiger et analyser.", "https://claude.ai/"],
-  ["DeepSeek", "IA", "Assistant IA polyvalent.", "https://chat.deepseek.com/"],
-  ["Canva", "Design", "Création d'affiches, visuels et présentations.", "https://www.canva.com/"],
-  ["Photopea", "Design", "Retouche d'images en ligne.", "https://www.photopea.com/"],
-  ["Pixlr", "Design", "Édition et création graphique.", "https://pixlr.com/"],
-  ["Remove.bg", "Design", "Suppression d'arrière-plan.", "https://www.remove.bg/"],
-  ["CapCut", "Vidéo", "Montage vidéo pour les réseaux sociaux.", "https://www.capcut.com/"],
-  ["VEED", "Vidéo", "Montage vidéo et sous-titres.", "https://www.veed.io/"],
-  ["Clipchamp", "Vidéo", "Montage vidéo en ligne.", "https://clipchamp.com/"],
-  ["Audacity", "Audio", "Enregistrement et traitement audio.", "https://www.audacityteam.org/"],
-  ["Suno", "Audio", "Création musicale assistée par IA.", "https://suno.com/"],
-  ["Google Docs", "Productivité", "Rédaction de documents.", "https://docs.google.com/"],
-  ["Google Sheets", "Productivité", "Tableurs et calculs.", "https://sheets.google.com/"],
-  ["Google Drive", "Productivité", "Stockage et partage de fichiers.", "https://drive.google.com/"],
-  ["Notion", "Productivité", "Organisation des projets et notes.", "https://www.notion.so/"],
-  ["Trello", "Productivité", "Gestion des tâches et projets.", "https://trello.com/"],
-  ["WordPress", "Web", "Création de sites et blogs.", "https://wordpress.com/"],
-  ["Google Sites", "Web", "Création de sites vitrines.", "https://sites.google.com/"],
-  ["GitHub", "Web", "Hébergement et gestion de projets.", "https://github.com/"],
-  ["Cloudflare", "Web", "Services web et hébergement.", "https://www.cloudflare.com/"],
-  ["Khan Academy", "Formation", "Apprentissage gratuit.", "https://fr.khanacademy.org/"],
-  ["Coursera", "Formation", "Cours en ligne.", "https://www.coursera.org/"],
-  ["freeCodeCamp", "Formation", "Apprentissage de la programmation.", "https://www.freecodecamp.org/"],
-  ["YouTube", "Formation", "Tutoriels et formations vidéo.", "https://www.youtube.com/"]
+type Tool = { name:string; category:string; description:string; url:string; keywords:string[]; how:string[]; benefits:string[] };
+const tools:Tool[] = [
+  {name:"ChatGPT",category:"Assistant IA",description:"Préparer des idées, des scripts, des textes et des plans de travail.",url:"https://chatgpt.com/",keywords:["idee","idée","texte","script","ecrire","écrire","rediger","rédiger","plan","apprendre","expliquer","strategie","stratégie","contenu"],how:["Ouvre le site et crée un compte gratuit si nécessaire.","Décris ton objectif avec le contexte et le résultat attendu.","Demande une réponse structurée, puis affine avec des précisions."],benefits:["Aide à clarifier une idée et organiser un projet.","Produit des brouillons et des plans rapidement.","Formule gratuite disponible, avec limites d'utilisation."]},
+  {name:"Gemini",category:"Assistant IA",description:"Assistant IA pour rechercher des idées, comprendre et rédiger.",url:"https://gemini.google.com/",keywords:["idee","idée","recherche","texte","apprendre","expliquer","image","document","contenu"],how:["Connecte-toi avec un compte Google.","Décris précisément la tâche à accomplir.","Vérifie les informations importantes avec des sources fiables."],benefits:["Intégration avec l'écosystème Google.","Aide à comprendre, rédiger et explorer des idées.","Accès gratuit avec limites et fonctions variables."]},
+  {name:"Perplexity",category:"Recherche",description:"Rechercher des informations sur le Web avec des références.",url:"https://www.perplexity.ai/",keywords:["recherche","information","source","actualite","actualité","comparaison","etude","étude","marche","marché"],how:["Saisis une question précise.","Consulte les sources affichées sous la réponse.","Ouvre les sources originales pour vérifier les faits."],benefits:["Références consultables.","Utile pour comparer et faire une première recherche.","Formule gratuite disponible."]},
+  {name:"Canva",category:"Design",description:"Créer des affiches, présentations, miniatures et visuels.",url:"https://www.canva.com/",keywords:["affiche","visuel","design","flyer","miniature","presentation","présentation","logo","publication","post","image"],how:["Crée un compte gratuit.","Choisis un format ou un modèle.","Modifie textes, couleurs et éléments, puis exporte."],benefits:["Modèles prêts à personnaliser.","Formats adaptés aux réseaux sociaux.","Nombreux éléments gratuits, certains contenus sont payants."]},
+  {name:"Photopea",category:"Retouche photo",description:"Retoucher des images dans un éditeur proche de Photoshop.",url:"https://www.photopea.com/",keywords:["photo","retouche","detourer","détourer","montage","image","calque","png"],how:["Ouvre Photopea dans ton navigateur.","Importe une image depuis ton appareil.","Utilise les calques et outils de retouche, puis exporte."],benefits:["Fonctionne dans le navigateur.","Prend en charge PSD et de nombreux formats.","Utilisation gratuite avec publicité."]},
+  {name:"Remove.bg",category:"Détourage",description:"Supprimer automatiquement l'arrière-plan d'une photo.",url:"https://www.remove.bg/",keywords:["fond","arriere-plan","arrière-plan","detourer","détourer","transparent","photo","portrait"],how:["Téléverse une image nette.","Laisse l'outil détecter le sujet.","Télécharge le résultat selon les options gratuites disponibles."],benefits:["Très rapide pour isoler un sujet.","Aucune compétence avancée nécessaire.","Téléchargement gratuit limité en résolution/crédits."]},
+  {name:"CapCut",category:"Montage vidéo",description:"Monter des vidéos verticales, ajouter du texte et des sous-titres.",url:"https://www.capcut.com/",keywords:["video","vidéo","montage","tiktok","reel","short","sous-titre","sous titre","clip"],how:["Importe tes séquences dans un nouveau projet.","Coupe les passages inutiles et ajoute texte ou sous-titres.","Exporte en format vertical pour TikTok, Reels ou Shorts."],benefits:["Interface accessible aux débutants.","Outils de montage adaptés aux réseaux sociaux.","Fonctions gratuites et options Pro payantes."]},
+  {name:"Clipchamp",category:"Montage vidéo",description:"Monter des vidéos et enregistrer des contenus depuis le navigateur.",url:"https://clipchamp.com/",keywords:["video","vidéo","montage","couper","assembler","presentation","présentation","youtube"],how:["Connecte-toi et crée un projet vidéo.","Importe tes médias et organise la timeline.","Ajoute titres et transitions, puis exporte."],benefits:["Montage simple dans le navigateur.","Utile pour des vidéos explicatives.","Offre gratuite disponible avec conditions d'export." ]},
+  {name:"Audacity",category:"Audio",description:"Enregistrer, nettoyer et monter des fichiers audio.",url:"https://www.audacityteam.org/",keywords:["audio","son","voix","musique","enregistrement","nettoyer","podcast"],how:["Installe Audacity sur un ordinateur.","Importe ou enregistre ton audio.","Réduis le bruit, coupe les erreurs et exporte."],benefits:["Logiciel libre et gratuit.","Outils de nettoyage et montage audio.","Pas d'abonnement nécessaire."]},
+  {name:"Google Docs",category:"Documents",description:"Rédiger et partager des documents en ligne.",url:"https://docs.google.com/",keywords:["document","rapport","lettre","rediger","rédiger","texte","memoire","mémoire"],how:["Ouvre Google Docs avec ton compte Google.","Crée un document vierge ou utilise un modèle.","Rédige et partage avec les droits adaptés."],benefits:["Sauvegarde en ligne.","Collaboration en temps réel.","Utilisation gratuite avec un compte Google."]},
+  {name:"Google Sheets",category:"Tableur",description:"Créer des tableaux, budgets et suivis de données.",url:"https://sheets.google.com/",keywords:["tableau","budget","calcul","liste","statistique","donnee","donnée","comptabilite","comptabilité"],how:["Crée une feuille de calcul.","Organise les données en colonnes.","Utilise formules et filtres pour les analyser."],benefits:["Formules et graphiques intégrés.","Collaboration en temps réel.","Accès gratuit avec un compte Google."]},
+  {name:"Notion",category:"Organisation",description:"Organiser des notes, tâches et projets.",url:"https://www.notion.so/",keywords:["organiser","organisation","projet","tache","tâche","planning","notes","equipe","équipe"],how:["Crée un espace gratuit.","Choisis une page ou un modèle de projet.","Ajoute tâches, dates et informations utiles."],benefits:["Centralise notes et tâches.","Pages personnalisables.","Formule gratuite pour usage individuel."]},
+  {name:"freeCodeCamp",category:"Formation",description:"Apprendre la programmation avec des exercices pratiques.",url:"https://www.freecodecamp.org/",keywords:["programmer","programmation","code","coder","html","css","javascript","site web","developper","développer"],how:["Crée un compte gratuit.","Choisis un parcours de formation.","Suis les leçons et valide les exercices pratiques."],benefits:["Cours et exercices gratuits.","Apprentissage progressif par la pratique.","Certifications gratuites sur les parcours proposés."]},
+  {name:"Khan Academy",category:"Formation",description:"Apprendre les mathématiques, sciences et autres matières.",url:"https://fr.khanacademy.org/",keywords:["cours","etudier","étudier","math","mathematique","mathématique","science","formation","apprendre"],how:["Choisis ta matière et ton niveau.","Suis les leçons courtes.","Fais les exercices pour mesurer tes progrès."],benefits:["Ressources éducatives gratuites.","Exercices et suivi de progression.","Adapté à plusieurs niveaux."]},
+  {name:"WordPress.com",category:"Création de site",description:"Créer un site ou un blog avec une formule de départ gratuite.",url:"https://wordpress.com/",keywords:["site","blog","web","page internet","vitrine","publier"],how:["Crée un compte et choisis un thème.","Ajoute tes pages et tes contenus.","Publie avec l'adresse gratuite proposée."],benefits:["Création sans programmation obligatoire.","Thèmes et éditeur de pages.","Formule gratuite avec adresse et fonctions limitées."]},
+  {name:"Google Sites",category:"Création de site",description:"Créer simplement un site vitrine ou un espace de présentation.",url:"https://sites.google.com/",keywords:["site","web","page internet","vitrine","portfolio","presentation","présentation"],how:["Ouvre Google Sites avec ton compte Google.","Choisis un modèle et ajoute tes sections.","Publie le site et partage son adresse."],benefits:["Très simple à prendre en main.","Hébergement inclus dans le service.","Gratuit avec un compte Google."]}
 ];
 
-const paths = [
-  {
-    name: "Création de contenu",
-    description: "Apprendre à créer des contenus numériques.",
-    steps: ["Découvrir Canva", "Apprendre CapCut", "Préparer des scripts", "Publier ses créations"]
-  },
-  {
-    name: "Compétences numériques",
-    description: "Développer des compétences utiles sur Internet.",
-    steps: ["Découvrir les outils numériques", "Apprendre les bases du web", "Créer un projet", "Présenter ses réalisations"]
-  },
-  {
-    name: "Business en ligne",
-    description: "Préparer progressivement une activité numérique.",
-    steps: ["Identifier un besoin", "Définir une offre", "Créer une présence en ligne", "Tester son offre"]
-  }
-];
-
-const businessSteps = [
-  "Identifier un problème réel.",
-  "Étudier les besoins des clients potentiels.",
-  "Construire une offre claire.",
-  "Créer une présence professionnelle.",
-  "Tester son offre et recueillir des avis.",
-  "Améliorer progressivement son service."
-];
-
-function readStorage(key: string): string[] {
-  try {
-    const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : [];
-  } catch {
-    return [];
-  }
+const norm=(s:string)=>s.toLocaleLowerCase("fr").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+function matchesTool(t:Tool,q:string) {
+  const query=norm(q);
+  const words=query.split(/[^a-z0-9]+/).filter(w=>w.length>2);
+  const hay=norm([t.name,t.category,t.description,...t.keywords].join(" "));
+  return t.keywords.some(k=>query.includes(norm(k))) || words.some(w=>hay.includes(w));
 }
 
 export default function App() {
-  const [lang, setLang] = useState<"fr" | "en">("fr");
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("Tous");
-  const [favorites, setFavorites] = useState<string[]>(() => readStorage("aqui-favorites"));
-  const [onlyFavorites, setOnlyFavorites] = useState(false);
-  const [progress, setProgress] = useState<string[]>(() => readStorage("aqui-progress"));
-  const [pathIndex, setPathIndex] = useState(0);
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
+  const [lang,setLang]=useState<"fr"|"en">("fr");
+  const [request,setRequest]=useState("");
+  const [submitted,setSubmitted]=useState("");
+  const [selectedTool,setSelectedTool]=useState<Tool|null>(null);
+  const fr=lang==="fr";
+  const recommendations=useMemo(()=>submitted?tools.filter(t=>matchesTool(t,submitted)).slice(0,6):[],[submitted]);
+  const syncRemote=useCallback((_favorites:string[],_progress:string[])=>{},[]);
+  const gated=(id:string)=>document.getElementById("compte")?.scrollIntoView({behavior:"smooth",block:"start"});
 
-  const fr = lang === "fr";
-  const syncRemote = useCallback((nextFavorites: string[], nextProgress: string[]) => { setFavorites(nextFavorites); setProgress(nextProgress); }, []);
-  const categories = ["Tous", ...Array.from(new Set(tools.map(t => t[1])))];
+  return <div className="site-shell">
+    <header className="topbar">
+      <a className="brand" href="#accueil"><span className="brand-mark">A</span><span>AQUI NET <strong>HUB</strong></span></a>
+      <nav className="main-nav"><a href="#accueil">{fr?"Accueil":"Home"}</a><a href="#services">{fr?"Services":"Services"}</a><a href="#compte">{fr?"Compte":"Account"}</a></nav>
+      <button className="language-button" onClick={()=>setLang(fr?"en":"fr")}>{fr?"EN":"FR"}</button>
+    </header>
+    <main>
+      <section className="hub-hero" id="accueil">
+        <span className="eyebrow">AQUI NET HUB · DIGITAL ACTION CENTER</span>
+        <h1>{fr?"Ton idée. Les bons outils. Des résultats concrets.":"Your idea. The right tools. Practical results."}</h1>
+        <p>{fr?"Un seul espace pour trouver des outils gratuits, créer des vidéos, améliorer tes réseaux sociaux et proposer des partenariats.":"One place to find free tools, create videos, improve your social accounts and propose partnerships."}</p>
+        <a className="primary-button" href="#services">{fr?"Commencer maintenant":"Get started"}</a>
+      </section>
 
-  const visibleTools = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    return tools.filter(t => {
-      const matches =
-        !q || t.join(" ").toLowerCase().includes(q);
-      const matchesCategory = category === "Tous" || t[1] === category;
-      const matchesFavorite = !onlyFavorites || favorites.includes(t[0]);
-      return matches && matchesCategory && matchesFavorite;
-    });
-  }, [search, category, onlyFavorites, favorites]);
-
-  function toggleFavorite(name: string) {
-    setFavorites(old => {
-      const next = old.includes(name)
-        ? old.filter(x => x !== name)
-        : [...old, name];
-      localStorage.setItem("aqui-favorites", JSON.stringify(next));
-      return next;
-    });
-  }
-
-  function toggleProgress(id: string) {
-    setProgress(old => {
-      const next = old.includes(id)
-        ? old.filter(x => x !== id)
-        : [...old, id];
-      localStorage.setItem("aqui-progress", JSON.stringify(next));
-      return next;
-    });
-  }
-
-  function assist() {
-    const q = question.toLowerCase().trim();
-    if (!q) {
-      setAnswer(fr ? "Décris ton objectif pour recevoir une orientation." : "Describe your goal to receive guidance.");
-    } else if (/vidéo|video|tiktok|montage/.test(q)) {
-      setAnswer(fr
-        ? "Commence avec CapCut pour le montage, Canva pour les visuels et ChatGPT pour préparer tes scripts."
-        : "Start with CapCut for editing, Canva for visuals and ChatGPT for scripts.");
-    } else if (/argent|revenu|business|vente|commerce/.test(q)) {
-      setAnswer(fr
-        ? "Identifie une compétence, un besoin réel et des clients potentiels. Prépare une offre utile et teste-la avant d'investir. Aucun revenu n'est garanti."
-        : "Identify a skill, a real need and potential customers. Prepare a useful offer and test it before investing. No income is guaranteed.");
-    } else if (/site|web|application|code|programm/.test(q)) {
-      setAnswer(fr
-        ? "Explore freeCodeCamp, GitHub et Cloudflare. Commence par un petit projet fonctionnel."
-        : "Explore freeCodeCamp, GitHub and Cloudflare. Start with a small working project.");
-    } else if (/étud|etud|cours|formation|apprendre/.test(q)) {
-      setAnswer(fr
-        ? "Utilise Khan Academy, YouTube et Notion pour organiser ton apprentissage."
-        : "Use Khan Academy, YouTube and Notion to organize your learning.");
-    } else {
-      setAnswer(fr
-        ? "Décompose ton objectif en étapes simples. Compare les outils disponibles et commence par une solution adaptée à ton besoin."
-        : "Break your goal into simple steps. Compare available tools and start with a solution that fits your needs.");
-    }
-  }
-
-  return (
-    <div className="site-shell">
-      <header className="topbar">
-        <a className="brand" href="#accueil">
-          <span className="brand-mark">A</span>
-          <span>AQUI NET <strong>HUB</strong></span>
-        </a>
-        <nav className="main-nav">
-          <a href="#accueil">{fr ? "Accueil" : "Home"}</a>
-          <a href="#outils">{fr ? "Outils" : "Tools"}</a>
-          <a href="#academy">Academy</a>
-          <a href="#business">Business</a>
-          <a href="#compte">{fr ? "Compte" : "Account"}</a>
-          <a href="#partenaires">{fr ? "Partenaires" : "Partners"}</a>
-          <a href="#administration">{fr ? "Administration" : "Admin"}</a>
-        </nav>
-        <button className="language-button" onClick={() => setLang(fr ? "en" : "fr")}>
-          {fr ? "EN" : "FR"}
-        </button>
-      </header>
-
-      <main>
-        <section className="hero" id="accueil">
-          <div className="hero-content">
-            <span className="eyebrow">AQUI NET HUB · DIGITAL OPPORTUNITIES</span>
-            <h1>{fr ? "Le numérique ouvre des possibilités." : "Digital opens up possibilities."}</h1>
-            <p>{fr
-              ? "Découvre des outils, développe tes compétences et construis tes projets avec AQUI NET HUB."
-              : "Discover tools, develop your skills and build your projects with AQUI NET HUB."}</p>
-            <div className="hero-actions">
-              <a className="primary-button" href="#outils">{fr ? "Explorer les outils" : "Explore tools"}</a>
-              <a className="secondary-button" href="#academy">{fr ? "Découvrir l'académie" : "Explore academy"}</a>
-            </div>
-          </div>
-          <div className="hero-visual" aria-hidden="true">
-            <div className="visual-orbit orbit-one" />
-            <div className="visual-orbit orbit-two" />
-            <div className="visual-center">AQUI<br />NET<br /><strong>HUB</strong></div>
-            <span className="visual-chip chip-one">AI</span>
-            <span className="visual-chip chip-two">WEB</span>
-            <span className="visual-chip chip-three">CREATE</span>
-          </div>
-        </section>
-
-        <section className="stats-section">
-          <div className="stat-card"><strong>{tools.length}</strong><span>{fr ? "Outils numériques" : "Digital tools"}</span></div>
-          <div className="stat-card"><strong>{categories.length - 1}</strong><span>{fr ? "Domaines" : "Categories"}</span></div>
-          <div className="stat-card"><strong>24/7</strong><span>{fr ? "Accès en ligne" : "Online access"}</span></div>
-        </section>
-
-        <section className="section tools-section" id="outils">
-          <div className="section-heading">
-            <span className="eyebrow">AQUI NET TOOLS</span>
-            <h2>{fr ? "Explore les outils" : "Explore the tools"}</h2>
-            <p>{fr ? "Des ressources numériques pour apprendre, créer et entreprendre." : "Digital resources to learn, create and build."}</p>
-          </div>
-
-          <div className="tools-controls">
-            <input
-              type="search"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder={fr ? "Rechercher un outil..." : "Search for a tool..."}
-            />
-            <select value={category} onChange={e => setCategory(e.target.value)}>
-              {categories.map(c => <option key={c} value={c}>{c === "Tous" ? (fr ? "Toutes les catégories" : "All categories") : c}</option>)}
-            </select>
-            <button className={onlyFavorites ? "filter-button active" : "filter-button"} onClick={() => setOnlyFavorites(v => !v)}>
-              ♥ {fr ? "Mes favoris" : "Favorites"} ({favorites.length})
-            </button>
-          </div>
-
-          <p className="tools-count">{visibleTools.length} {fr ? "outil(s) disponible(s)" : "available tools"}</p>
-
-          {visibleTools.length ? (
-            <div className="tools-grid">
-              {visibleTools.map(t => (
-                <article className="tool-card" key={t[0]}>
-                  <div className="tool-card-top">
-                    <span className="tool-icon">{t[0].charAt(0)}</span>
-                    <button className={favorites.includes(t[0]) ? "favorite-button selected" : "favorite-button"} onClick={() => toggleFavorite(t[0])}>
-                      {favorites.includes(t[0]) ? "♥" : "♡"}
-                    </button>
-                  </div>
-                  <span className="tool-category">{t[1]}</span>
-                  <h3>{t[0]}</h3>
-                  <p>{t[2]}</p>
-                  <div className="tool-card-bottom">
-                    <span className="free-label">{fr ? "Accès gratuit*" : "Free access*"}</span>
-                    <a href={t[3]} target="_blank" rel="noopener noreferrer">{fr ? "Ouvrir" : "Open"} ↗</a>
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : <div className="empty-state">{fr ? "Aucun outil trouvé." : "No tools found."}</div>}
-          <p className="business-note">{fr ? "*Certains outils proposent aussi des options payantes. Consulte leurs conditions officielles." : "*Some tools also offer paid features. Check their official terms."}</p>
-        </section>
-
-        <section className="section assist-section" id="assistant">
-          <div className="assist-content">
-            <span className="eyebrow">YOUR DIGITAL GUIDE</span>
-            <h2>NET ASSIST</h2>
-            <p>{fr ? "Décris ton objectif. NET ASSIST te propose une première orientation." : "Describe your goal. NET ASSIST suggests a starting point."}</p>
-            <textarea rows={3} value={question} onChange={e => setQuestion(e.target.value)} placeholder={fr ? "Exemple : je veux créer des vidéos pour TikTok..." : "Example: I want to create videos for TikTok..."} />
-            <button className="primary-button" onClick={assist}>{fr ? "Obtenir une orientation" : "Get guidance"}</button>
-            {answer && <div className="assist-result"><strong>{fr ? "Orientation" : "Guidance"}</strong><p>{answer}</p></div>}
-          </div>
-          <div className="assist-symbol" aria-hidden="true">✦</div>
-        </section>
-
-        <section className="section academy-section" id="academy">
-          <div className="section-heading">
-            <span className="eyebrow">LEARN · PRACTICE · GROW</span>
-            <h2>AQUI NET ACADEMY</h2>
-            <p>{fr ? "Des parcours simples pour développer tes compétences." : "Simple paths to develop your skills."}</p>
-          </div>
-          <div className="academy-layout">
-            <div className="academy-paths">
-              {paths.map((p, i) => (
-                <button key={p.name} className={pathIndex === i ? "path-button active" : "path-button"} onClick={() => setPathIndex(i)}>
-                  <span>0{i + 1}</span><strong>{p.name}</strong><small>{p.description}</small>
-                </button>
-              ))}
-            </div>
-            <div className="academy-detail">
-              <span className="eyebrow">{fr ? "TON PARCOURS" : "YOUR PATH"}</span>
-              <h3>{paths[pathIndex].name}</h3>
-              <p>{paths[pathIndex].description}</p>
-              <div className="progress-list">
-                {paths[pathIndex].steps.map((step, i) => {
-                  const id = `${pathIndex}-${i}`;
-                  return (
-                    <label className="progress-item" key={id}>
-                      <input type="checkbox" checked={progress.includes(id)} onChange={() => toggleProgress(id)} />
-                      <span className={progress.includes(id) ? "completed" : ""}>{step}</span>
-                    </label>
-                  );
-                })}
-              </div>
-              <p className="progress-summary">{progress.filter(x => x.startsWith(`${pathIndex}-`)).length}/{paths[pathIndex].steps.length} {fr ? "étapes terminées" : "steps completed"}</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="section business-section" id="business">
-          <div className="section-heading">
-            <span className="eyebrow">IDEAS INTO ACTION</span>
-            <h2>{fr ? "Construis ton projet." : "Build your project."}</h2>
-            <p>{fr ? "Une méthode progressive pour transformer une idée en activité structurée." : "A gradual method to turn an idea into a structured activity."}</p>
-          </div>
-          <div className="business-steps">
-            {businessSteps.map((s, i) => <div className="business-step" key={s}><span>{String(i + 1).padStart(2, "0")}</span><p>{s}</p></div>)}
-          </div>
-          <p className="business-note">{fr ? "AQUI NET HUB ne garantit aucun revenu. Les résultats dépendent du marché, du travail et de la qualité de l'offre." : "AQUI NET HUB does not guarantee income. Results depend on the market, effort and offer quality."}</p>
-        </section>
-
-        <AccountHub favorites={favorites} progress={progress} lang={lang} onRemoteSync={syncRemote} />
-
-        <AdminPanel />
-
-        <section className="section promotion-grid" id="partenaires">
-          <article className="promotion-card">
-            <span className="eyebrow">AQUI NET ADS</span>
-            <h2>{fr ? "Publicité" : "Advertising"}</h2>
-            <p>{fr ? "Propose une campagne depuis ton espace membre. Chaque demande est examinée par notre équipe avant publication." : "Submit an advertising campaign from your member account. Each request is reviewed by our team before publication."}</p>
-            <span className="status-label">{fr ? "Demandes ouvertes" : "Requests open"}</span>
-          </article>
-          <article className="promotion-card partner-card">
-            <span className="eyebrow">AQUI NET PARTNERS</span>
-            <h2>{fr ? "Partenaires et collaborations" : "Partners and collaborations"}</h2>
-            <p>{fr ? "Propose une collaboration depuis ton espace membre. Notre équipe examinera ta candidature." : "Submit a partnership proposal from your member account. Our team will review your application."}</p>
-            <span className="status-label">{fr ? "Demandes ouvertes" : "Requests open"}</span>
-          </article>
-        </section>
-
-        <section className="section faq-section" id="faq">
-          <div className="section-heading"><span className="eyebrow">HELP CENTER</span><h2>{fr ? "Questions fréquentes" : "Frequently asked questions"}</h2></div>
-          <details><summary>{fr ? "Les outils sont-ils gratuits ?" : "Are the tools free?"}</summary><p>{fr ? "Les outils référencés proposent un accès gratuit ou une formule gratuite. Certaines fonctions peuvent être payantes." : "Listed tools offer free access or a free plan. Some features may require payment."}</p></details>
-          <details><summary>{fr ? "Où sont enregistrés mes favoris ?" : "Where are my favorites saved?"}</summary><p>{fr ? "Sans compte, ils restent sur cet appareil. Avec un compte, ils sont synchronisés en ligne." : "With an account, they sync online. Without an account, they stay on this device."}</p></details>
-          <details><summary>{fr ? "Ma progression est-elle synchronisée ?" : "Is my progress synchronized?"}</summary><p>{fr ? "Avec un compte, elle est synchronisée en ligne. Sans compte, elle reste enregistrée sur cet appareil." : "With an account, your progress syncs online. Without one, it stays on this device."}</p></details>
-          <details><summary>{fr ? "AQUI NET HUB garantit-il des revenus ?" : "Does AQUI NET HUB guarantee income?"}</summary><p>{fr ? "Non. La plateforme fournit des ressources et des orientations, mais aucun revenu n'est garanti." : "No. The platform provides resources and guidance, but no income is guaranteed."}</p></details>
-        </section>
-      </main>
-
-      <footer className="site-footer">
-        <a className="brand footer-brand" href="#accueil"><span className="brand-mark">A</span><span>AQUI NET <strong>HUB</strong></span></a>
-        <p>{fr ? "Une plateforme pour apprendre, créer et avancer dans le monde numérique." : "A platform to learn, create and move forward in the digital world."}</p>
-        <div className="footer-links">
-          <a href="#accueil">{fr ? "Accueil" : "Home"}</a>
-          <a href="#outils">{fr ? "Outils" : "Tools"}</a>
-          <a href="#academy">Academy</a>
-          <a href="#faq">FAQ</a>
+      <section className="hub-services section" id="services">
+        <div className="section-heading"><span className="eyebrow">CHOISIS TON OBJECTIF</span><h2>{fr?"Que souhaites-tu faire ?":"What would you like to do?"}</h2><p>{fr?"Les quatre services essentiels d'AQUI NET HUB. Les fonctions personnelles nécessitent un compte.":"Four core AQUI NET HUB services. Personal features require an account."}</p></div>
+        <div className="service-grid">
+          <article className="service-card service-public"><span className="service-number">01</span><span className="service-symbol">✦</span><h3>{fr?"Trouver les outils adaptés":"Find the right tools"}</h3><p>{fr?"Décris ton projet : nous affichons uniquement les outils pertinents, avec leur guide d'utilisation.":"Describe your task: only relevant tools appear, with usage guides."}</p><a className="primary-button" href="#demande-outils">{fr?"Décrire mon besoin":"Describe my need"} <span>↗</span></a><small>{fr?"Accessible sans compte":"No account required"}</small></article>
+          <article className="service-card"><span className="service-number">02</span><span className="service-symbol">▶</span><h3>{fr?"Générer une vidéo IA":"Generate an AI video"}</h3><p>{fr?"Crée un clip à partir d'une image et d'une description.":"Create a clip from an image and a prompt."}</p><button className="secondary-button" onClick={()=>gated("video")}>{fr?"Accéder au générateur":"Open video generator"} ↗</button><small>{fr?"Compte obligatoire":"Account required"}</small></article>
+          <article className="service-card"><span className="service-number">03</span><span className="service-symbol">◎</span><h3>{fr?"Analyser mes réseaux sociaux":"Analyze my social accounts"}</h3><p>{fr?"Obtiens un diagnostic de ton positionnement, de tes contenus et des pistes de progression.":"Get a review of your positioning, content and growth opportunities."}</p><button className="secondary-button" onClick={()=>gated("social")}>{fr?"Analyser mon compte":"Analyze my account"} ↗</button><small>{fr?"Compte obligatoire":"Account required"}</small></article>
+          <article className="service-card"><span className="service-number">04</span><span className="service-symbol">◇</span><h3>{fr?"Proposer un partenariat":"Propose a partnership"}</h3><p>{fr?"Présente ton organisation, ta marque ou ton idée de collaboration.":"Introduce your organization, brand or collaboration idea."}</p><button className="secondary-button" onClick={()=>gated("partner")}>{fr?"Déposer une proposition":"Submit a proposal"} ↗</button><small>{fr?"Compte obligatoire":"Account required"}</small></article>
         </div>
-        <small>© {new Date().getFullYear()} AQUI NET HUB. {fr ? "Tous droits réservés." : "All rights reserved."}</small>
-      </footer>
-    </div>
-  );
-                                                                                                            }
+      </section>
+
+      <section className="section request-section" id="demande-outils">
+        <div className="section-heading"><span className="eyebrow">01 · SMART TOOL FINDER</span><h2>{fr?"Décris ce que tu veux accomplir":"Describe what you want to achieve"}</h2><p>{fr?"Exemple : je veux créer un logo, monter une vidéo TikTok, apprendre l'anglais ou construire un site web.":"Example: I want to create a logo, edit a TikTok video, learn English or build a website."}</p></div>
+        <form className="tool-request-form" onSubmit={e=>{e.preventDefault();setSubmitted(request.trim());setSelectedTool(null);}}>
+          <textarea value={request} onChange={e=>setRequest(e.target.value)} rows={3} placeholder={fr?"Décris ton objectif avec tes propres mots…":"Describe your goal in your own words…"} required />
+          <button className="primary-button" type="submit" disabled={!request.trim()}>{fr?"Trouver les outils gratuits adaptés":"Find suitable free tools"} ↗</button>
+        </form>
+        {submitted && <div className="recommendation-results">
+          <div className="recommendation-heading"><h3>{fr?"Outils correspondant à ta demande":"Tools matching your request"}</h3><button className="text-button" onClick={()=>{setSubmitted("");setSelectedTool(null);}}>{fr?"Nouvelle recherche":"New search"}</button></div>
+          {recommendations.length ? <div className="recommended-grid">{recommendations.map(t=><button className="recommended-tool" key={t.name} onClick={()=>setSelectedTool(t)}><span>{t.category}</span><strong>{t.name}</strong><small>{t.description}</small><b>{fr?"Voir le guide":"View guide"} ↗</b></button>)}</div> : <p className="no-match">{fr?"Je n'ai pas identifié d'outil correspondant avec certitude. Reformule ton objectif en précisant le résultat attendu.":"I couldn't confidently match a tool. Rephrase your goal and specify the expected result."}</p>}
+        </div>}
+        {selectedTool && <article className="tool-detail-page">
+          <button className="text-button" onClick={()=>setSelectedTool(null)}>← {fr?"Retour aux résultats":"Back to results"}</button>
+          <span className="eyebrow">{selectedTool.category}</span><h3>{selectedTool.name}</h3><p>{selectedTool.description}</p>
+          <div className="tool-detail-columns"><div><h4>{fr?"Comment utiliser cet outil":"How to use this tool"}</h4><ol>{selectedTool.how.map(x=><li key={x}>{x}</li>)}</ol></div><div><h4>{fr?"Avantages":"Benefits"}</h4><ul>{selectedTool.benefits.map(x=><li key={x}>{x}</li>)}</ul></div></div>
+          <a className="primary-button" href={selectedTool.url} target="_blank" rel="noopener noreferrer">{fr?"Ouvrir le site officiel":"Open official website"} ↗</a>
+          <small className="free-disclaimer">{fr?"Les services indiqués proposent une formule ou un usage gratuit ; des limites, crédits ou options payantes peuvent s'appliquer selon l'outil. Vérifie les conditions sur le site officiel.":"These services offer a free tier or free usage; limits, credits or paid options may apply. Check the official terms."}</small>
+        </article>}
+      </section>
+
+      <AccountHub favorites={[]} progress={[]} lang={lang} onRemoteSync={syncRemote}/>
+      <AdminPanel/>
+    </main>
+    <footer className="site-footer"><a className="brand footer-brand" href="#accueil"><span className="brand-mark">A</span><span>AQUI NET <strong>HUB</strong></span></a><p>{fr?"Des outils et des opportunités pour avancer dans le numérique.":"Tools and opportunities to move forward digitally."}</p><small>© {new Date().getFullYear()} AQUI NET HUB</small></footer>
+  </div>;
+}
