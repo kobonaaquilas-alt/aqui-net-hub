@@ -65,8 +65,20 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
       return reply({ error: "Utilise une URL HTTPS publique directe vers une image." }, 400);
     if (prompt.length < 3 || prompt.length > 1200)
       return reply({ error: "La description doit contenir entre 3 et 1 200 caractères." }, 400);
-    if (![2, 3, 4, 5].includes(duration))
-      return reply({ error: "Durée actuellement disponible : 2 à 5 secondes." }, 400);
+    if (![2, 3, 4, 5, 6, 8, 10].includes(duration))
+      return reply({ error: "Durées disponibles : 2, 3, 4, 5, 6, 8 ou 10 secondes." }, 400);
+    if (duration > 5) {
+      const access = await fetch(
+        `${env.SUPABASE_URL}/rest/v1/hub_subscriptions?user_id=eq.${encodeURIComponent(user.id)}&status=eq.active&ends_at=gt.${encodeURIComponent(new Date().toISOString())}&select=id&limit=1`,
+        { headers: serviceHeaders(env) },
+      );
+      if (!access.ok) return reply({ error: "Vérification de l'abonnement impossible." }, 502);
+      const active = await access.json() as unknown[];
+      if (!active.length) return reply({
+        error: "Les vidéos de plus de 5 secondes nécessitent un abonnement AQUI NET HUB (500 FCFA/mois ou 5 000 FCFA/an).",
+        code: "PAYMENT_REQUIRED",
+      }, 402);
+    }
 
     const jobsUrl = `${env.SUPABASE_URL}/rest/v1/hub_video_jobs`;
     const activeJobs = await fetch(
