@@ -53,7 +53,6 @@ export default function App() {
       <nav className="main-nav"><a href="#accueil">{fr?"Accueil":"Home"}</a><a href="#services">{fr?"Services":"Services"}</a><a href="#account-access">{fr?"Créer un compte":"Create account"}</a></nav>
       <button className="language-button" onClick={()=>setLang(fr?"en":"fr")}>{fr?"EN":"FR"}</button>
     </header>
-    <AccountHub service="video" favorites={[]} progress={[]} lang={lang} onRemoteSync={syncRemote} authOnly />
     <main>
       <section className="hub-hero" id="accueil">
         <span className="eyebrow">AQUI NET HUB · DIGITAL ACTION CENTER</span>
@@ -71,6 +70,7 @@ export default function App() {
           <button type="button" className={"service-card "+(activeService==="partners"?"selected":"")} onClick={()=>setActiveService("partners")}><span className="service-number">04</span><span className="service-symbol">◇</span><h3>{fr?"Partenariats & publicité":"Partnerships & advertising"}</h3><span className="service-action">{fr?"Ouvrir le service":"Open service"} ↗</span></button>
         </div>
       </section>
+      <AccountHub service="video" favorites={[]} progress={[]} lang={lang} onRemoteSync={syncRemote} authOnly />
       {campaigns.length>0&&<section className="promo-ticker" aria-label="Publicités"><div className="promo-track">{[...campaigns,...campaigns].map((campaign,i)=><a key={campaign.id+"-"+i} href={campaign.destination_url||"#services"} target={campaign.destination_url?"_blank":undefined} rel="noreferrer"><span>✦</span> {campaign.title} <small>{campaign.description}</small> <b>{fr?"En savoir plus":"Learn more"} ↗</b></a>)}</div></section>}
       {activeService==="tools"&&<section className="section request-section" id="demande-outils">
         <div className="section-heading"><span className="eyebrow">01 · SMART TOOL FINDER</span><h2>{fr?"Décris ce que tu veux accomplir":"Describe what you want to achieve"}</h2><p>{fr?"Exemple : je veux créer un logo, monter une vidéo TikTok, apprendre l'anglais ou construire un site web.":"Example: I want to create a logo, edit a TikTok video, learn English or build a website."}</p></div>
