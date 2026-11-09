@@ -223,10 +223,11 @@ export default {
     const url = new URL(request.url);
     try {
       if (request.method === "GET" && url.pathname === "/api/public/campaigns") {
-        const now = encodeURIComponent(new Date().toISOString());
-        const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_campaigns?is_active=eq.true&or=(starts_at.is.null,starts_at.lte.${now})&and=(or(ends_at.is.null,ends_at.gte.${now}))&select=id,title,description,destination_url,image_url,starts_at,ends_at&order=created_at.desc&limit=30`, { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY } });
+        const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_campaigns?is_active=eq.true&select=id,title,description,destination_url,image_url,starts_at,ends_at&order=created_at.desc&limit=100`, { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY } });
         if (!response.ok) return json({ error: "Publicités indisponibles." }, 502);
-        return json({ campaigns: await response.json() });
+        const campaigns = await response.json() as Array<{ starts_at: string | null; ends_at: string | null }>;
+        const now = Date.now();
+        return json({ campaigns: campaigns.filter(c => (!c.starts_at || new Date(c.starts_at).getTime() <= now) && (!c.ends_at || new Date(c.ends_at).getTime() >= now)) });
       }
       if (request.method === "GET" && url.pathname === "/api/public/settings") {
         const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_site_settings?setting_key=eq.adsense_client&select=setting_value&limit=1`, { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY } });
