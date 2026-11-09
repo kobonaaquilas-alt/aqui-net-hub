@@ -9,7 +9,8 @@
       "/api/*",
       "/ads.txt",
       "/terms",
-      "/privacy"
+      "/privacy",
+      "/tiktokOsKTaCjvBEOEf2Di5eXocwwfXpXer12F.txt"
     ]
   },
   "main": "./worker/index.ts",
