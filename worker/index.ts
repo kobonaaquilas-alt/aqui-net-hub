@@ -254,6 +254,7 @@ export default {
           cinetpay: !!env.CINETPAY_API_KEY && !!env.CINETPAY_API_PASSWORD,
           cinetpay_api_key: !!env.CINETPAY_API_KEY,
           cinetpay_api_password: !!env.CINETPAY_API_PASSWORD,
+          video_github_token: !!env.GITHUB_TOKEN,
         });
       if (url.pathname === "/api/video/jobs" && request.method === "POST")
         return handleVideo(request, env);
