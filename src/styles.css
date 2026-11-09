@@ -372,3 +372,32 @@ button.service-card{
  .footer-contact{font-size:11px}
 }
 @media(prefers-reduced-motion:reduce){.promo-track{animation:none;flex-wrap:wrap;width:100%}}
+
+
+/* AQUI NET HUB: aligned tool results, guide below, and visible account access */
+.account-access.section{padding:26px 7% 14px;scroll-margin-top:82px}
+.account-access .section-heading{margin-bottom:14px}
+.account-access .section-heading h2{font-size:clamp(22px,2.6vw,30px)}
+.account-access .account-card{max-width:760px;margin:0 auto;padding:20px}
+.tool-results-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;margin-top:18px}
+.tool-results-layout.has-selection{grid-template-columns:minmax(0,1fr) minmax(280px,.9fr)}
+.tool-results-layout .recommendation-results{min-width:0;margin:0}
+.tool-detail-page{position:sticky;top:96px;align-self:start;min-width:0;padding:22px;border:1px solid rgba(139,184,255,.35);border-radius:18px;background:linear-gradient(145deg,rgba(34,53,87,.98),rgba(19,33,57,.98));box-shadow:var(--shadow)}
+.tool-detail-page h3{margin:12px 0 8px;font-size:25px}
+.tool-detail-page>p{color:#d0daeb;line-height:1.65}
+.tool-detail-page .primary-button{display:flex;align-items:center;justify-content:center;text-align:center}
+.tool-guide{grid-column:1/-1;padding:22px;border:1px solid var(--line);border-radius:18px;background:rgba(17,31,53,.96)}
+.tool-guide>h4{margin:0 0 16px;color:#f1f5ff;font:700 17px Manrope,sans-serif}
+.tool-detail-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.tool-detail-columns h4{margin:0 0 10px;color:#9fc4ff}
+.tool-detail-columns li{margin:8px 0;color:#d0daeb;line-height:1.6}
+.video-price{margin:14px 0 4px;color:#dce8fa;font-size:14px}
+.video-price strong{color:#fff;font-size:18px}
+.subscription-required{border-color:rgba(139,184,255,.35)}
+@media(max-width:760px){
+ .account-access.section{padding:22px 5% 10px}
+ .tool-results-layout.has-selection{grid-template-columns:minmax(0,1fr)}
+ .tool-detail-page{position:static}
+ .tool-guide{grid-column:1}
+ .tool-detail-columns{grid-template-columns:minmax(0,1fr)}
+}
