@@ -312,3 +312,63 @@ footer, .site-footer {
  .service-card p{font-size:9px}
 }
 @media(prefers-reduced-motion:reduce){.service-card{transition:none}.service-card:hover{transform:none}}
+
+
+/* AQUI NET HUB — service-first navigation and public trust elements */
+button.service-card{
+  width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer;
+  appearance:none;-webkit-appearance:none;
+}
+.service-card .service-action{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:100%;min-height:36px;padding:8px 10px;border-radius:9px;
+  color:#dce9ff;background:rgba(103,151,221,.15);
+  border:1px solid rgba(145,181,235,.25);font-size:11px;font-weight:800;
+}
+.service-card.selected{border-color:#9ac0ff;box-shadow:0 0 0 2px rgba(119,168,239,.16),0 12px 28px rgba(0,0,0,.18)}
+.service-card h3{min-height:2.5em}
+.promo-ticker{
+  overflow:hidden;position:relative;margin:0 auto 22px;padding:0;
+  border-top:1px solid rgba(145,176,222,.22);
+  border-bottom:1px solid rgba(145,176,222,.22);
+  background:linear-gradient(90deg,#243c5c,#172b46,#243c5c);
+}
+.promo-track{display:flex;width:max-content;animation:aqui-promo-scroll 42s linear infinite}
+.promo-track:hover{animation-play-state:paused}
+.promo-track a{
+  display:flex;align-items:center;gap:13px;padding:13px 26px;
+  color:#f3f7ff;text-decoration:none;white-space:nowrap;font-size:13px;font-weight:800;
+}
+.promo-track a>span{color:#9fc4ff}
+.promo-track a small{max-width:350px;overflow:hidden;text-overflow:ellipsis;color:#c8d7ec;font-size:11px;font-weight:500}
+.promo-track a b{color:#a9cbff;font-size:11px}
+@keyframes aqui-promo-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.footer-contact{display:grid;gap:6px;color:#cbd8eb;font-size:12px}
+.footer-contact strong{color:#f3f7ff;margin-bottom:2px}
+.footer-contact a{color:#a9cbff;text-decoration:none}
+.footer-contact a:hover,.footer-links a:hover{text-decoration:underline}
+.admin-private{border-top:2px solid rgba(134,177,242,.35);background:#0c1728}
+.admin-campaign-form{display:grid;gap:11px;margin:14px 0 22px}
+.admin-campaign-form input:not([type=checkbox]),.admin-campaign-form textarea,.admin-private input:not([type=checkbox]){
+  width:100%;padding:11px 12px;border:1px solid #40536d;border-radius:9px;
+  color:#f4f7ff;background:#101d30;font:inherit
+}
+.admin-campaign-form textarea{min-height:80px;resize:vertical}
+.admin-campaign-form label{display:flex;align-items:center;gap:8px;color:#cbd8eb;font-size:12px}
+.admin-campaign-form input[type=checkbox]{width:17px;height:17px;accent-color:#80adf7}
+.social-metrics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
+.social-metrics-grid label{display:grid;gap:6px;color:#cbd8eb;font-size:12px}
+.social-metrics-grid input{width:100%;padding:11px 12px;border:1px solid #40536d;border-radius:9px;color:#f4f7ff;background:#101d30}
+.follow-gate{display:grid;gap:11px;margin-top:22px;padding:18px;border:1px solid #49658a;border-radius:14px;background:#172a43}
+.follow-gate h4{margin:0;color:#f5f7ff}
+.follow-links{display:flex;flex-wrap:wrap;gap:10px}
+.follow-links a{padding:10px 12px;border:1px solid #55739b;border-radius:9px;color:#d8e7ff;background:#223b5a;text-decoration:none;font-size:12px;font-weight:800}
+.social-report{white-space:pre-wrap;line-height:1.65}
+@media(max-width:620px){
+ .promo-track a{gap:8px;padding:11px 16px;font-size:11px}
+ .promo-track a small{max-width:190px;font-size:9px}
+ .promo-track a b{font-size:10px}
+ .social-metrics-grid{grid-template-columns:1fr 1fr;gap:8px}
+ .footer-contact{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){.promo-track{animation:none;flex-wrap:wrap;width:100%}}
