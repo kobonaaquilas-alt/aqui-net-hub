@@ -28,37 +28,43 @@ const tools:Tool[] = [
 
 const norm=(s:string)=>s.toLocaleLowerCase("fr").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 const intentRules:[string,string[]][]=[
-  ["game_creation",["jeu video","jeux video","video game","video games","creer un jeu","developper un jeu","generer un jeu","creation de jeu video","game development","create a game","make a game","build a game"]],
-  ["image_generation",["generer une image","creer une image","image ia","dessin ia","illustration ia"]],
-  ["video_generation",["generer une video","creer une video","video ia","video a partir d'un texte","texte en video"]],
-  ["website_creation",["creer un site","creation de site","site internet","site web","boutique en ligne"]],
-  ["photo_editing",["retoucher une photo","restaurer une photo","ameliorer une photo"]],
-  ["background_removal",["supprimer le fond","enlever le fond","detourer une photo"]],
-  ["video_editing",["montage video","monter une video","couper une video","sous titres video"]],
-  ["logo_design",["creer un logo","faire un logo","logo"]],
-  ["visual_design",["creer une affiche","faire un flyer","miniature youtube","visuel reseaux sociaux"]],
-  ["audio_editing",["montage audio","nettoyer un audio","enregistrer une voix","podcast"]],
-  ["document_creation",["rediger un document","creer un document","faire un rapport","lettre administrative"]],
-  ["spreadsheet",["tableur","feuille de calcul","tableau de calcul","budget avec formules"]],
-  ["project_organization",["organiser un projet","gerer mes taches","planning de projet"]],
-  ["learn_programming",["apprendre a programmer","apprendre le code","apprendre javascript","apprendre html"]],
-  ["web_research",["rechercher des informations","faire une recherche web","trouver des sources"]],
-  ["content_writing",["rediger un texte","ecrire un texte","ecrire un script","creer du contenu"]],
-  ["idea_generation",["trouver des idees","generer des idees","brainstorming"]],
-  ["learning",["apprendre une matiere","suivre des cours","faire des exercices"]]
+  ["game_creation",["jeu video","jeux video","video game","video games","jeu 2d","jeu 3d","jeu mobile","creer un jeu","creer mon jeu","faire un jeu","fabriquer un jeu","construire un jeu","developper un jeu","generer un jeu","creation de jeu video","creer un jeu video","jeu video avec ia","game development","create a game","make a game","build a game","make my own game"]],
+  ["image_generation",["generer une image","creer une image","faire une image","image ia","image avec ia","dessin ia","illustration ia","generer un dessin","creer une illustration","texte en image","text to image"]],
+  ["video_generation",["generer une video","creer une video","faire une video avec ia","video ia","video a partir d'un texte","texte en video","text to video","generer un clip","creer un clip video"]],
+  ["website_creation",["creer un site","creation de site","site internet","site web","faire un site","construire un site","developper un site","boutique en ligne","site e commerce","page web"]],
+  ["photo_editing",["retoucher une photo","restaurer une photo","ameliorer une photo","reparer une vieille photo","coloriser une photo","augmenter la qualite d'une photo","modifier une photo"]],
+  ["background_removal",["supprimer le fond","enlever le fond","retirer l'arriere plan","detourer une photo","fond transparent"]],
+  ["video_editing",["montage video","monter une video","couper une video","modifier une video","sous titres video","assembler des videos"]],
+  ["logo_design",["creer un logo","faire un logo","concevoir un logo","generer un logo","logo professionnel"]],
+  ["visual_design",["creer une affiche","faire un flyer","miniature youtube","visuel reseaux sociaux","creer un poster","design graphique"]],
+  ["audio_editing",["montage audio","nettoyer un audio","enregistrer une voix","modifier un son","editer un fichier audio","podcast"]],
+  ["document_creation",["rediger un document","creer un document","faire un rapport","lettre administrative","rediger une lettre","document pdf"]],
+  ["spreadsheet",["tableur","feuille de calcul","tableau de calcul","budget avec formules","creer un tableau excel","analyser des donnees"]],
+  ["project_organization",["organiser un projet","gerer mes taches","planning de projet","suivre mes projets","organiser mon equipe"]],
+  ["learn_programming",["apprendre a programmer","apprendre le code","apprendre javascript","apprendre html","creer une application","developper une application"]],
+  ["web_research",["rechercher des informations","faire une recherche web","trouver des sources","verifier une information","faire une veille"]],
+  ["content_writing",["rediger un texte","ecrire un texte","ecrire un script","creer du contenu","rediger une publication","ecrire un article"]],
+  ["idea_generation",["trouver des idees","generer des idees","brainstorming","idees de contenu","idees de business"]],
+  ["learning",["apprendre une matiere","suivre des cours","faire des exercices","apprendre une langue","apprendre l'anglais"]]
 ];
-function getIntent(q:string) { const query=norm(q); return intentRules.filter(([,phrases])=>phrases.some(p=>query.includes(norm(p)))).map(([id])=>id); }
+function getIntent(q:string) {
+  const query=norm(q).replace(/[’']/g," ");
+  return intentRules.filter(([,phrases])=>phrases.some(p=>{
+    const phrase=norm(p).replace(/[’']/g," ");
+    return query.includes(phrase);
+  })).map(([id])=>id);
+}
 function matchesTool(t:Tool,q:string) {
   const query=norm(q);
   const intents=getIntent(q);
   if(intents.length) return !!t.exactIntents?.some(intent=>intents.includes(intent));
-  const words=query.split(/[^a-z0-9]+/).filter(w=>w.length>3);
-  const keywordHits=t.keywords.filter(k=>{const key=norm(k);return key.length>3&&(query.includes(key)||words.includes(key));}).length;
-  const hay=norm([t.name,t.category,...t.keywords].join(" "));
-  const directHits=words.filter(w=>hay.split(/[^a-z0-9]+/).includes(w)).length;
-  return keywordHits>=1 && directHits>=1;
+  const words=[...new Set(query.split(/[^a-z0-9]+/).filter(w=>w.length>2))];
+  const toolWords=new Set(norm([t.name,t.category,...t.keywords].join(" ")).split(/[^a-z0-9]+/).filter(w=>w.length>2));
+  if(words.some(w=>norm(t.name).split(/[^a-z0-9]+/).includes(w))) return true;
+  const hits=words.filter(w=>toolWords.has(w));
+  // En l'absence d'intention reconnue, exiger plusieurs indices concordants.
+  return hits.length>=2;
 }
-
 export default function App() {
   const [lang,setLang]=useState<"fr"|"en">("fr");
   const [request,setRequest]=useState("");
