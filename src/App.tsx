@@ -46,7 +46,7 @@ const intentRules:[string,string[]][]=[
   ["content_writing",["rediger un texte","ecrire un texte","ecrire un script","creer du contenu"]],
   ["idea_generation",["trouver des idees","generer des idees","brainstorming"]],
   ["learning",["apprendre une matiere","suivre des cours","faire des exercices"]]
-]];
+];
 function getIntent(q:string) { const query=norm(q); return intentRules.filter(([,phrases])=>phrases.some(p=>query.includes(norm(p)))).map(([id])=>id); }
 function matchesTool(t:Tool,q:string) {
   const query=norm(q);
