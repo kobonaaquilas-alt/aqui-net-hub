@@ -53,6 +53,9 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const [tiktokProof,setTiktokProof]=useState("");
   const [facebookProof,setFacebookProof]=useState("");
   const [paymentBusy,setPaymentBusy]=useState(false);
+  const [backendReady,setBackendReady]=useState(false);
+  const [videoReady,setVideoReady]=useState(false);
+  const [cinetpayReady,setCinetpayReady]=useState(false);
 
   const refreshSummary = useCallback(async () => {
     if (!session?.access_token) return;
@@ -73,6 +76,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
 
   useEffect(() => {
     db.auth.getSession().then(({data}) => setSession(data.session));
+    fetch("/api/health").then(r=>r.ok?r.json():Promise.reject()).then(d=>{setBackendReady(!!d.supabase);setVideoReady(!!d.supabase&&!!d.video_github_token);setCinetpayReady(!!d.cinetpay);}).catch(()=>{setBackendReady(false);setVideoReady(false);setCinetpayReady(false);});
     const {data:{subscription}} = db.auth.onAuthStateChange((event,next) => {
       if (event === "PASSWORD_RECOVERY") setRecoveryMode(true);
       setSession(next);
@@ -184,6 +188,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   },[session?.access_token]);
   async function startSocialAudit(){
     if(!session)return;
+    if(!backendReady){setSocialResult("Service temporairement indisponible : la clé privée Supabase du Worker doit être configurée.");return;}
     let platform="Réseau social";
     try{const host=new URL(socialUrl).hostname.toLowerCase();if(host.includes("tiktok"))platform="TikTok";else if(host.includes("facebook")||host.includes("fb."))platform="Facebook";else if(host.includes("instagram"))platform="Instagram";else if(host.includes("youtube"))platform="YouTube";else if(host.includes("x.com")||host.includes("twitter"))platform="X";else if(host.includes("linkedin"))platform="LinkedIn";else throw new Error("Plateforme non reconnue.");}
     catch{setSocialResult("Lien de profil invalide ou réseau non pris en charge.");return;}
@@ -212,6 +217,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   }
   async function startPayment(plan:Plan){
     if(!session?.access_token){setNotice("Connecte-toi pour payer.");return;}
+    if(!cinetpayReady){setNotice("Paiement indisponible : les clés API CinetPay ne sont pas encore configurées.");return;}
     const parts=fullName.trim().split(/\s+/);const first_name=parts[0]||"Client";const last_name=parts.slice(1).join(" ")||"AQUI";
     setPaymentBusy(true);setNotice("");
     try{
@@ -226,6 +232,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       setVideoNotice(fr ? "Connecte-toi pour utiliser le générateur." : "Sign in to use the generator.");
       return;
     }
+    if(!videoReady){setVideoNotice("Générateur indisponible : la clé Supabase privée et le jeton GitHub doivent être configurés.");return;}
     setVideoBusy(true); setVideoNotice(""); setVideoUrl(""); setVideoStatus("");
     try {
       const response = await fetch("/api/video/jobs", {
@@ -338,7 +345,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
           <label>{fr?"Publications / semaine":"Posts / week"}<input type="number" min="0" step="0.5" value={socialFrequency} onChange={e=>setSocialFrequency(e.target.value)}/></label>
         </div>
         <input type="text" value={socialGoal} onChange={e=>setSocialGoal(e.target.value)} placeholder={fr?"Objectif : vues, abonnés, ventes…":"Goal: views, followers, sales…"}/>
-        <button type="button" className="primary-button" disabled={busy||!socialUrl.trim()||!socialName.trim()} onClick={()=>void startSocialAudit()}>{busy?"…":fr?"Lancer l'analyse":"Run analysis"}</button>
+        <button type="button" className="primary-button" disabled={busy||!backendReady||!socialUrl.trim()||!socialName.trim()} onClick={()=>void startSocialAudit()}>{busy?"…":fr?"Lancer l'analyse":"Run analysis"}</button>
       </>:<p className="account-message">{fr?"Tu as utilisé tes 3 analyses gratuites. Pour continuer, abonne-toi aux deux comptes ci-dessous et envoie les preuves.":"Your 3 free reviews are used. Follow both accounts below and submit proof to continue."}</p>}
       {socialCount>=3&&<div className="follow-gate">
         <h4>{fr?"Étape 1 — Abonne-toi aux deux comptes":"Step 1 — Follow both accounts"}</h4>
@@ -348,7 +355,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
           <input type="url" value={tiktokProof} onChange={e=>setTiktokProof(e.target.value)} placeholder={fr?"Lien de preuve TikTok (capture)":"TikTok follow proof URL"}/>
           <input type="url" value={facebookProof} onChange={e=>setFacebookProof(e.target.value)} placeholder={fr?"Lien de preuve Facebook (capture)":"Facebook follow proof URL"}/>
           <button className="primary-button" disabled={busy||!socialName.trim()||!tiktokProof.trim()||!facebookProof.trim()||followStatus==="pending"} onClick={()=>void submitFollowProof()}>{fr?"Envoyer pour vérification":"Submit for review"}</button>
-        </>:<><p>{fr?"Abonnements validés. Étape 2 : active ton abonnement pour poursuivre les analyses.":"Follows verified. Step 2: activate a subscription to continue."}</p>{!socialSubscribed&&plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>void startPayment(p)}>{paymentBusy?"…":fr?"S'abonner et payer":"Subscribe and pay"}</button></article>)}{socialSubscribed&&<p className="account-message">{fr?"Abonnement actif : les analyses supplémentaires sont débloquées.":"Active subscription: additional reviews are unlocked."}</p>}</>}
+        </>:<><p>{fr?"Abonnements validés. Étape 2 : active ton abonnement pour poursuivre les analyses.":"Follows verified. Step 2: activate a subscription to continue."}</p>{!socialSubscribed&&plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{paymentBusy?"…":fr?"S'abonner et payer":"Subscribe and pay"}</button></article>)}{socialSubscribed&&<p className="account-message">{fr?"Abonnement actif : les analyses supplémentaires sont débloquées.":"Active subscription: additional reviews are unlocked."}</p>}</>}
       </div>}
       {socialResult&&<pre className="account-message social-report" role="status">{socialResult}</pre>}
       <small className="account-footnote">{fr?"Les captures sont contrôlées manuellement. Les statistiques ne sont pas authentifiées automatiquement par TikTok ou Meta.":"Screenshots are reviewed manually. TikTok or Meta do not automatically authenticate these metrics here."}</small>
@@ -364,7 +371,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
           <option value="2">2 secondes · gratuit</option><option value="3">3 secondes · gratuit</option><option value="4">4 secondes · gratuit</option><option value="5">5 secondes · gratuit</option><option value="6">6 secondes · abonnement</option><option value="8">8 secondes · abonnement</option><option value="10">10 secondes · abonnement</option>
         </select>
       </label>
-      <button type="button" className="primary-button" disabled={videoBusy || !videoImageUrl.trim() || videoPrompt.trim().length<3} onClick={()=>void startVideo()}>
+      <button type="button" className="primary-button" disabled={videoBusy || !videoReady || !videoImageUrl.trim() || videoPrompt.trim().length<3} onClick={()=>void startVideo()}>
         {videoBusy ? "…" : (fr ? "Lancer la génération" : "Generate video")}
       </button>
       {videoRequestId && <p className="video-status">{fr ? "État :" : "Status:"} {videoStatus || "queued"} · {videoRequestId}</p>}
@@ -396,7 +403,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       </form>
     </div>}
     {session && service==="partners" && campaigns.length>0 && <div className="account-card"><h3>{fr?"Campagnes actives":"Active campaigns"}</h3>{campaigns.map(c=><article key={c.id}><strong>{c.title}</strong><p>{c.description}</p>{c.destination_url&&<a href={c.destination_url} target="_blank" rel="noreferrer">{fr?"Découvrir":"Learn more"} ↗</a>}</article>)}</div>}
-    {service==="partners" && <div className="account-card"><h3>{fr?"Abonnements publicité et partenariat":"Advertising and partnership plans"}</h3>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!session||paymentBusy} onClick={()=>void startPayment(p)}>{!session?(fr?"Connecte-toi pour payer":"Sign in to pay"):(paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay")}</button></article>):<p>{fr?"Aucune formule n'est publiée pour le moment.":"No plans are published yet."}</p>}
+    {service==="partners" && <div className="account-card"><h3>{fr?"Abonnements publicité et partenariat":"Advertising and partnership plans"}</h3>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!session||!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!session?(fr?"Connecte-toi pour payer":"Sign in to pay"):(paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay")}</button></article>):<p>{fr?"Aucune formule n'est publiée pour le moment.":"No plans are published yet."}</p>}
     <small className="account-footnote">{fr?"500 FCFA / mois · 5 000 FCFA / an. Le paiement dépend de la configuration active du compte marchand CinetPay.":"500 XOF / month · 5,000 XOF / year. Payment requires an active CinetPay merchant setup."}</small></div>}
     {!session && <p className="account-footnote">{fr?"Connecte-toi pour utiliser le service sélectionné.":"Sign in to use the selected service."}</p>}
   </section>;
