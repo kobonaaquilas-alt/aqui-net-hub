@@ -3,7 +3,8 @@ import { unzipSync } from "fflate";
 type VideoEnv = {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
+  SUPABASE_SECRET_KEY?: string;
   GITHUB_TOKEN: string;
   VIDEO_WORKFLOW_REF?: string;
 };
@@ -19,7 +20,7 @@ function reply(data: unknown, status = 200) {
 }
 function serviceHeaders(env: VideoEnv) {
   return {
-    apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+    apikey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || "",
     "Content-Type": "application/json",
     Prefer: "return=representation",
   };
@@ -42,7 +43,7 @@ const githubHeaders = (env: VideoEnv) => ({
 });
 
 export async function handleVideo(request: Request, env: VideoEnv): Promise<Response> {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !env.SUPABASE_SERVICE_ROLE_KEY || !env.GITHUB_TOKEN)
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !(env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY) || !env.GITHUB_TOKEN)
     return reply({ error: "Service vidéo non configuré." }, 503);
   const user = await currentUser(request, env);
   if (!user) return reply({ error: "Connexion requise." }, 401);
@@ -198,7 +199,7 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
     {
       method: "POST",
       headers: {
-        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || "",
         "Content-Type": "video/mp4",
         "x-upsert": "true",
       },
