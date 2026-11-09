@@ -238,7 +238,7 @@ export default {
         const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_site_settings?setting_key=eq.adsense_client&select=setting_value&limit=1`, { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY } });
         const rows = response.ok ? await response.json() as Array<{ setting_value: string }> : [];
         const publisher = (rows[0]?.setting_value || "").replace(/^ca-pub-/, "");
-        return new Response(/^\\d{16}$/.test(publisher) ? `google.com, pub-${publisher}, DIRECT, f08c47fec0942fa0\\n` : "", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=300" } });
+        return new Response(/^\d{16}$/.test(publisher) ? `google.com, pub-${publisher}, DIRECT, f08c47fec0942fa0\n` : "", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=300" } });
       }
       if (url.pathname.startsWith("/api/social/")) return handleSocial(request, env);
       if (request.method === "GET" && url.pathname === "/api/health")
