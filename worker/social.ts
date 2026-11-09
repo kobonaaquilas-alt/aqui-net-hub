@@ -65,14 +65,27 @@ export async function handleSocial(request:Request,env:Env){
    if(profile.protocol!=="https:"||account.length<2)return json({error:"Renseigne un profil HTTPS et le nom du compte."},400);
    const fields=["followers","average_views","average_likes","average_comments","posts_per_week"];
    for(const k of fields){const n=Number(b[k]);if(!Number.isFinite(n)||n<0||n>100000000000)return json({error:`Valeur invalide : ${k}`},400);}
-   const count=await countAudits(env,user.id); const access=await entitlement(env,user.id);
-   if(count>=3&&access.followStatus!=="approved")return json({error:access.followStatus==="pending"?"Ta preuve d'abonnement est en cours de vérification.":"Les 3 analyses gratuites sont utilisées. Abonne-toi aux comptes TikTok et Facebook puis envoie les preuves pour validation.",code:access.followStatus==="pending"?"FOLLOW_PENDING":"FOLLOW_REQUIRED",count},403);
-   if(count>=3&&!access.subscribed)return json({error:"Abonnement AQUI NET HUB requis après validation des abonnements TikTok et Facebook.",code:"SUBSCRIPTION_REQUIRED",count},402);
    const report=analyze(b);
-   const payload={user_id:user.id,social_url:profile.toString(),platform,account_name:account,followers:Number(b.followers),average_views:Number(b.average_views),average_likes:Number(b.average_likes),average_comments:Number(b.average_comments),posts_per_week:Number(b.posts_per_week),goal:String(b.goal||"").slice(0,500),report};
-   const saved=await fetch(`${env.SUPABASE_URL}/rest/v1/hub_social_audits`,{method:"POST",headers:headers(env),body:JSON.stringify(payload)});
+   const saved=await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/create_hub_social_audit`,{
+    method:"POST",headers:headers(env),
+    body:JSON.stringify({
+     p_user_id:user.id,p_social_url:profile.toString(),p_platform:platform,p_account_name:account,
+     p_followers:Number(b.followers),p_average_views:Number(b.average_views),
+     p_average_likes:Number(b.average_likes),p_average_comments:Number(b.average_comments),
+     p_posts_per_week:Number(b.posts_per_week),p_goal:String(b.goal||"").slice(0,500),p_report:report
+    })
+   });
    if(!saved.ok)return json({error:"Impossible d'enregistrer l'analyse."},502);
-   return json({ok:true,count:count+1,free_remaining:Math.max(0,2-count),report});
+   const result=await saved.json() as {ok:boolean;code?:string;count:number};
+   if(!result.ok){
+    const messages:Record<string,string>={
+     FOLLOW_REQUIRED:"Les 3 analyses gratuites sont utilisées. Abonne-toi aux comptes TikTok et Facebook puis envoie les preuves pour validation.",
+     FOLLOW_PENDING:"Ta preuve d'abonnement est en cours de vérification.",
+     SUBSCRIPTION_REQUIRED:"Abonnement AQUI NET HUB requis après validation des abonnements TikTok et Facebook."
+    };
+    return json({error:messages[result.code||""]||"Accès refusé.",code:result.code,count:result.count},result.code==="SUBSCRIPTION_REQUIRED"?402:403);
+   }
+   return json({ok:true,count:result.count,free_remaining:Math.max(0,3-result.count),report});
   }
   return json({error:"Route sociale introuvable."},404);
  }catch{return json({error:"Erreur pendant le traitement social."},500);}
