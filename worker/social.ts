@@ -1,7 +1,7 @@
-type Env = { SUPABASE_URL: string; SUPABASE_ANON_KEY: string; SUPABASE_SERVICE_ROLE_KEY: string };
+type Env = { SUPABASE_URL: string; SUPABASE_ANON_KEY: string; SUPABASE_SERVICE_ROLE_KEY?: string; SUPABASE_SECRET_KEY?: string };
 type User = { id: string };
 const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
-const headers=(env:Env)=>({apikey:env.SUPABASE_SERVICE_ROLE_KEY,"Content-Type":"application/json",Prefer:"return=representation"});
+const headers=(env:Env)=>({apikey:env.SUPABASE_SERVICE_ROLE_KEY||env.SUPABASE_SECRET_KEY||"","Content-Type":"application/json",Prefer:"return=representation"});
 async function userFrom(request:Request,env:Env):Promise<User|null>{
  const token=request.headers.get("Authorization")?.replace(/^Bearer\s+/i,"").trim();
  if(!token)return null;
@@ -41,7 +41,7 @@ function analyze(body:any){
  return {engagement_rate:Number(engagement.toFixed(2)),views_to_followers_percent:Number(viewRatio.toFixed(1)),strengths,issues,actions,disclaimer:"Analyse indicative calculée à partir des chiffres déclarés par l'utilisateur. Les statistiques n'ont pas été vérifiées auprès du réseau social."};
 }
 export async function handleSocial(request:Request,env:Env){
- if(!env.SUPABASE_URL||!env.SUPABASE_ANON_KEY||!env.SUPABASE_SERVICE_ROLE_KEY)return json({error:"Service social non configuré."},503);
+ if(!env.SUPABASE_URL||!env.SUPABASE_ANON_KEY||!(env.SUPABASE_SERVICE_ROLE_KEY||env.SUPABASE_SECRET_KEY))return json({error:"Service social non configuré."},503);
  const user=await userFrom(request,env); if(!user)return json({error:"Connexion requise."},401);
  const url=new URL(request.url);
  try{
