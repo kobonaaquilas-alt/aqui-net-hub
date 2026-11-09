@@ -1,7 +1,9 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AccountHub from "./AccountHub";
 import AdminPanel from "./AdminPanel";
 
+type Service = "tools" | "video" | "social" | "partners";
+type Campaign = {id:string;title:string;description:string;destination_url:string|null};
 type Tool = { name:string; category:string; description:string; url:string; keywords:string[]; how:string[]; benefits:string[] };
 const tools:Tool[] = [
   {name:"ChatGPT",category:"Assistant IA",description:"Préparer des idées, des scripts, des textes et des plans de travail.",url:"https://chatgpt.com/",keywords:["idee","idée","texte","script","ecrire","écrire","rediger","rédiger","plan","apprendre","expliquer","strategie","stratégie","contenu"],how:["Ouvre le site et crée un compte gratuit si nécessaire.","Décris ton objectif avec le contexte et le résultat attendu.","Demande une réponse structurée, puis affine avec des précisions."],benefits:["Aide à clarifier une idée et organiser un projet.","Produit des brouillons et des plans rapidement.","Formule gratuite disponible, avec limites d'utilisation."]},
@@ -35,8 +37,13 @@ export default function App() {
   const [request,setRequest]=useState("");
   const [submitted,setSubmitted]=useState("");
   const [selectedTool,setSelectedTool]=useState<Tool|null>(null);
+  const [activeService,setActiveService]=useState<Service|null>(null);
+  const [campaigns,setCampaigns]=useState<Campaign[]>([]);
+  const [adsenseClient,setAdsenseClient]=useState("");
   const fr=lang==="fr";
   const recommendations=useMemo(()=>submitted?tools.filter(t=>matchesTool(t,submitted)).slice(0,6):[],[submitted]);
+  useEffect(()=>{fetch("/api/public/campaigns").then(r=>r.ok?r.json():Promise.reject()).then(d=>setCampaigns(d.campaigns||[])).catch(()=>{});fetch("/api/public/settings").then(r=>r.ok?r.json():Promise.reject()).then(d=>setAdsenseClient(d.adsense_client||"")).catch(()=>{});},[]);
+  useEffect(()=>{if(!adsenseClient||!/^ca-pub-[0-9]{16}$/.test(adsenseClient)||document.querySelector("script[data-aqui-adsense]"))return;const s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";s.dataset.aquiAdsense="true";s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client="+adsenseClient;document.head.appendChild(s);},[adsenseClient]);
   const syncRemote=useCallback((_favorites:string[],_progress:string[])=>{},[]);
   const gated=()=>document.getElementById("compte")?.scrollIntoView({behavior:"smooth",block:"start"});
 
@@ -55,16 +62,16 @@ export default function App() {
       </section>
 
       <section className="hub-services section" id="services">
-        <div className="section-heading"><span className="eyebrow">CHOISIS TON OBJECTIF</span><h2>{fr?"Que souhaites-tu faire ?":"What would you like to do?"}</h2><p>{fr?"Les quatre services essentiels d'AQUI NET HUB. Les fonctions personnelles nécessitent un compte.":"Four core AQUI NET HUB services. Personal features require an account."}</p></div>
+        <div className="section-heading"><span className="eyebrow">AQUI NET HUB · SERVICES</span><h2>{fr?"Choisis un service":"Choose a service"}</h2><p>{fr?"Appuie sur une option pour découvrir uniquement ses fonctions.":"Select a service to reveal its features."}</p></div>
         <div className="service-grid">
-          <article className="service-card service-public"><span className="service-number">01</span><span className="service-symbol">✦</span><h3>{fr?"Trouver les outils adaptés":"Find the right tools"}</h3><p>{fr?"Décris ton projet : nous affichons uniquement les outils pertinents, avec leur guide d'utilisation.":"Describe your task: only relevant tools appear, with usage guides."}</p><a className="primary-button" href="#demande-outils">{fr?"Décrire mon besoin":"Describe my need"} <span>↗</span></a><small>{fr?"Accessible sans compte":"No account required"}</small></article>
-          <article className="service-card"><span className="service-number">02</span><span className="service-symbol">▶</span><h3>{fr?"Générer une vidéo IA":"Generate an AI video"}</h3><p>{fr?"Crée un clip à partir d'une image et d'une description.":"Create a clip from an image and a prompt."}</p><button className="secondary-button" onClick={()=>gated()}>{fr?"Accéder au générateur":"Open video generator"} ↗</button><small>{fr?"Compte obligatoire":"Account required"}</small></article>
-          <article className="service-card"><span className="service-number">03</span><span className="service-symbol">◎</span><h3>{fr?"Analyser mes réseaux sociaux":"Analyze my social accounts"}</h3><p>{fr?"Obtiens un diagnostic de ton positionnement, de tes contenus et des pistes de progression.":"Get a review of your positioning, content and growth opportunities."}</p><button className="secondary-button" onClick={()=>gated()}>{fr?"Analyser mon compte":"Analyze my account"} ↗</button><small>{fr?"Compte obligatoire":"Account required"}</small></article>
-          <article className="service-card"><span className="service-number">04</span><span className="service-symbol">◇</span><h3>{fr?"Proposer un partenariat":"Propose a partnership"}</h3><p>{fr?"Présente ton organisation, ta marque ou ton idée de collaboration.":"Introduce your organization, brand or collaboration idea."}</p><button className="secondary-button" onClick={()=>gated()}>{fr?"Déposer une proposition":"Submit a proposal"} ↗</button><small>{fr?"Compte obligatoire":"Account required"}</small></article>
+          <button type="button" className={"service-card service-public "+(activeService==="tools"?"selected":"")} onClick={()=>{setActiveService("tools");setSelectedTool(null);}}><span className="service-number">01</span><span className="service-symbol">✦</span><h3>{fr?"Trouver des outils":"Find tools"}</h3><span className="service-action">{fr?"Ouvrir le service":"Open service"} ↗</span></button>
+          <button type="button" className={"service-card "+(activeService==="video"?"selected":"")} onClick={()=>setActiveService("video")}><span className="service-number">02</span><span className="service-symbol">▶</span><h3>{fr?"Génération vidéo IA":"AI video generation"}</h3><span className="service-action">{fr?"Ouvrir le service":"Open service"} ↗</span></button>
+          <button type="button" className={"service-card "+(activeService==="social"?"selected":"")} onClick={()=>setActiveService("social")}><span className="service-number">03</span><span className="service-symbol">◎</span><h3>{fr?"Analyse des réseaux sociaux":"Social account analysis"}</h3><span className="service-action">{fr?"Ouvrir le service":"Open service"} ↗</span></button>
+          <button type="button" className={"service-card "+(activeService==="partners"?"selected":"")} onClick={()=>setActiveService("partners")}><span className="service-number">04</span><span className="service-symbol">◇</span><h3>{fr?"Partenariats & publicité":"Partnerships & advertising"}</h3><span className="service-action">{fr?"Ouvrir le service":"Open service"} ↗</span></button>
         </div>
       </section>
-
-      <section className="section request-section" id="demande-outils">
+      {campaigns.length>0&&<section className="promo-ticker" aria-label="Publicités"><div className="promo-track">{[...campaigns,...campaigns].map((campaign,i)=><a key={campaign.id+"-"+i} href={campaign.destination_url||"#services"} target={campaign.destination_url?"_blank":undefined} rel="noreferrer"><span>✦</span> {campaign.title} <small>{campaign.description}</small> <b>{fr?"En savoir plus":"Learn more"} ↗</b></a>)}</div></section>}
+      {activeService==="tools"&&<section className="section request-section" id="demande-outils">
         <div className="section-heading"><span className="eyebrow">01 · SMART TOOL FINDER</span><h2>{fr?"Décris ce que tu veux accomplir":"Describe what you want to achieve"}</h2><p>{fr?"Exemple : je veux créer un logo, monter une vidéo TikTok, apprendre l'anglais ou construire un site web.":"Example: I want to create a logo, edit a TikTok video, learn English or build a website."}</p></div>
         <form className="tool-request-form" onSubmit={e=>{e.preventDefault();setSubmitted(request.trim());setSelectedTool(null);}}>
           <textarea value={request} onChange={e=>setRequest(e.target.value)} rows={3} placeholder={fr?"Décris ton objectif avec tes propres mots…":"Describe your goal in your own words…"} required />
@@ -81,11 +88,11 @@ export default function App() {
           <a className="primary-button" href={selectedTool.url} target="_blank" rel="noopener noreferrer">{fr?"Ouvrir le site officiel":"Open official website"} ↗</a>
           <small className="free-disclaimer">{fr?"Les services indiqués proposent une formule ou un usage gratuit ; des limites, crédits ou options payantes peuvent s'appliquer selon l'outil. Vérifie les conditions sur le site officiel.":"These services offer a free tier or free usage; limits, credits or paid options may apply. Check the official terms."}</small>
         </article>}
-      </section>
+      </section>}
 
-      <AccountHub favorites={[]} progress={[]} lang={lang} onRemoteSync={syncRemote}/>
+      {activeService && activeService!=="tools" && <AccountHub service={activeService} favorites={[]} progress={[]} lang={lang} onRemoteSync={syncRemote}/>}
       <AdminPanel/>
     </main>
-    <footer className="site-footer"><a className="brand footer-brand" href="#accueil"><span className="brand-mark">A</span><span>AQUI NET <strong>HUB</strong></span></a><p>{fr?"Des outils et des opportunités pour avancer dans le numérique.":"Tools and opportunities to move forward digitally."}</p><small>© {new Date().getFullYear()} AQUI NET HUB</small></footer>
+    <footer className="site-footer"><a className="brand footer-brand" href="#accueil"><span className="brand-mark">A</span><span>AQUI NET <strong>HUB</strong></span></a><p>{fr?"Des outils et des opportunités pour avancer dans le numérique.":"Tools and opportunities to move forward digitally."}</p><div className="footer-links"><a href="https://tiktok.com/@el.maestro907" target="_blank" rel="noreferrer">TikTok · S’abonner</a><a href="https://www.facebook.com/profile.php?id=61582777979597" target="_blank" rel="noreferrer">Facebook · S’abonner</a></div><div className="footer-contact"><strong>{fr?"Contact, assistance et dons":"Contact, support and donations"}</strong><a href="tel:+22892244653">+228 92 24 46 53</a><a href="tel:+22898393862">+228 98 39 38 62</a><a href="https://wa.me/22892244653" target="_blank" rel="noreferrer">WhatsApp</a></div><small>© {new Date().getFullYear()} AQUI NET HUB</small></footer>
   </div>;
 }
