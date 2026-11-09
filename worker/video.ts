@@ -76,7 +76,7 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
       if (!access.ok) return reply({ error: "Vérification de l'abonnement impossible." }, 502);
       const active = await access.json() as unknown[];
       if (!active.length) return reply({
-        error: "Les vidéos de plus de 5 secondes nécessitent un abonnement AQUI NET HUB (500 FCFA/mois ou 5 000 FCFA/an).",
+        error: "La génération vidéo nécessite un abonnement AQUI NET HUB actif.",
         code: "PAYMENT_REQUIRED",
       }, 402);
     }
