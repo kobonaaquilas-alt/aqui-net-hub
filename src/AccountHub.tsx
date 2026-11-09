@@ -3,14 +3,14 @@ import { createClient, type Session } from "@supabase/supabase-js";
 
 const db = createClient("https://xbobkysbtvtmepqgtnbt.supabase.co", "sb_publishable_AGtfBQyqyKbH5C_4f5cQgw_bm0MmusA");
 type Service = "video" | "social" | "partners";
-type Props = { service: Service; favorites: string[]; progress: string[]; lang: "fr" | "en"; onRemoteSync: (favorites: string[], progress: string[]) => void };
+type Props = { service: Service; favorites: string[]; progress: string[]; lang: "fr" | "en"; onRemoteSync: (favorites: string[], progress: string[]) => void; authOnly?: boolean };
 type Plan = { id: string; name: string; description: string; amount_xof: number; duration_days: number };
 type Campaign = { id: string; title: string; description: string; destination_url: string | null };
 type Subscription = { id: string; plan_id: string; plan_name: string; starts_at: string; ends_at: string; status: string };
 type Payment = { id: string; merchant_transaction_id: string; amount_xof: number; currency: string; status: string; created_at: string; paid_at: string | null };
 type AccountSummary = { subscriptions: Subscription[]; payments: Payment[] };
 
-export default function AccountHub({ service, favorites, progress, lang, onRemoteSync }: Props) {
+export default function AccountHub({ service, favorites, progress, lang, onRemoteSync, authOnly = false }: Props) {
   const fr = lang === "fr";
   const [session, setSession] = useState<Session | null>(null);
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -303,8 +303,23 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   }
 
   const input=(value:string,change:(v:string)=>void,placeholder:string,type="text",required=true)=><input type={type} value={value} onChange={e=>change(e.target.value)} placeholder={placeholder} required={required}/>;
+  const hasActiveSubscription=!!summary?.subscriptions.some(item=>item.status==="active"&&new Date(item.ends_at).getTime()>Date.now());
+  const videoSeconds=Number(videoDuration);
+  const videoPrice=videoSeconds<3?0:25+((videoSeconds-15)/5)*25;
   const date=(value:string)=>new Date(value).toLocaleDateString(fr?"fr-FR":"en-GB");
   const paymentLabel=(status:string)=>status==="paid"?(fr?"Payé":"Paid"):status==="failed"?(fr?"Échoué":"Failed"):(fr?"En attente":"Pending");
+  if (authOnly) return <section className="section account-hub account-access" id="account-access">
+    <div className="section-heading"><div><span className="eyebrow">AQUI NET HUB · ESPACE MEMBRE</span><h2>{fr?"Créer un compte ou se connecter":"Create an account or sign in"}</h2><p>{fr?"Un compte est nécessaire pour utiliser les trois services protégés.":"An account is required to use the three protected services."}</p></div></div>
+    {!session ? <div className="account-card">
+      <div className="account-tabs"><button type="button" className={mode==="login"?"active":""} onClick={()=>setMode("login")}>{fr?"Connexion":"Sign in"}</button><button type="button" className={mode==="signup"?"active":""} onClick={()=>setMode("signup")}>{fr?"Créer un compte":"Create account"}</button></div>
+      {mode==="signup" && <>{input(fullName,setFullName,fr?"Nom complet":"Full name")}{input(phone,setPhone,fr?"Téléphone (facultatif)":"Phone (optional)","tel",false)}</>}
+      {input(email,setEmail,"E-mail","email")}{input(password,setPassword,fr?"Mot de passe (8 caractères minimum)":"Password (8 characters minimum)","password")}
+      <button className="primary-button" disabled={busy||!email||password.length<8} onClick={()=>void authenticate()}>{busy?"…":mode==="login"?(fr?"Se connecter":"Sign in"):(fr?"Créer mon compte":"Create account")}</button>
+      {mode==="login" && <button type="button" className="text-button account-reset-link" disabled={busy} onClick={()=>void sendPasswordReset()}>{fr?"Mot de passe oublié ?":"Forgot password?"}</button>}
+      {notice && <p className="account-message" role="status">{notice}</p>}
+    </div> : <div className="account-card"><p>{fr?"Connecté avec":"Signed in as"} <strong>{session.user.email}</strong></p><button className="filter-button" onClick={()=>void db.auth.signOut()}>{fr?"Se déconnecter":"Sign out"}</button></div>}
+  </section>;
+
   return <section className="section account-hub" id="compte">
     <div className="section-heading"><div><span className="eyebrow">AQUI NET HUB · {service==="video"?"AQUI VIDEO AI":service==="social"?"SOCIAL AUDIT":"PARTENARIATS"}</span><h2>{service==="video"?(fr?"Génération vidéo IA":"AI video generation"):service==="social"?(fr?"Analyse de compte social":"Social account analysis"):(fr?"Partenariats et abonnements":"Partnerships and subscriptions")}</h2><p>{fr?"Connecte-toi pour accéder à ce service.":"Sign in to access this service."}</p></div></div>
     {!session ? <div className="account-card">
@@ -315,10 +330,11 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       {mode==="login" && <button type="button" className="text-button account-reset-link" disabled={busy} onClick={()=>void sendPasswordReset()}>{fr?"Mot de passe oublié ?":"Forgot password?"}</button>}
     </div> : <div className="account-card"><p>{fr?"Connecté avec":"Signed in as"} <strong>{session.user.email}</strong></p><p className="sync-status">{fr?"Favoris et progression synchronisés sur ce compte.":"Favorites and progress synced to this account."}</p><button className="filter-button" onClick={()=>void db.auth.signOut()}>{fr?"Se déconnecter":"Sign out"}</button></div>}
     {notice && <p className="account-message" role="status">{notice}</p>}
+    {session && !hasActiveSubscription && <div className="account-card subscription-required"><span className="eyebrow">AQUI NET HUB · ABONNEMENT</span><h3>{fr?"Abonnement requis":"Subscription required"}</h3><p>{fr?"Pour utiliser ce service, connecte-toi et active d’abord un abonnement. Choisis une formule ci-dessous.":"To use this service, sign in and activate a subscription first. Choose a plan below."}</p>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement bientôt disponible":"Payment coming soon"):paymentBusy?"…":fr?"S’abonner et payer":"Subscribe and pay"}</button></article>):<p>{fr?"Les formules d’abonnement seront affichées ici dès leur activation.":"Subscription plans will appear here when activated."}</p>}</div>}
 
     {session && recoveryMode && <div className="account-card password-recovery-card"><h3>{fr?"Définir un nouveau mot de passe":"Set a new password"}</h3>{input(newPassword,setNewPassword,fr?"Nouveau mot de passe (8 caractères minimum)":"New password (at least 8 characters)","password")}<button type="button" className="primary-button" disabled={busy||newPassword.length<8} onClick={()=>void updatePassword()}>{busy?"…":fr?"Mettre à jour le mot de passe":"Update password"}</button></div>}
 
-    {session && service==="partners" && <div className="account-card account-summary">
+    {session && hasActiveSubscription && service==="partners" && <div className="account-card account-summary">
       <div className="account-summary-heading"><div><h3>{fr?"Mes abonnements et paiements":"My subscriptions and payments"}</h3><p>{fr?"Statuts confirmés par le serveur.":"Statuses confirmed by the server."}</p></div><button type="button" className="filter-button" disabled={summaryBusy} onClick={()=>void refreshSummary()}>{summaryBusy?"…":fr?"Actualiser":"Refresh"}</button></div>
       <h4>{fr?"Abonnements":"Subscriptions"}</h4>
       {summary?.subscriptions.length ? summary.subscriptions.map(item=>{
@@ -330,7 +346,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     </div>}
 
 
-    {session && service==="social" && <div className="account-card social-audit">
+    {session && hasActiveSubscription && service==="social" && <div className="account-card social-audit">
       <span className="eyebrow">AQUI SOCIAL AUDIT · {socialCount}/3 {fr?"analyses gratuites":"free reviews"}</span>
       <h3>{fr?"Diagnostic de ton compte":"Your account review"}</h3>
       <p>{fr?"Renseigne les chiffres visibles dans les statistiques de ton réseau. Le rapport est calculé à partir de ces données déclarées : AQUI NET HUB ne se connecte pas encore directement à ton compte social.":"Enter figures from your platform analytics. The report uses the figures you provide; AQUI NET HUB does not yet connect directly to your social account."}</p>
@@ -360,17 +376,19 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       {socialResult&&<pre className="account-message social-report" role="status">{socialResult}</pre>}
       <small className="account-footnote">{fr?"Les captures sont contrôlées manuellement. Les statistiques ne sont pas authentifiées automatiquement par TikTok ou Meta.":"Screenshots are reviewed manually. TikTok or Meta do not automatically authenticate these metrics here."}</small>
     </div>}
-    {session && service==="video" && <div className="account-card video-studio">
+    {session && hasActiveSubscription && service==="video" && <div className="account-card video-studio">
       <span className="eyebrow">AQUI VIDEO AI</span>
       <h3>{fr ? "Créer une vidéo à partir d'une image" : "Create a video from an image"}</h3>
-      <p>{fr ? "Wan 2.2 : clips de 2 à 5 secondes gratuits. Les vidéos de 6, 8 ou 10 secondes nécessitent un abonnement et sont assemblées en segments successifs de 5 secondes maximum." : "Wan 2.2: free clips of 2–5 seconds. 6, 8 or 10 second videos require an active subscription and are assembled from consecutive clips."}</p>
+      <p>{fr ? "Le moteur assemble des segments de 5 secondes. 2 secondes sont gratuites ; les vidéos longues sont proposées par paliers de 5 secondes, jusqu’à 60 secondes." : "The engine joins 5-second segments. 2 seconds are free; longer videos are offered in 5-second increments, up to 60 seconds."}</p>
       <input type="url" value={videoImageUrl} onChange={e=>setVideoImageUrl(e.target.value)} placeholder={fr ? "Lien direct public de l'image (JPG, PNG, WEBP)" : "Public direct image URL (JPG, PNG, WEBP)"} required />
       <textarea value={videoPrompt} onChange={e=>setVideoPrompt(e.target.value)} placeholder={fr ? "Décris précisément le mouvement souhaité…" : "Describe the motion you want…"} required />
       <label>{fr ? "Durée du clip" : "Clip duration"}
         <select value={videoDuration} onChange={e=>{setVideoDuration(e.target.value);setVideoPaywall(false);}}>
-          <option value="2">2 secondes · gratuit</option><option value="3">3 secondes · gratuit</option><option value="4">4 secondes · gratuit</option><option value="5">5 secondes · gratuit</option><option value="6">6 secondes · abonnement</option><option value="8">8 secondes · abonnement</option><option value="10">10 secondes · abonnement</option>
+          <option value="2">2 secondes · gratuit</option>{Array.from({length:10},(_,i)=>(i+3)*5).map(seconds=><option key={seconds} value={seconds}>{seconds} secondes · {(25+((seconds-15)/5)*25).toLocaleString("fr-FR")} FCFA</option>)}
         </select>
       </label>
+      <p className="video-price">{fr?"Prix de cette génération :":"Price for this generation:"} <strong>{videoPrice===0?(fr?"Gratuit":"Free"):`${videoPrice.toLocaleString("fr-FR")} FCFA`}</strong></p>
+      <small className="account-footnote">{fr?"Tarif : 15 s = 25 FCFA ; chaque tranche supplémentaire de 5 s ajoute 25 FCFA. Maximum proposé : 60 s (250 FCFA).":"Pricing: 15 s = 25 XOF; each additional 5-second block adds 25 XOF. Maximum offered: 60 s (250 XOF)."}</small>
       <button type="button" className="primary-button" disabled={videoBusy || !videoReady || !videoImageUrl.trim() || videoPrompt.trim().length<3} onClick={()=>void startVideo()}>
         {videoBusy ? "…" : (fr ? "Lancer la génération" : "Generate video")}
       </button>
@@ -378,10 +396,10 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       {videoNotice && <p className="account-message" role="status">{videoNotice}</p>}
       {videoPaywall && <div className="follow-gate"><h4>{fr?"Choisis ton abonnement pour débloquer les vidéos longues":"Choose a subscription to unlock longer videos"}</h4>{plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement indisponible":"Payment unavailable"):paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay"}</button></article>)}</div>}
       {videoUrl && <div className="video-result"><video controls playsInline src={videoUrl} /><a href={videoUrl} target="_blank" rel="noreferrer">{fr ? "Ouvrir / enregistrer le MP4" : "Open / save MP4"} ↗</a></div>}
-      <small className="account-footnote">{fr ? "Les clips de plus de 5 secondes sont réservés aux abonnés. Le moteur assemble plusieurs segments successifs." : "Wan 2.2 creates free 2–5 second clips. 6, 8 or 10 second videos require an active subscription and are assembled from consecutive clips."}</small>
+      <small className="account-footnote">{fr ? "La génération est limitée à 60 secondes par demande dans cette version. Les performances et la disponibilité dépendent du moteur Wan 2.2 et de ses quotas." : "Generation is limited to 60 seconds per request in this version. Performance and availability depend on Wan 2.2 and its quotas."}</small>
     </div>}
 
-    {session && service==="partners" && <div className="account-grid">
+    {session && hasActiveSubscription && service==="partners" && <div className="account-grid">
       <form className="account-card" onSubmit={e=>{e.preventDefault();void submit("ads");}}><h3>AQUI NET ADS</h3><p>{fr?"Proposer une campagne publicitaire.":"Submit an advertising campaign."}</p>
         {input(ad.company_name,v=>setAd(s=>({...s,company_name:v})),fr?"Entreprise / marque":"Company / brand")}
         {input(ad.contact_name,v=>setAd(s=>({...s,contact_name:v})),fr?"Nom du contact":"Contact name")}
@@ -402,8 +420,8 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
         <button className="primary-button" disabled={!session||busy}>{fr?"Envoyer la candidature":"Send application"}</button>
       </form>
     </div>}
-    {session && service==="partners" && campaigns.length>0 && <div className="account-card"><h3>{fr?"Campagnes actives":"Active campaigns"}</h3>{campaigns.map(c=><article key={c.id}><strong>{c.title}</strong><p>{c.description}</p>{c.destination_url&&<a href={c.destination_url} target="_blank" rel="noreferrer">{fr?"Découvrir":"Learn more"} ↗</a>}</article>)}</div>}
-    {service==="partners" && <div className="account-card"><h3>{fr?"Abonnements publicité et partenariat":"Advertising and partnership plans"}</h3>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!session||!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!session?(fr?"Connecte-toi pour payer":"Sign in to pay"):(paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay")}</button></article>):<p>{fr?"Aucune formule n'est publiée pour le moment.":"No plans are published yet."}</p>}
+    {session && hasActiveSubscription && service==="partners" && campaigns.length>0 && <div className="account-card"><h3>{fr?"Campagnes actives":"Active campaigns"}</h3>{campaigns.map(c=><article key={c.id}><strong>{c.title}</strong><p>{c.description}</p>{c.destination_url&&<a href={c.destination_url} target="_blank" rel="noreferrer">{fr?"Découvrir":"Learn more"} ↗</a>}</article>)}</div>}
+    {session && hasActiveSubscription && service==="partners" && <div className="account-card"><h3>{fr?"Abonnements publicité et partenariat":"Advertising and partnership plans"}</h3>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!session||!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!session?(fr?"Connecte-toi pour payer":"Sign in to pay"):(paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay")}</button></article>):<p>{fr?"Aucune formule n'est publiée pour le moment.":"No plans are published yet."}</p>}
     <small className="account-footnote">{fr?"500 FCFA / mois · 5 000 FCFA / an. Le paiement dépend de la configuration active du compte marchand CinetPay.":"500 XOF / month · 5,000 XOF / year. Payment requires an active CinetPay merchant setup."}</small></div>}
     {!session && <p className="account-footnote">{fr?"Connecte-toi pour utiliser le service sélectionné.":"Sign in to use the selected service."}</p>}
   </section>;
