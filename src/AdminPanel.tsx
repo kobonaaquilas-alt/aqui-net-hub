@@ -1,88 +1,64 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient, type Session } from "@supabase/supabase-js";
 
-const db = createClient("https://xbobkysbtvtmepqgtnbt.supabase.co", "sb_publishable_AGtfBQyqyKbH5C_4f5cQgw_bm0MmusA");
-type RequestItem = {
-  id: string; user_id: string; contact_name: string; email: string; phone: string | null;
-  website: string | null; status: "received" | "reviewing" | "accepted" | "declined";
-  created_at: string; company_name?: string; budget?: string | null; message?: string;
-  organization?: string; proposal?: string;
-};
-type Data = { ads: RequestItem[]; partners: RequestItem[] };
-const labels: Record<RequestItem["status"], string> = {
-  received: "Reçue", reviewing: "En cours", accepted: "Acceptée", declined: "Refusée",
-};
-export default function AdminPanel() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [data, setData] = useState<Data>({ ads: [], partners: [] });
-  const [notice, setNotice] = useState("");
-  const [busy, setBusy] = useState(false);
-  const load = useCallback(async () => {
-    if (!session) return;
-    setBusy(true); setNotice("");
-    try {
-      const response = await fetch("/api/admin/requests", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      const result = await response.json() as Data & { error?: string };
-      if (!response.ok) throw new Error(result.error || "Accès administrateur indisponible.");
-      setData(result);
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Erreur de chargement.");
-    } finally { setBusy(false); }
-  }, [session?.access_token]);
-  useEffect(() => {
-    db.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: { subscription } } = db.auth.onAuthStateChange((_event, next) => setSession(next));
-    return () => subscription.unsubscribe();
-  }, []);
-  useEffect(() => { if (session) void load(); }, [session?.user.id, load]);
-  async function update(kind: "ads" | "partners", id: string, status: RequestItem["status"]) {
-    if (!session) return;
-    setBusy(true); setNotice("");
-    try {
-      const response = await fetch(`/api/admin/requests/${kind}/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ status }),
-      });
-      const result = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(result.error || "Modification refusée.");
-      await load();
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Erreur de mise à jour.");
-      setBusy(false);
-    }
-  }
-  function group(kind: "ads" | "partners", items: RequestItem[]) {
-    return <div className="account-card">
-      <h3>{kind === "ads" ? "AQUI NET ADS" : "AQUI NET PARTNERS"} · {items.length}</h3>
-      {items.length === 0 && <p>Aucune demande pour le moment.</p>}
-      {items.map(item => <article className="admin-request-row" key={item.id}>
-        <div>
-          <strong>{kind === "ads" ? item.company_name : item.organization}</strong>
-          <p>{item.contact_name} · {item.email}{item.phone ? ` · ${item.phone}` : ""}</p>
-          {item.website && <p><a href={item.website} target="_blank" rel="noreferrer">{item.website}</a></p>}
-          <p>{kind === "ads" ? item.message : item.proposal}</p>
-          {kind === "ads" && item.budget && <p>Budget indicatif : {item.budget} FCFA</p>}
-          <small>{new Date(item.created_at).toLocaleString("fr-FR")} · {labels[item.status]}</small>
-        </div>
-        <div className="admin-actions">
-          <button type="button" disabled={busy} onClick={() => void update(kind, item.id, "reviewing")}>En cours</button>
-          <button type="button" disabled={busy} onClick={() => void update(kind, item.id, "accepted")}>Accepter</button>
-          <button type="button" disabled={busy} onClick={() => void update(kind, item.id, "declined")}>Refuser</button>
-          <button type="button" disabled={busy} onClick={() => void update(kind, item.id, "received")}>Réinitialiser</button>
-        </div>
-      </article>)}
-    </div>;
-  }
-  return <section className="section account-hub" id="administration">
-    <div className="section-heading"><div><span className="eyebrow">AQUI NET · ADMIN</span><h2>Administration</h2><p>Gestion confidentielle des demandes publicitaires et partenariats.</p></div></div>
-    {!session ? <div className="account-card"><p>Connecte-toi avec le compte administrateur autorisé.</p><a className="primary-button" href="#compte">Aller à la connexion</a></div> : <>
-      <div className="account-card account-summary-heading"><p>Connecté : <strong>{session.user.email}</strong></p><button type="button" className="filter-button" disabled={busy} onClick={() => void load()}>{busy ? "…" : "Actualiser"}</button></div>
-      {notice && <p className="account-message" role="status">{notice}</p>}
-      {group("ads", data.ads)}
-      {group("partners", data.partners)}
-    </>}
-  </section>;
+const db=createClient("https://xbobkysbtvtmepqgtnbt.supabase.co","sb_publishable_AGtfBQyqyKbH5C_4f5cQgw_bm0MmusA");
+type RequestItem={id:string;user_id:string;contact_name:string;email:string;phone:string|null;website:string|null;status:string;created_at:string;company_name?:string;organization?:string;message?:string;proposal?:string;budget?:string|null};
+type Campaign={id:string;title:string;description:string;destination_url:string|null;image_url:string|null;starts_at:string|null;ends_at:string|null;is_active:boolean};
+type Follow={id:string;user_id:string;account_name:string;tiktok_proof_url:string;facebook_proof_url:string;status:string;created_at:string;admin_note:string|null};
+type Audit={id:string;user_id:string;platform:string;account_name:string;social_url:string;followers:number;average_views:number;average_likes:number;average_comments:number;posts_per_week:number;goal:string;created_at:string};
+type Data={ads:RequestItem[];partners:RequestItem[];follows:Follow[];audits:Audit[]};
+export default function AdminPanel(){
+ const [session,setSession]=useState<Session|null>(null),[authorized,setAuthorized]=useState(false),[checked,setChecked]=useState(false);
+ const [data,setData]=useState<Data>({ads:[],partners:[],follows:[],audits:[]}),[campaigns,setCampaigns]=useState<Campaign[]>([]);
+ const [notice,setNotice]=useState(""),[busy,setBusy]=useState(false),[adsense,setAdsense]=useState("");
+ const [draft,setDraft]=useState({title:"",description:"",destination_url:"",image_url:"",starts_at:"",ends_at:"",is_active:true});
+ const auth=useCallback(async(s:Session|null)=>{
+  setSession(s);setAuthorized(false);setChecked(false);
+  if(!s){setChecked(true);return;}
+  try{const r=await fetch("/api/admin/me",{headers:{Authorization:`Bearer ${s.access_token}`}});setAuthorized(r.ok);}
+  catch{setAuthorized(false);}finally{setChecked(true);}
+ },[]);
+ useEffect(()=>{db.auth.getSession().then(({data})=>void auth(data.session));const {data:{subscription}}=db.auth.onAuthStateChange((_e,s)=>void auth(s));return()=>subscription.unsubscribe();},[auth]);
+ const request=useCallback(async(path:string,init:RequestInit={})=>{
+  if(!session)throw new Error("Session administrateur absente.");
+  const r=await fetch(path,{...init,headers:{"Content-Type":"application/json",Authorization:`Bearer ${session.access_token}`,...(init.headers||{})}});
+  const d=await r.json();if(!r.ok)throw new Error(d.error||"Action impossible.");return d;
+ },[session]);
+ const load=useCallback(async()=>{
+  if(!session||!authorized)return;setBusy(true);setNotice("");
+  try{const [d,c,s]=await Promise.all([request("/api/admin/requests"),request("/api/admin/campaigns"),request("/api/admin/settings")]);setData(d);setCampaigns(c.campaigns||[]);setAdsense(s.adsense_client||"");}
+  catch(e){setNotice(e instanceof Error?e.message:"Erreur de chargement.");}finally{setBusy(false);}
+ },[session,authorized,request]);
+ useEffect(()=>{if(authorized)void load();},[authorized,load]);
+ async function action(path:string,method:string,body?:unknown){
+  setBusy(true);setNotice("");try{await request(path,{method,body:body===undefined?undefined:JSON.stringify(body)});await load();setNotice("Modification enregistrée.");}
+  catch(e){setNotice(e instanceof Error?e.message:"Erreur.");}finally{setBusy(false);}
+ }
+ async function createCampaign(e:React.FormEvent){
+  e.preventDefault();setBusy(true);setNotice("");
+  try{await request("/api/admin/campaigns",{method:"POST",body:JSON.stringify({...draft,starts_at:draft.starts_at?new Date(draft.starts_at).toISOString():null,ends_at:draft.ends_at?new Date(draft.ends_at).toISOString():null})});setDraft({title:"",description:"",destination_url:"",image_url:"",starts_at:"",ends_at:"",is_active:true});await load();setNotice("Publicité créée et enregistrée.");}
+  catch(e){setNotice(e instanceof Error?e.message:"Création impossible.");}finally{setBusy(false);}
+ }
+ async function saveAdsense(){await action("/api/admin/settings","PATCH",{adsense_client:adsense});}
+ if(!checked||!authorized)return null;
+ const group=(kind:"ads"|"partners",items:RequestItem[])=> <div className="account-card"><h3>{kind==="ads"?"Demandes publicitaires":"Demandes de partenariat"} · {items.length}</h3>{items.length===0&&<p>Aucune demande.</p>}{items.map(x=><article className="admin-request-row" key={x.id}><div><strong>{kind==="ads"?x.company_name:x.organization}</strong><p>{x.contact_name} · {x.email} · {x.phone||""}</p>{x.website&&<p><a href={x.website} target="_blank" rel="noreferrer">{x.website}</a></p>}<p>{x.message||x.proposal}</p><small>{new Date(x.created_at).toLocaleString("fr-FR")} · {x.status}</small></div><div className="admin-actions"><button disabled={busy} onClick={()=>void action(`/api/admin/requests/${kind}/${x.id}`,"PATCH",{status:"reviewing"})}>En cours</button><button disabled={busy} onClick={()=>void action(`/api/admin/requests/${kind}/${x.id}`,"PATCH",{status:"accepted"})}>Valider</button><button disabled={busy} onClick={()=>void action(`/api/admin/requests/${kind}/${x.id}`,"PATCH",{status:"declined"})}>Refuser</button></div></article>)}</div>;
+ return <section className="section account-hub admin-private" id="admin-prive">
+  <div className="section-heading"><span className="eyebrow">ESPACE PRIVÉ</span><h2>Administration AQUI NET HUB</h2><p>Connecté en tant que {session?.user.email}</p><button className="filter-button" disabled={busy} onClick={()=>void load()}>{busy?"…":"Actualiser"}</button></div>
+  {notice&&<p className="account-message" role="status">{notice}</p>}
+  {group("ads",data.ads)}{group("partners",data.partners)}
+  <div className="account-card"><h3>Vérification des abonnements TikTok et Facebook · {data.follows.length}</h3>{data.follows.length===0&&<p>Aucune preuve reçue.</p>}{data.follows.map(f=><article className="admin-request-row" key={f.id}><div><strong>{f.account_name} · {f.status}</strong><p>Utilisateur : {f.user_id}</p><p><a href={f.tiktok_proof_url} target="_blank" rel="noreferrer">Preuve TikTok</a> · <a href={f.facebook_proof_url} target="_blank" rel="noreferrer">Preuve Facebook</a></p><small>{new Date(f.created_at).toLocaleString("fr-FR")}</small></div><div className="admin-actions"><button disabled={busy} onClick={()=>void action(`/api/admin/follows/${f.id}`,"PATCH",{status:"approved"})}>Valider</button><button disabled={busy} onClick={()=>void action(`/api/admin/follows/${f.id}`,"PATCH",{status:"rejected"})}>Refuser</button></div></article>)}</div>
+  <div className="account-card"><h3>Analyses sociales · {data.audits.length}</h3>{data.audits.map(a=><article className="admin-request-row" key={a.id}><div><strong>{a.platform} · {a.account_name}</strong><p><a href={a.social_url} target="_blank" rel="noreferrer">Profil</a> · {a.followers.toLocaleString("fr-FR")} abonnés · {a.average_views.toLocaleString("fr-FR")} vues moyennes</p><small>{a.user_id} · {new Date(a.created_at).toLocaleString("fr-FR")}</small></div></article>)}</div>
+  <div className="account-card"><h3>Publicités défilantes</h3><form className="admin-campaign-form" onSubmit={e=>void createCampaign(e)}>
+   <input value={draft.title} onChange={e=>setDraft(s=>({...s,title:e.target.value}))} placeholder="Titre de la publicité" required/>
+   <textarea value={draft.description} onChange={e=>setDraft(s=>({...s,description:e.target.value}))} placeholder="Description courte" required/>
+   <input type="url" value={draft.destination_url} onChange={e=>setDraft(s=>({...s,destination_url:e.target.value}))} placeholder="Lien de destination HTTPS"/>
+   <input type="url" value={draft.image_url} onChange={e=>setDraft(s=>({...s,image_url:e.target.value}))} placeholder="Image HTTPS (facultatif)"/>
+   <label>Début de diffusion <input type="datetime-local" value={draft.starts_at} onChange={e=>setDraft(s=>({...s,starts_at:e.target.value}))}/></label>
+   <label>Fin de diffusion <input type="datetime-local" value={draft.ends_at} onChange={e=>setDraft(s=>({...s,ends_at:e.target.value}))}/></label>
+   <label><input type="checkbox" checked={draft.is_active} onChange={e=>setDraft(s=>({...s,is_active:e.target.checked}))}/> Activer la campagne</label>
+   <button className="primary-button" disabled={busy}>Créer la publicité</button>
+  </form>
+  {campaigns.map(c=><article className="admin-request-row" key={c.id}><div><strong>{c.title}</strong><p>{c.description}</p><small>{c.is_active?"Active":"En pause"} · Début : {c.starts_at?new Date(c.starts_at).toLocaleString("fr-FR"):"immédiat"} · Fin : {c.ends_at?new Date(c.ends_at).toLocaleString("fr-FR"):"non définie"}</small></div><div className="admin-actions"><button disabled={busy} onClick={()=>void action(`/api/admin/campaigns/${c.id}`,"PATCH",{is_active:!c.is_active})}>{c.is_active?"Suspendre":"Activer"}</button><button disabled={busy} onClick={()=>void action(`/api/admin/campaigns/${c.id}`,"DELETE")}>Supprimer</button></div></article>)}</div>
+  <div className="account-card"><h3>Google AdSense</h3><p>Ajoute ton identifiant éditeur après l'acceptation du site par Google. Les annonces ne s'afficheront qu'après validation AdSense.</p><input value={adsense} onChange={e=>setAdsense(e.target.value)} placeholder="ca-pub-0000000000000000"/><button className="primary-button" disabled={busy} onClick={()=>void saveAdsense()}>Enregistrer l'identifiant</button><small>Fichier ads.txt : /ads.txt</small></div>
+ </section>;
 }
