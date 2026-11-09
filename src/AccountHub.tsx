@@ -243,7 +243,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       const data = await response.json() as { request_id?: string; status?: string; error?: string; code?: string };
       if (response.status === 402 || data.code === "PAYMENT_REQUIRED") {
         setVideoPaywall(true);
-        setVideoNotice(data.error || (fr ? "Un abonnement est requis pour les vidéos de plus de 5 secondes." : "A subscription is required for videos longer than 5 seconds."));
+        setVideoNotice(data.error || (fr ? "Un abonnement AQUI NET HUB actif est requis pour utiliser le générateur." : "An active AQUI NET HUB subscription is required to use the generator."));
         return;
       }
       if (!response.ok || !data.request_id) throw new Error(data.error || "Video request failed.");
@@ -388,7 +388,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
         </select>
       </label>
       <p className="video-price">{fr?"Prix de cette génération :":"Price for this generation:"} <strong>{videoPrice===0?(fr?"Gratuit":"Free"):`${videoPrice.toLocaleString("fr-FR")} FCFA`}</strong></p>
-      <small className="account-footnote">{fr?"Tarif : 15 s = 25 FCFA ; chaque tranche supplémentaire de 5 s ajoute 25 FCFA. Maximum proposé : 60 s (250 FCFA).":"Pricing: 15 s = 25 XOF; each additional 5-second block adds 25 XOF. Maximum offered: 60 s (250 XOF)."}</small>
+      <small className="account-footnote">{fr?"Tarif affiché : 15 s = 25 FCFA ; chaque tranche supplémentaire de 5 s ajoute 25 FCFA. Maximum proposé : 60 s (250 FCFA). Le paiement à la durée sera activé lorsque CinetPay sera configuré.":"Displayed price: 15 s = 25 XOF; each additional 5-second block adds 25 XOF. Maximum offered: 60 s (250 XOF). Per-duration payment will be enabled when CinetPay is configured."}</small>
       <button type="button" className="primary-button" disabled={videoBusy || !videoReady || !videoImageUrl.trim() || videoPrompt.trim().length<3} onClick={()=>void startVideo()}>
         {videoBusy ? "…" : (fr ? "Lancer la génération" : "Generate video")}
       </button>
