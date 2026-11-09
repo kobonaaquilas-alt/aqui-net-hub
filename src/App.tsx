@@ -4,7 +4,7 @@ import AdminPanel from "./AdminPanel";
 
 type Service = "tools" | "video" | "social" | "partners";
 type Campaign = {id:string;title:string;description:string;destination_url:string|null};
-type Tool = { name:string; category:string; description:string; url:string; keywords:string[]; how:string[]; benefits:string[] };
+type Tool = { name:string; category:string; description:string; url:string; keywords:string[]; how:string[]; benefits:string[]; exactIntents?:string[] };
 const tools:Tool[] = [
   {name:"ChatGPT",category:"Assistant IA",description:"Préparer des idées, des scripts, des textes et des plans de travail.",url:"https://chatgpt.com/",keywords:["idee","idée","texte","script","ecrire","écrire","rediger","rédiger","plan","apprendre","expliquer","strategie","stratégie","contenu"],how:["Ouvre le site et crée un compte gratuit si nécessaire.","Décris ton objectif avec le contexte et le résultat attendu.","Demande une réponse structurée, puis affine avec des précisions."],benefits:["Aide à clarifier une idée et organiser un projet.","Produit des brouillons et des plans rapidement.","Formule gratuite disponible, avec limites d'utilisation."]},
   {name:"Gemini",category:"Assistant IA",description:"Assistant IA pour rechercher des idées, comprendre et rédiger.",url:"https://gemini.google.com/",keywords:["idee","idée","recherche","texte","apprendre","expliquer","image","document","contenu"],how:["Connecte-toi avec un compte Google.","Décris précisément la tâche à accomplir.","Vérifie les informations importantes avec des sources fiables."],benefits:["Intégration avec l'écosystème Google.","Aide à comprendre, rédiger et explorer des idées.","Accès gratuit avec limites et fonctions variables."]},
@@ -21,15 +21,32 @@ const tools:Tool[] = [
   {name:"freeCodeCamp",category:"Formation",description:"Apprendre la programmation avec des exercices pratiques.",url:"https://www.freecodecamp.org/",keywords:["programmer","programmation","code","coder","html","css","javascript","site web","developper","développer"],how:["Crée un compte gratuit.","Choisis un parcours de formation.","Suis les leçons et valide les exercices pratiques."],benefits:["Cours et exercices gratuits.","Apprentissage progressif par la pratique.","Certifications gratuites sur les parcours proposés."]},
   {name:"Khan Academy",category:"Formation",description:"Apprendre les mathématiques, sciences et autres matières.",url:"https://fr.khanacademy.org/",keywords:["cours","etudier","étudier","math","mathematique","mathématique","science","formation","apprendre"],how:["Choisis ta matière et ton niveau.","Suis les leçons courtes.","Fais les exercices pour mesurer tes progrès."],benefits:["Ressources éducatives gratuites.","Exercices et suivi de progression.","Adapté à plusieurs niveaux."]},
   {name:"WordPress.com",category:"Création de site",description:"Créer un site ou un blog avec une formule de départ gratuite.",url:"https://wordpress.com/",keywords:["site","blog","web","page internet","vitrine","publier"],how:["Crée un compte et choisis un thème.","Ajoute tes pages et tes contenus.","Publie avec l'adresse gratuite proposée."],benefits:["Création sans programmation obligatoire.","Thèmes et éditeur de pages.","Formule gratuite avec adresse et fonctions limitées."]},
-  {name:"Google Sites",category:"Création de site",description:"Créer simplement un site vitrine ou un espace de présentation.",url:"https://sites.google.com/",keywords:["site","web","page internet","vitrine","portfolio","presentation","présentation"],how:["Ouvre Google Sites avec ton compte Google.","Choisis un modèle et ajoute tes sections.","Publie le site et partage son adresse."],benefits:["Très simple à prendre en main.","Hébergement inclus dans le service.","Gratuit avec un compte Google."]}
+  {name:"Google Sites",category:"Création de site",description:"Créer simplement un site vitrine ou un espace de présentation.",url:"https://sites.google.com/",keywords:["site","web","page internet","vitrine","portfolio","presentation","présentation"],how:["Ouvre Google Sites avec ton compte Google.","Choisis un modèle et ajoute tes sections.","Publie le site et partage son adresse."],benefits:["Très simple à prendre en main.","Hébergement inclus dans le service.","Gratuit avec un compte Google."]},
+  {name:"Rosebud AI",category:"Création de jeux vidéo avec IA",description:"Générer un jeu vidéo jouable à partir d'une description en langage naturel, puis modifier le code, les visuels et les mécaniques avec l'assistant IA.",url:"https://www.play.rosebud.ai/",keywords:["jeu video","jeux video","jeu vidéo","jeux vidéo","game","gameplay","rpg","plateforme","platformer","jeu mobile","jeu 2d","jeu 3d","creer un jeu","créer un jeu","developper un jeu","développer un jeu","generer un jeu","générer un jeu"],exactIntents:["game_creation"],how:["Ouvre Rosebud AI et décris le jeu que tu veux créer : genre, univers, personnages et règles.","Réponds aux questions de l'assistant pour définir la première version jouable.","Teste le jeu dans le navigateur puis demande des modifications à l'IA.","Publie ou partage le jeu lorsque le résultat te convient."],benefits:["Produit une première version réellement jouable à partir d'un prompt.","Peut créer des jeux 2D, 3D et des expériences multijoueurs.","Permet d'itérer en langage naturel. Offre et limites à vérifier sur le site officiel."]},
+  {name:"GDevelop AI",category:"Création de jeux vidéo avec IA",description:"Créer et modifier les scènes, objets, événements et mécaniques d'un vrai projet de jeu dans le moteur GDevelop à l'aide d'un agent IA.",url:"https://gdevelop.io/",keywords:["jeu video","jeux video","jeu vidéo","jeux vidéo","game","gameplay","rpg","plateforme","platformer","jeu mobile","jeu 2d","creer un jeu","créer un jeu","developper un jeu","développer un jeu","generer un jeu","générer un jeu","moteur de jeu"],exactIntents:["game_creation"],how:["Installe ou ouvre GDevelop et crée un projet de jeu.","Ouvre Ask AI dans l'éditeur.","Décris une mécanique précise ou demande à l'IA de construire des éléments du jeu.","Teste le projet et ajuste les scènes et événements avant l'export."],benefits:["L'IA agit directement sur les éléments du projet GDevelop.","Peut créer scènes, objets, comportements, variables et événements.","Le moteur permet de construire des jeux sans coder chaque mécanique manuellement. Vérifie les limites de l'offre IA."]}
 ];
 
 const norm=(s:string)=>s.toLocaleLowerCase("fr").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const intentRules:[string,string[]][]=[
+  ["game_creation",["jeu video","jeux video","jeu","game","gameplay","rpg","plateforme","platformer","jeu mobile","jeu 2d","jeu 3d","moteur de jeu","creer un jeu","developper un jeu","generer un jeu"]],
+  ["image_generation",["generer une image","creer une image","image ia","illustration","dessin ia","photo ia"]],
+  ["video_generation",["generer une video","creer une video","video ia","animation video"]],
+  ["website_creation",["creer un site","creation de site","site web","site internet","boutique en ligne"]],
+  ["photo_editing",["retoucher une photo","restaurer une photo","detourage","supprimer le fond"]],
+  ["video_editing",["montage video","monter une video","sous titres video"]],
+  ["logo_design",["creer un logo","logo","identite visuelle"]],
+  ["audio_editing",["montage audio","nettoyer un audio","enregistrer une voix","podcast"]]
+];
+function getIntent(q:string) { const query=norm(q); return intentRules.filter(([,phrases])=>phrases.some(p=>query.includes(norm(p)))).map(([id])=>id); }
 function matchesTool(t:Tool,q:string) {
   const query=norm(q);
-  const words=query.split(/[^a-z0-9]+/).filter(w=>w.length>2);
-  const hay=norm([t.name,t.category,t.description,...t.keywords].join(" "));
-  return t.keywords.some(k=>query.includes(norm(k))) || words.some(w=>hay.includes(w));
+  const intents=getIntent(q);
+  if(intents.length) return !!t.exactIntents?.some(intent=>intents.includes(intent));
+  const words=query.split(/[^a-z0-9]+/).filter(w=>w.length>3);
+  const keywordHits=t.keywords.filter(k=>{const key=norm(k);return key.length>3&&(query.includes(key)||words.includes(key));}).length;
+  const hay=norm([t.name,t.category,...t.keywords].join(" "));
+  const directHits=words.filter(w=>hay.split(/[^a-z0-9]+/).includes(w)).length;
+  return keywordHits>=1 && directHits>=1;
 }
 
 export default function App() {
@@ -42,10 +59,11 @@ export default function App() {
   const [adsenseClient,setAdsenseClient]=useState("");
   const fr=lang==="fr";
   const showAdmin=new URLSearchParams(window.location.search).get("admin")==="1";
-  const recommendations=useMemo(()=>submitted?tools.filter(t=>matchesTool(t,submitted)).slice(0,6):[],[submitted]);
+  const recommendations=useMemo(()=>{if(!submitted)return [];const matches=tools.filter(t=>matchesTool(t,submitted));const intents=getIntent(submitted);return intents.length?matches:matches.slice(0,4);},[submitted]);
   useEffect(()=>{fetch("/api/public/campaigns").then(r=>r.ok?r.json():Promise.reject()).then(d=>setCampaigns(d.campaigns||[])).catch(()=>{});fetch("/api/public/settings").then(r=>r.ok?r.json():Promise.reject()).then(d=>setAdsenseClient(d.adsense_client||"")).catch(()=>{});},[]);
   useEffect(()=>{if(!adsenseClient||!/^ca-pub-[0-9]{16}$/.test(adsenseClient)||document.querySelector("script[data-aqui-adsense]"))return;const s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";s.dataset.aquiAdsense="true";s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client="+adsenseClient;document.head.appendChild(s);},[adsenseClient]);
   useEffect(()=>{if(!activeService)return;const frame=requestAnimationFrame(()=>document.getElementById(activeService==="tools"?"demande-outils":"compte")?.scrollIntoView({behavior:"smooth",block:"start"}));return()=>cancelAnimationFrame(frame);},[activeService]);
+  useEffect(()=>{if(!selectedTool)return;const frame=requestAnimationFrame(()=>document.getElementById("outil-detail-selectionne")?.scrollIntoView({behavior:"smooth",block:"start"}));return()=>cancelAnimationFrame(frame);},[selectedTool]);
   const syncRemote=useCallback((_favorites:string[],_progress:string[])=>{},[]);
 
   return <div className="site-shell">
@@ -54,6 +72,7 @@ export default function App() {
       <nav className="main-nav"><a href="#accueil">{fr?"Accueil":"Home"}</a><a href="#services">{fr?"Services":"Services"}</a><a href="#account-access">{fr?"Créer un compte":"Create account"}</a></nav>
       <button className="language-button" onClick={()=>setLang(fr?"en":"fr")}>{fr?"EN":"FR"}</button>
     </header>
+    <section className="promo-ticker" aria-label={fr?"Bandeau d’informations":"Information ticker"}><div className="promo-track">{[...(campaigns.length?campaigns:[{id:"hub-1",title:fr?"AQUI NET HUB · Trouve les outils adaptés à tes projets":"AQUI NET HUB · Find tools that fit your projects",description:fr?"Des solutions numériques sélectionnées selon ton besoin.":"Digital tools selected for your needs.",destination_url:null},{id:"hub-2",title:fr?"Création IA · Vidéo · Réseaux sociaux":"AI creation · Video · Social media",description:fr?"Découvre les services et les ressources disponibles.":"Explore services and available resources.",destination_url:null}]),...(campaigns.length?campaigns:[{id:"hub-1",title:fr?"AQUI NET HUB · Trouve les outils adaptés à tes projets":"AQUI NET HUB · Find tools that fit your projects",description:fr?"Des solutions numériques sélectionnées selon ton besoin.":"Digital tools selected for your needs.",destination_url:null},{id:"hub-2",title:fr?"Création IA · Vidéo · Réseaux sociaux":"AI creation · Video · Social media",description:fr?"Découvre les services et les ressources disponibles.":"Explore services and available resources.",destination_url:null}])].map((campaign,i)=><a key={campaign.id+"-"+i} href={campaign.destination_url||"#services"} target={campaign.destination_url?"_blank":undefined} rel="noreferrer"><span>✦</span> {campaign.title} <small>{campaign.description}</small> <b>{fr?"En savoir plus":"Learn more"} ↗</b></a>)}</div></section>
     <main>
       <section className="hub-hero" id="accueil">
         <span className="eyebrow">AQUI NET HUB · DIGITAL ACTION CENTER</span>
@@ -72,7 +91,7 @@ export default function App() {
         </div>
       </section>
       <AccountHub service="video" favorites={[]} progress={[]} lang={lang} onRemoteSync={syncRemote} authOnly />
-      {campaigns.length>0&&<section className="promo-ticker" aria-label="Publicités"><div className="promo-track">{[...campaigns,...campaigns].map((campaign,i)=><a key={campaign.id+"-"+i} href={campaign.destination_url||"#services"} target={campaign.destination_url?"_blank":undefined} rel="noreferrer"><span>✦</span> {campaign.title} <small>{campaign.description}</small> <b>{fr?"En savoir plus":"Learn more"} ↗</b></a>)}</div></section>}
+      
       {activeService==="tools"&&<section className="section request-section" id="demande-outils">
         <div className="section-heading"><span className="eyebrow">01 · SMART TOOL FINDER</span><h2>{fr?"Décris ce que tu veux accomplir":"Describe what you want to achieve"}</h2><p>{fr?"Exemple : je veux créer un logo, monter une vidéo TikTok, apprendre l'anglais ou construire un site web.":"Example: I want to create a logo, edit a TikTok video, learn English or build a website."}</p></div>
         <form className="tool-request-form" onSubmit={e=>{e.preventDefault();setSubmitted(request.trim());setSelectedTool(null);}}>
@@ -83,7 +102,7 @@ export default function App() {
           <div className="recommendation-heading"><h3>{fr?"Outils correspondant à ta demande":"Tools matching your request"}</h3><button className="text-button" onClick={()=>{setSubmitted("");setSelectedTool(null);}}>{fr?"Nouvelle recherche":"New search"}</button></div>
           {recommendations.length ? <div className="recommended-grid">{recommendations.map(t=><button className="recommended-tool" key={t.name} onClick={()=>setSelectedTool(t)}><span>{t.category}</span><strong>{t.name}</strong><small>{t.description}</small><b>{fr?"Voir le guide":"View guide"} ↗</b></button>)}</div> : <p className="no-match">{fr?"Je n'ai pas identifié d'outil correspondant avec certitude. Reformule ton objectif en précisant le résultat attendu.":"I couldn't confidently match a tool. Rephrase your goal and specify the expected result."}</p>}
         </div>
-        {selectedTool && <article className="tool-detail-page">
+        {selectedTool && <article className="tool-detail-page" id="outil-detail-selectionne">
           <button className="text-button" onClick={()=>setSelectedTool(null)}>← {fr?"Retour aux résultats":"Back to results"}</button>
           <span className="eyebrow">{selectedTool.category}</span><h3>{selectedTool.name}</h3><p>{selectedTool.description}</p>
           <a className="primary-button" href={selectedTool.url} target="_blank" rel="noopener noreferrer">{fr?"Ouvrir le site officiel":"Open official website"} ↗</a>
