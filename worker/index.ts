@@ -7,7 +7,8 @@ interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
+  SUPABASE_SECRET_KEY?: string;
   CINETPAY_API_KEY: string;
   CINETPAY_API_PASSWORD: string;
   APP_BASE_URL?: string;
@@ -19,8 +20,9 @@ const json = (data: unknown, status = 200) => new Response(JSON.stringify(data),
   status,
   headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
 });
+const serviceKey = (env: Env) => env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || "";
 const headers = (env: Env) => ({
-  apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+  apikey: serviceKey(env),
   "Content-Type": "application/json",
   Prefer: "return=representation",
 });
@@ -35,7 +37,7 @@ async function authUser(request: Request, env: Env): Promise<AuthUser | null> {
   return user?.id ? user : null;
 }
 async function createPayment(request: Request, env: Env) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !env.SUPABASE_SERVICE_ROLE_KEY)
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !serviceKey(env))
     return json({ error: "Backend Supabase non configuré." }, 503);
   if (!env.CINETPAY_API_KEY || !env.CINETPAY_API_PASSWORD)
     return json({ error: "Paiement non configuré : identifiants marchands absents." }, 503);
@@ -122,7 +124,7 @@ async function createPayment(request: Request, env: Env) {
   }
 }
 async function accountSummary(request: Request, env: Env) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !env.SUPABASE_SERVICE_ROLE_KEY)
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !serviceKey(env))
     return json({ error: "Backend Supabase non configuré." }, 503);
   const user = await authUser(request, env);
   if (!user) return json({ error: "Connexion requise." }, 401);
@@ -159,7 +161,7 @@ async function accountSummary(request: Request, env: Env) {
   });
 }
 async function webhook(request: Request, env: Env) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY ||
+  if (!env.SUPABASE_URL || !serviceKey(env) ||
       !env.CINETPAY_API_KEY || !env.CINETPAY_API_PASSWORD)
     return json({ error: "Service de paiement non configuré." }, 503);
   let payload: unknown;
@@ -245,10 +247,10 @@ export default {
       if (request.method === "GET" && url.pathname === "/api/health")
         return json({
           ok: true,
-          supabase: !!env.SUPABASE_URL && !!env.SUPABASE_ANON_KEY && !!env.SUPABASE_SERVICE_ROLE_KEY,
+          supabase: !!env.SUPABASE_URL && !!env.SUPABASE_ANON_KEY && !!serviceKey(env),
           supabase_url: !!env.SUPABASE_URL,
           supabase_anon_key: !!env.SUPABASE_ANON_KEY,
-          supabase_service_key: !!env.SUPABASE_SERVICE_ROLE_KEY,
+          supabase_service_key: !!serviceKey(env),
           cinetpay: !!env.CINETPAY_API_KEY && !!env.CINETPAY_API_PASSWORD,
           cinetpay_api_key: !!env.CINETPAY_API_KEY,
           cinetpay_api_password: !!env.CINETPAY_API_PASSWORD,
