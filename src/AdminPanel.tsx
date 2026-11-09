@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { createClient, type Session } from "@supabase/supabase-js";
 
 const db=createClient("https://xbobkysbtvtmepqgtnbt.supabase.co","sb_publishable_AGtfBQyqyKbH5C_4f5cQgw_bm0MmusA");
@@ -34,7 +34,7 @@ export default function AdminPanel(){
   setBusy(true);setNotice("");try{await request(path,{method,body:body===undefined?undefined:JSON.stringify(body)});await load();setNotice("Modification enregistrée.");}
   catch(e){setNotice(e instanceof Error?e.message:"Erreur.");}finally{setBusy(false);}
  }
- async function createCampaign(e:React.FormEvent){
+ async function createCampaign(e:FormEvent){
   e.preventDefault();setBusy(true);setNotice("");
   try{await request("/api/admin/campaigns",{method:"POST",body:JSON.stringify({...draft,starts_at:draft.starts_at?new Date(draft.starts_at).toISOString():null,ends_at:draft.ends_at?new Date(draft.ends_at).toISOString():null})});setDraft({title:"",description:"",destination_url:"",image_url:"",starts_at:"",ends_at:"",is_active:true});await load();setNotice("Publicité créée et enregistrée.");}
   catch(e){setNotice(e instanceof Error?e.message:"Création impossible.");}finally{setBusy(false);}
