@@ -50,9 +50,10 @@ export default function App() {
   return <div className="site-shell">
     <header className="topbar">
       <a className="brand" href="#accueil"><span className="brand-mark">A</span><span>AQUI NET <strong>HUB</strong></span></a>
-      <nav className="main-nav"><a href="#accueil">{fr?"Accueil":"Home"}</a><a href="#services">{fr?"Services":"Services"}</a><a href="#services">{fr?"Espace membre":"Member area"}</a></nav>
+      <nav className="main-nav"><a href="#accueil">{fr?"Accueil":"Home"}</a><a href="#services">{fr?"Services":"Services"}</a><a href="#account-access">{fr?"Créer un compte":"Create account"}</a></nav>
       <button className="language-button" onClick={()=>setLang(fr?"en":"fr")}>{fr?"EN":"FR"}</button>
     </header>
+    <AccountHub service="video" favorites={[]} progress={[]} lang={lang} onRemoteSync={syncRemote} authOnly />
     <main>
       <section className="hub-hero" id="accueil">
         <span className="eyebrow">AQUI NET HUB · DIGITAL ACTION CENTER</span>
@@ -77,17 +78,18 @@ export default function App() {
           <textarea value={request} onChange={e=>setRequest(e.target.value)} rows={3} placeholder={fr?"Décris ton objectif avec tes propres mots…":"Describe your goal in your own words…"} required />
           <button className="primary-button" type="submit" disabled={!request.trim()}>{fr?"Trouver les outils gratuits adaptés":"Find suitable free tools"} ↗</button>
         </form>
-        {submitted && <div className="recommendation-results">
+        {submitted && <div className={selectedTool ? "tool-results-layout has-selection" : "tool-results-layout"}><div className="recommendation-results">
           <div className="recommendation-heading"><h3>{fr?"Outils correspondant à ta demande":"Tools matching your request"}</h3><button className="text-button" onClick={()=>{setSubmitted("");setSelectedTool(null);}}>{fr?"Nouvelle recherche":"New search"}</button></div>
           {recommendations.length ? <div className="recommended-grid">{recommendations.map(t=><button className="recommended-tool" key={t.name} onClick={()=>setSelectedTool(t)}><span>{t.category}</span><strong>{t.name}</strong><small>{t.description}</small><b>{fr?"Voir le guide":"View guide"} ↗</b></button>)}</div> : <p className="no-match">{fr?"Je n'ai pas identifié d'outil correspondant avec certitude. Reformule ton objectif en précisant le résultat attendu.":"I couldn't confidently match a tool. Rephrase your goal and specify the expected result."}</p>}
-        </div>}
+        </div>
         {selectedTool && <article className="tool-detail-page">
           <button className="text-button" onClick={()=>setSelectedTool(null)}>← {fr?"Retour aux résultats":"Back to results"}</button>
           <span className="eyebrow">{selectedTool.category}</span><h3>{selectedTool.name}</h3><p>{selectedTool.description}</p>
-          <div className="tool-detail-columns"><div><h4>{fr?"Comment utiliser cet outil":"How to use this tool"}</h4><ol>{selectedTool.how.map(x=><li key={x}>{x}</li>)}</ol></div><div><h4>{fr?"Avantages":"Benefits"}</h4><ul>{selectedTool.benefits.map(x=><li key={x}>{x}</li>)}</ul></div></div>
           <a className="primary-button" href={selectedTool.url} target="_blank" rel="noopener noreferrer">{fr?"Ouvrir le site officiel":"Open official website"} ↗</a>
           <small className="free-disclaimer">{fr?"Les services indiqués proposent une formule ou un usage gratuit ; des limites, crédits ou options payantes peuvent s'appliquer selon l'outil. Vérifie les conditions sur le site officiel.":"These services offer a free tier or free usage; limits, credits or paid options may apply. Check the official terms."}</small>
         </article>}
+        {selectedTool && <div className="tool-guide"><h4>{fr?"Guide d’utilisation":"User guide"}</h4><div className="tool-detail-columns"><div><h4>{fr?"Comment utiliser cet outil":"How to use this tool"}</h4><ol>{selectedTool.how.map(x=><li key={x}>{x}</li>)}</ol></div><div><h4>{fr?"Avantages":"Benefits"}</h4><ul>{selectedTool.benefits.map(x=><li key={x}>{x}</li>)}</ul></div></div></div>}
+      </div>}
       </section>}
 
       {activeService && activeService!=="tools" && <AccountHub service={activeService} favorites={[]} progress={[]} lang={lang} onRemoteSync={syncRemote}/>}
