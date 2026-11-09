@@ -299,3 +299,7 @@ export default {
       if (url.pathname.startsWith("/api/")) return json({ error: "Route introuvable." }, 404);
       return env.ASSETS.fetch(request);
     } catch {
+      return json({ error: "Erreur interne du serveur." }, 500);
+    }
+  },
+};
