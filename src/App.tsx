@@ -28,7 +28,7 @@ const tools:Tool[] = [
 
 const norm=(s:string)=>s.toLocaleLowerCase("fr").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 const intentRules:[string,string[]][]=[
-  ["game_creation",["jeu video","jeux video","jeu","game","gameplay","rpg","plateforme","platformer","jeu mobile","jeu 2d","jeu 3d","moteur de jeu","creer un jeu","developper un jeu","generer un jeu"]],
+  ["game_creation",["jeu video","jeux video","video game","video games","creer un jeu","developper un jeu","generer un jeu","creation de jeu video","game development","create a game","make a game","build a game"]],
   ["image_generation",["generer une image","creer une image","image ia","dessin ia","illustration ia"]],
   ["video_generation",["generer une video","creer une video","video ia","video a partir d'un texte","texte en video"]],
   ["website_creation",["creer un site","creation de site","site internet","site web","boutique en ligne"]],
