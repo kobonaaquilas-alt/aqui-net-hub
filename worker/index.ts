@@ -220,6 +220,27 @@ async function webhook(request: Request, env: Env) {
   }
   return json({ received: true });
 }
+
+const legalPage = (title: string, body: string) => new Response(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="index,follow"><title>${title} | AQUI NET HUB</title><style>body{font:16px/1.65 system-ui,sans-serif;max-width:850px;margin:40px auto;padding:0 20px;color:#172033}h1,h2{line-height:1.2}a{color:#1769aa}.brand{font-weight:800}</style></head><body><p class="brand"><a href="/">AQUI NET HUB</a></p><h1>${title}</h1><p><small>Dernière mise à jour : 9 novembre 2026</small></p>${body}<p><a href="/">Retour à AQUI NET HUB</a></p></body></html>`, {headers:{"Content-Type":"text/html; charset=utf-8","Cache-Control":"public, max-age=3600"}});
+const termsBody = `
+<h2>1. Objet</h2><p>AQUI NET HUB présente des outils numériques, des ressources de formation et des services de création et d'analyse de contenu. Certaines fonctions peuvent nécessiter un compte ou un abonnement.</p>
+<h2>2. Compte</h2><p>Fournissez des informations exactes et protégez vos identifiants. Vous êtes responsable des activités réalisées depuis votre compte.</p>
+<h2>3. Utilisation</h2><p>Vous vous engagez à respecter les lois applicables, les droits des tiers et la sécurité de la plateforme. Toute utilisation frauduleuse, abusive ou perturbatrice est interdite.</p>
+<h2>4. Services tiers</h2><p>Les outils externes sont indépendants et soumis à leurs propres conditions. AQUI NET HUB ne garantit ni leur disponibilité, ni leurs prix, ni leurs fonctionnalités.</p>
+<h2>5. Abonnements et paiements</h2><p>Le prix, la durée et les conditions d'un abonnement sont affichés avant la commande. Les fonctions payantes sont activées après confirmation du paiement. Les remboursements sont soumis au droit applicable et aux conditions présentées lors de l'achat.</p>
+<h2>6. Contenus et analyses</h2><p>Vous restez responsable des contenus que vous fournissez. Les analyses et recommandations sont informatives et ne garantissent aucun résultat en matière de visibilité, d'audience ou de revenus.</p>
+<h2>7. Disponibilité</h2><p>Les fonctionnalités peuvent évoluer ou être temporairement suspendues pour maintenance, sécurité ou amélioration.</p>
+<h2>8. Contact</h2><p>Assistance : +228 92 24 46 53 ou <a href="https://wa.me/22892244653">WhatsApp</a>.</p>`;
+const privacyBody = `
+<h2>1. Responsable et contact</h2><p>AQUI NET HUB fournit ce service depuis le Togo. Contact : +228 92 24 46 53 ou <a href="https://wa.me/22892244653">WhatsApp</a>.</p>
+<h2>2. Données traitées</h2><p>Selon les fonctions utilisées, nous pouvons traiter les informations de compte (notamment adresse e-mail et identifiant), les demandes d'assistance, les informations de commande et d'abonnement, ainsi que les contenus que vous choisissez de transmettre.</p>
+<h2>3. Réseaux sociaux</h2><p>La connexion directe aux comptes TikTok et Facebook n'est pas encore activée. Lorsqu'une intégration officielle sera disponible, elle sera déclenchée à votre demande et après votre autorisation auprès de la plateforme concernée. Les données accessibles et les moyens de retirer l'accès seront alors précisés. Nous ne vous demanderons jamais votre mot de passe TikTok ou Facebook.</p>
+<h2>4. Finalités</h2><p>Les données servent à créer et sécuriser les comptes, fournir les fonctions demandées, gérer les abonnements et paiements, répondre aux demandes, prévenir les abus et améliorer le service.</p>
+<h2>5. Prestataires et partage</h2><p>Des prestataires techniques nécessaires au service peuvent traiter des données, notamment Cloudflare pour l'hébergement et Supabase pour la base de données. Le traitement des paiements peut impliquer le prestataire de paiement activé. Les données ne sont pas vendues à des annonceurs.</p>
+<h2>6. Conservation et sécurité</h2><p>Les données sont conservées pendant la durée nécessaire aux finalités décrites, sous réserve des obligations légales. Des mesures raisonnables de sécurité sont mises en œuvre, sans qu'une sécurité absolue puisse être garantie.</p>
+<h2>7. Vos demandes</h2><p>Vous pouvez demander l'accès, la rectification ou la suppression des données associées à votre compte, sous réserve des obligations légales, en contactant l'assistance. Vous pouvez retirer les autorisations accordées à un service tiers depuis les paramètres de ce service.</p>
+<h2>8. Cookies et modifications</h2><p>Des mécanismes techniques peuvent être utilisés pour le fonctionnement et la sécurité du site. Cette politique peut être mise à jour ; sa date figure en haut de page.</p>`;
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -243,6 +264,8 @@ export default {
         const publisher = (rows[0]?.setting_value || "").replace(/^ca-pub-/, "");
         return new Response(/^\d{16}$/.test(publisher) ? `google.com, pub-${publisher}, DIRECT, f08c47fec0942fa0\n` : "", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=300" } });
       }
+      if (request.method === "GET" && url.pathname === "/terms") return legalPage("Conditions d'utilisation", termsBody);
+      if (request.method === "GET" && url.pathname === "/privacy") return legalPage("Politique de confidentialité", privacyBody);
       if (url.pathname.startsWith("/api/social/")) return handleSocial(request, env);
       if (request.method === "GET" && url.pathname === "/api/health")
         return json({
