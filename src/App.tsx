@@ -41,6 +41,7 @@ export default function App() {
   const [campaigns,setCampaigns]=useState<Campaign[]>([]);
   const [adsenseClient,setAdsenseClient]=useState("");
   const fr=lang==="fr";
+  const showAdmin=new URLSearchParams(window.location.search).get("admin")==="1";
   const recommendations=useMemo(()=>submitted?tools.filter(t=>matchesTool(t,submitted)).slice(0,6):[],[submitted]);
   useEffect(()=>{fetch("/api/public/campaigns").then(r=>r.ok?r.json():Promise.reject()).then(d=>setCampaigns(d.campaigns||[])).catch(()=>{});fetch("/api/public/settings").then(r=>r.ok?r.json():Promise.reject()).then(d=>setAdsenseClient(d.adsense_client||"")).catch(()=>{});},[]);
   useEffect(()=>{if(!adsenseClient||!/^ca-pub-[0-9]{16}$/.test(adsenseClient)||document.querySelector("script[data-aqui-adsense]"))return;const s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";s.dataset.aquiAdsense="true";s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client="+adsenseClient;document.head.appendChild(s);},[adsenseClient]);
@@ -93,7 +94,7 @@ export default function App() {
       </section>}
 
       {activeService && activeService!=="tools" && <AccountHub service={activeService} favorites={[]} progress={[]} lang={lang} onRemoteSync={syncRemote}/>}
-      <AdminPanel/>
+      {showAdmin&&<AdminPanel/>}
     </main>
     <footer className="site-footer"><a className="brand footer-brand" href="#accueil"><span className="brand-mark">A</span><span>AQUI NET <strong>HUB</strong></span></a><p>{fr?"Des outils et des opportunités pour avancer dans le numérique.":"Tools and opportunities to move forward digitally."}</p><div className="footer-links"><a href="https://tiktok.com/@el.maestro907" target="_blank" rel="noreferrer">TikTok · S’abonner</a><a href="https://www.facebook.com/profile.php?id=61582777979597" target="_blank" rel="noreferrer">Facebook · S’abonner</a></div><div className="footer-contact"><strong>{fr?"Contact, assistance et dons":"Contact, support and donations"}</strong><a href="tel:+22892244653">+228 92 24 46 53</a><a href="tel:+22898393862">+228 98 39 38 62</a><a href="https://wa.me/22892244653" target="_blank" rel="noreferrer">WhatsApp</a></div><small>© {new Date().getFullYear()} AQUI NET HUB</small></footer>
   </div>;
