@@ -223,20 +223,20 @@ export default {
     const url = new URL(request.url);
     try {
       if (request.method === "GET" && url.pathname === "/api/public/campaigns") {
-        const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_campaigns?is_active=eq.true&select=id,title,description,destination_url,image_url,starts_at,ends_at&order=created_at.desc&limit=100`, { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY } });
+        const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_campaigns?is_active=eq.true&select=id,title,description,destination_url,image_url,starts_at,ends_at&order=created_at.desc&limit=100`, { headers: { apikey: env.SUPABASE_ANON_KEY } });
         if (!response.ok) return json({ error: "Publicités indisponibles." }, 502);
         const campaigns = await response.json() as Array<{ starts_at: string | null; ends_at: string | null }>;
         const now = Date.now();
         return json({ campaigns: campaigns.filter(c => (!c.starts_at || new Date(c.starts_at).getTime() <= now) && (!c.ends_at || new Date(c.ends_at).getTime() >= now)) });
       }
       if (request.method === "GET" && url.pathname === "/api/public/settings") {
-        const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_site_settings?setting_key=eq.adsense_client&select=setting_value&limit=1`, { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY } });
+        const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_site_settings?setting_key=eq.adsense_client&select=setting_value&limit=1`, { headers: { apikey: env.SUPABASE_ANON_KEY } });
         if (!response.ok) return json({ adsense_client: "" });
         const rows = await response.json() as Array<{ setting_value: string }>;
         return json({ adsense_client: rows[0]?.setting_value || "" });
       }
       if (request.method === "GET" && url.pathname === "/ads.txt") {
-        const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_site_settings?setting_key=eq.adsense_client&select=setting_value&limit=1`, { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY } });
+        const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_site_settings?setting_key=eq.adsense_client&select=setting_value&limit=1`, { headers: { apikey: env.SUPABASE_ANON_KEY } });
         const rows = response.ok ? await response.json() as Array<{ setting_value: string }> : [];
         const publisher = (rows[0]?.setting_value || "").replace(/^ca-pub-/, "");
         return new Response(/^\d{16}$/.test(publisher) ? `google.com, pub-${publisher}, DIRECT, f08c47fec0942fa0\n` : "", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=300" } });
@@ -246,7 +246,12 @@ export default {
         return json({
           ok: true,
           supabase: !!env.SUPABASE_URL && !!env.SUPABASE_ANON_KEY && !!env.SUPABASE_SERVICE_ROLE_KEY,
+          supabase_url: !!env.SUPABASE_URL,
+          supabase_anon_key: !!env.SUPABASE_ANON_KEY,
+          supabase_service_key: !!env.SUPABASE_SERVICE_ROLE_KEY,
           cinetpay: !!env.CINETPAY_API_KEY && !!env.CINETPAY_API_PASSWORD,
+          cinetpay_api_key: !!env.CINETPAY_API_KEY,
+          cinetpay_api_password: !!env.CINETPAY_API_PASSWORD,
         });
       if (url.pathname === "/api/video/jobs" && request.method === "POST")
         return handleVideo(request, env);
