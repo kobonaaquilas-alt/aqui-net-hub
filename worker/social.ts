@@ -3,7 +3,7 @@ type User = { id: string };
 const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
 const headers=(env:Env)=>({apikey:env.SUPABASE_SERVICE_ROLE_KEY,"Content-Type":"application/json",Prefer:"return=representation"});
 async function userFrom(request:Request,env:Env):Promise<User|null>{
- const token=request.headers.get("Authorization")?.replace(/^Bearer\\s+/i,"").trim();
+ const token=request.headers.get("Authorization")?.replace(/^Bearer\s+/i,"").trim();
  if(!token)return null;
  const r=await fetch(`${env.SUPABASE_URL}/auth/v1/user`,{headers:{apikey:env.SUPABASE_ANON_KEY,Authorization:`Bearer ${token}`}});
  if(!r.ok)return null; const u=await r.json() as {id?:string}; return u.id?{id:u.id}:null;
