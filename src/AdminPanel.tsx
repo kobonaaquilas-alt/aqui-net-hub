@@ -30,6 +30,7 @@ export default function AdminPanel(){
   catch(e){setNotice(e instanceof Error?e.message:"Erreur de chargement.");}finally{setBusy(false);}
  },[session,authorized,request]);
  useEffect(()=>{if(authorized)void load();},[authorized,load]);
+ useEffect(()=>{if(!authorized)return;const timer=window.setInterval(()=>void load(),30000);return()=>window.clearInterval(timer);},[authorized,load]);
  async function action(path:string,method:string,body?:unknown){
   setBusy(true);setNotice("");try{await request(path,{method,body:body===undefined?undefined:JSON.stringify(body)});await load();setNotice("Modification enregistrée.");}
   catch(e){setNotice(e instanceof Error?e.message:"Erreur.");}finally{setBusy(false);}
