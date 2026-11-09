@@ -37,6 +37,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const [videoUrl, setVideoUrl] = useState("");
   const [videoBusy, setVideoBusy] = useState(false);
   const [videoNotice, setVideoNotice] = useState("");
+  const [videoPaywall,setVideoPaywall]=useState(false);
   const [socialUrl, setSocialUrl] = useState("");
   const [socialGoal, setSocialGoal] = useState("");
   const [socialResult, setSocialResult] = useState("");
@@ -232,8 +233,14 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ image_url: videoImageUrl.trim(), prompt: videoPrompt.trim(), duration: Number(videoDuration) }),
       });
-      const data = await response.json() as { request_id?: string; status?: string; error?: string };
+      const data = await response.json() as { request_id?: string; status?: string; error?: string; code?: string };
+      if (response.status === 402 || data.code === "PAYMENT_REQUIRED") {
+        setVideoPaywall(true);
+        setVideoNotice(data.error || (fr ? "Un abonnement est requis pour les vidéos de plus de 5 secondes." : "A subscription is required for videos longer than 5 seconds."));
+        return;
+      }
       if (!response.ok || !data.request_id) throw new Error(data.error || "Video request failed.");
+      setVideoPaywall(false);
       setVideoRequestId(data.request_id);
       setVideoStatus(data.status || "queued");
       setVideoNotice(fr ? "Demande envoyée. La génération peut prendre plusieurs minutes." : "Request submitted. Generation may take several minutes.");
@@ -349,7 +356,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     {session && service==="video" && <div className="account-card video-studio">
       <span className="eyebrow">AQUI VIDEO AI</span>
       <h3>{fr ? "Créer une vidéo à partir d'une image" : "Create a video from an image"}</h3>
-      <p>{fr ? "Moteur Wan 2.2 expérimental : clips de 2 à 5 secondes gratuits. Le modèle actuel est techniquement limité à 5 secondes ; les durées supérieures nécessitent un moteur compatible avant de pouvoir être proposées." : "Experimental Wan 2.2 engine. Currently: public HTTPS image URL and 2–5 second clips. Generation depends on service availability and quotas."}</p>
+      <p>{fr ? "Wan 2.2 : clips de 2 à 5 secondes gratuits. Les vidéos de 6, 8 ou 10 secondes nécessitent un abonnement et sont assemblées en segments successifs de 5 secondes maximum." : "Experimental Wan 2.2 engine. Currently: public HTTPS image URL and 2–5 second clips. Generation depends on service availability and quotas."}</p>
       <input type="url" value={videoImageUrl} onChange={e=>setVideoImageUrl(e.target.value)} placeholder={fr ? "Lien direct public de l'image (JPG, PNG, WEBP)" : "Public direct image URL (JPG, PNG, WEBP)"} required />
       <textarea value={videoPrompt} onChange={e=>setVideoPrompt(e.target.value)} placeholder={fr ? "Décris précisément le mouvement souhaité…" : "Describe the motion you want…"} required />
       <label>{fr ? "Durée du clip" : "Clip duration"}
@@ -361,9 +368,9 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
         {videoBusy ? "…" : (fr ? "Lancer la génération" : "Generate video")}
       </button>
       {videoRequestId && <p className="video-status">{fr ? "État :" : "Status:"} {videoStatus || "queued"} · {videoRequestId}</p>}
-      {videoNotice && <p className="account-message" role="status">{videoNotice}</p>}
+      {videoNotice && <p className="account-message" role="status">{videoNotice}</p>}\n      {videoPaywall && <div className="follow-gate"><h4>{fr?"Choisis ton abonnement pour débloquer les vidéos longues":"Choose a subscription to unlock longer videos"}</h4>{plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>void startPayment(p)}>{paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay"}</button></article>)}</div>}
       {videoUrl && <div className="video-result"><video controls playsInline src={videoUrl} /><a href={videoUrl} target="_blank" rel="noreferrer">{fr ? "Ouvrir / enregistrer le MP4" : "Open / save MP4"} ↗</a></div>}
-      <small className="account-footnote">{fr ? "L'audio IA, les sous-titres automatiques, les clips de 10 secondes et la tarification ne sont pas encore activés. Aucun paiement n'est déclenché ici." : "The current Wan 2.2 engine has a hard 5-second limit. Longer paid clips are not enabled until a compatible model is connected."}</small>
+      <small className="account-footnote">{fr ? "L'audio IA, les sous-titres automatiques, les clips de 10 secondes et la tarification ne sont pas encore activés. Aucun paiement n'est déclenché ici." : "Wan 2.2 creates free 2–5 second clips. 6, 8 or 10 second videos require an active subscription and are assembled from consecutive clips."}</small>
     </div>}
 
     {session && service==="partners" && <div className="account-grid">
