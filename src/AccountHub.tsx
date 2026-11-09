@@ -211,7 +211,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   }
   async function startPayment(plan:Plan){
     if(!session?.access_token){setNotice("Connecte-toi pour payer.");return;}
-    const parts=fullName.trim().split(/\\s+/);const first_name=parts[0]||"Client";const last_name=parts.slice(1).join(" ")||"AQUI";
+    const parts=fullName.trim().split(/\s+/);const first_name=parts[0]||"Client";const last_name=parts.slice(1).join(" ")||"AQUI";
     setPaymentBusy(true);setNotice("");
     try{
       const r=await fetch("/api/payments/create",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({plan_id:plan.id,first_name,last_name,phone})});
