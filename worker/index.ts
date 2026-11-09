@@ -264,6 +264,7 @@ export default {
         const publisher = (rows[0]?.setting_value || "").replace(/^ca-pub-/, "");
         return new Response(/^\d{16}$/.test(publisher) ? `google.com, pub-${publisher}, DIRECT, f08c47fec0942fa0\n` : "", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=300" } });
       }
+      if (request.method === "GET" && url.pathname === "/tiktokOsKTaCjvBEOEf2Di5eXocwwfXpXer12F.txt") return new Response("tiktok-developers-site-verification=OsKTaCjvBEOEf2Di5eXocwwfXpXer12F", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" } });
       if (request.method === "GET" && url.pathname === "/terms") return legalPage("Conditions d'utilisation", termsBody);
       if (request.method === "GET" && url.pathname === "/privacy") return legalPage("Politique de confidentialité", privacyBody);
       if (url.pathname.startsWith("/api/social/")) return handleSocial(request, env);
@@ -298,7 +299,3 @@ export default {
       if (url.pathname.startsWith("/api/")) return json({ error: "Route introuvable." }, 404);
       return env.ASSETS.fetch(request);
     } catch {
-      return json({ error: "Erreur interne du service." }, 500);
-    }
-  },
-};
