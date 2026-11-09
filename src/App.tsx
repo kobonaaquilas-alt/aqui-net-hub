@@ -44,6 +44,7 @@ export default function App() {
   const recommendations=useMemo(()=>submitted?tools.filter(t=>matchesTool(t,submitted)).slice(0,6):[],[submitted]);
   useEffect(()=>{fetch("/api/public/campaigns").then(r=>r.ok?r.json():Promise.reject()).then(d=>setCampaigns(d.campaigns||[])).catch(()=>{});fetch("/api/public/settings").then(r=>r.ok?r.json():Promise.reject()).then(d=>setAdsenseClient(d.adsense_client||"")).catch(()=>{});},[]);
   useEffect(()=>{if(!adsenseClient||!/^ca-pub-[0-9]{16}$/.test(adsenseClient)||document.querySelector("script[data-aqui-adsense]"))return;const s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";s.dataset.aquiAdsense="true";s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client="+adsenseClient;document.head.appendChild(s);},[adsenseClient]);
+  useEffect(()=>{if(!activeService)return;const frame=requestAnimationFrame(()=>document.getElementById(activeService==="tools"?"demande-outils":"compte")?.scrollIntoView({behavior:"smooth",block:"start"}));return()=>cancelAnimationFrame(frame);},[activeService]);
   const syncRemote=useCallback((_favorites:string[],_progress:string[])=>{},[]);
 
   return <div className="site-shell">
