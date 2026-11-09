@@ -28,14 +28,7 @@ const tools:Tool[] = [
 
 const norm=(s:string)=>s.toLocaleLowerCase("fr").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 const intentRules:[string,string[]][]=[
-  ["game_creation",["jeu video","jeux video","jeu","game","gameplay","rpg","plateforme","platformer","jeu mobile","jeu 2d","jeu 3d","moteur de jeu","creer un jeu","developper un jeu","generer un jeu"]],
-  ["image_generation",["generer une image","creer une image","image ia","illustration","dessin ia","photo ia"]],
-  ["video_generation",["generer une video","creer une video","video ia","animation video"]],
-  ["website_creation",["creer un site","creation de site","site web","site internet","boutique en ligne"]],
-  ["photo_editing",["retoucher une photo","restaurer une photo","detourage","supprimer le fond"]],
-  ["video_editing",["montage video","monter une video","sous titres video"]],
-  ["logo_design",["creer un logo","logo","identite visuelle"]],
-  ["audio_editing",["montage audio","nettoyer un audio","enregistrer une voix","podcast"]]
+  ["game_creation",["jeu video","jeux video","jeu","game","gameplay","rpg","plateforme","platformer","jeu mobile","jeu 2d","jeu 3d","moteur de jeu","creer un jeu","developper un jeu","generer un jeu"]]
 ];
 function getIntent(q:string) { const query=norm(q); return intentRules.filter(([,phrases])=>phrases.some(p=>query.includes(norm(p)))).map(([id])=>id); }
 function matchesTool(t:Tool,q:string) {
