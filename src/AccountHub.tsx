@@ -356,21 +356,22 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     {session && service==="video" && <div className="account-card video-studio">
       <span className="eyebrow">AQUI VIDEO AI</span>
       <h3>{fr ? "Créer une vidéo à partir d'une image" : "Create a video from an image"}</h3>
-      <p>{fr ? "Wan 2.2 : clips de 2 à 5 secondes gratuits. Les vidéos de 6, 8 ou 10 secondes nécessitent un abonnement et sont assemblées en segments successifs de 5 secondes maximum." : "Experimental Wan 2.2 engine. Currently: public HTTPS image URL and 2–5 second clips. Generation depends on service availability and quotas."}</p>
+      <p>{fr ? "Wan 2.2 : clips de 2 à 5 secondes gratuits. Les vidéos de 6, 8 ou 10 secondes nécessitent un abonnement et sont assemblées en segments successifs de 5 secondes maximum." : "Wan 2.2: free clips of 2–5 seconds. 6, 8 or 10 second videos require an active subscription and are assembled from consecutive clips."}</p>
       <input type="url" value={videoImageUrl} onChange={e=>setVideoImageUrl(e.target.value)} placeholder={fr ? "Lien direct public de l'image (JPG, PNG, WEBP)" : "Public direct image URL (JPG, PNG, WEBP)"} required />
       <textarea value={videoPrompt} onChange={e=>setVideoPrompt(e.target.value)} placeholder={fr ? "Décris précisément le mouvement souhaité…" : "Describe the motion you want…"} required />
       <label>{fr ? "Durée du clip" : "Clip duration"}
-        <select value={videoDuration} onChange={e=>setVideoDuration(e.target.value)}>
-          <option value="2">2 secondes</option><option value="3">3 secondes</option><option value="4">4 secondes</option><option value="5">5 secondes</option>
+        <select value={videoDuration} onChange={e=>{setVideoDuration(e.target.value);setVideoPaywall(false);}}>
+          <option value="2">2 secondes · gratuit</option><option value="3">3 secondes · gratuit</option><option value="4">4 secondes · gratuit</option><option value="5">5 secondes · gratuit</option><option value="6">6 secondes · abonnement</option><option value="8">8 secondes · abonnement</option><option value="10">10 secondes · abonnement</option>
         </select>
       </label>
       <button type="button" className="primary-button" disabled={videoBusy || !videoImageUrl.trim() || videoPrompt.trim().length<3} onClick={()=>void startVideo()}>
         {videoBusy ? "…" : (fr ? "Lancer la génération" : "Generate video")}
       </button>
       {videoRequestId && <p className="video-status">{fr ? "État :" : "Status:"} {videoStatus || "queued"} · {videoRequestId}</p>}
-      {videoNotice && <p className="account-message" role="status">{videoNotice}</p>}\n      {videoPaywall && <div className="follow-gate"><h4>{fr?"Choisis ton abonnement pour débloquer les vidéos longues":"Choose a subscription to unlock longer videos"}</h4>{plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>void startPayment(p)}>{paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay"}</button></article>)}</div>}
+      {videoNotice && <p className="account-message" role="status">{videoNotice}</p>}
+      {videoPaywall && <div className="follow-gate"><h4>{fr?"Choisis ton abonnement pour débloquer les vidéos longues":"Choose a subscription to unlock longer videos"}</h4>{plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>void startPayment(p)}>{paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay"}</button></article>)}</div>}
       {videoUrl && <div className="video-result"><video controls playsInline src={videoUrl} /><a href={videoUrl} target="_blank" rel="noreferrer">{fr ? "Ouvrir / enregistrer le MP4" : "Open / save MP4"} ↗</a></div>}
-      <small className="account-footnote">{fr ? "L'audio IA, les sous-titres automatiques, les clips de 10 secondes et la tarification ne sont pas encore activés. Aucun paiement n'est déclenché ici." : "Wan 2.2 creates free 2–5 second clips. 6, 8 or 10 second videos require an active subscription and are assembled from consecutive clips."}</small>
+      <small className="account-footnote">{fr ? "Les clips de plus de 5 secondes sont réservés aux abonnés. Le moteur assemble plusieurs segments successifs." : "Wan 2.2 creates free 2–5 second clips. 6, 8 or 10 second videos require an active subscription and are assembled from consecutive clips."}</small>
     </div>}
 
     {session && service==="partners" && <div className="account-grid">
