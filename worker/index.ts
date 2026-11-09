@@ -1,6 +1,7 @@
 import { CinetPayClient, parseNotification, verifyNotification } from "cinetpay-js";
 import { handleAdmin } from "./admin";
 import { handleVideo } from "./video";
+import { handleSocial } from "./social";
 
 interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -221,6 +222,25 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     try {
+      if (request.method === "GET" && url.pathname === "/api/public/campaigns") {
+        const now = encodeURIComponent(new Date().toISOString());
+        const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_campaigns?is_active=eq.true&or=(starts_at.is.null,starts_at.lte.${now})&and=(or(ends_at.is.null,ends_at.gte.${now}))&select=id,title,description,destination_url,image_url,starts_at,ends_at&order=created_at.desc&limit=30`, { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY } });
+        if (!response.ok) return json({ error: "Publicités indisponibles." }, 502);
+        return json({ campaigns: await response.json() });
+      }
+      if (request.method === "GET" && url.pathname === "/api/public/settings") {
+        const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_site_settings?setting_key=eq.adsense_client&select=setting_value&limit=1`, { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY } });
+        if (!response.ok) return json({ adsense_client: "" });
+        const rows = await response.json() as Array<{ setting_value: string }>;
+        return json({ adsense_client: rows[0]?.setting_value || "" });
+      }
+      if (request.method === "GET" && url.pathname === "/ads.txt") {
+        const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_site_settings?setting_key=eq.adsense_client&select=setting_value&limit=1`, { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY } });
+        const rows = response.ok ? await response.json() as Array<{ setting_value: string }> : [];
+        const publisher = (rows[0]?.setting_value || "").replace(/^ca-pub-/, "");
+        return new Response(/^\\d{16}$/.test(publisher) ? `google.com, pub-${publisher}, DIRECT, f08c47fec0942fa0\\n` : "", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=300" } });
+      }
+      if (url.pathname.startsWith("/api/social/")) return handleSocial(request, env);
       if (request.method === "GET" && url.pathname === "/api/health")
         return json({
           ok: true,
