@@ -31,7 +31,7 @@ Plateforme numérique pour découvrir des outils, apprendre, structurer des proj
 ## Configuration de production
 Consulter [docs/CONFIGURATION_PRODUCTION.md](docs/CONFIGURATION_PRODUCTION.md) pour l'ordre des migrations Supabase, les variables Cloudflare et les étapes de vérification.
 
-## Automatisation navigateur\n- Agent navigateur en lecture seule dans l'espace administrateur, exécuté par GitHub Actions + Playwright et stocké dans Supabase.\n- Détails : [docs/BROWSER_AUTOMATION.md](docs/BROWSER_AUTOMATION.md).\n\n## Sécurité
+## Automatisation navigateur\n- Automatisation navigateur en lecture seule dans l'espace administrateur, exécuté par GitHub Actions + Playwright et stocké dans Supabase.\n- Détails : [docs/BROWSER_AUTOMATION.md](docs/BROWSER_AUTOMATION.md).\n\n## Sécurité
 - Les clés privées et identifiants de paiement restent exclusivement dans les secrets Cloudflare.
 - La clé Supabase `service_role` ne doit jamais être exposée au navigateur.
 - Les paiements ne sont considérés comme réussis qu'après vérification côté serveur auprès de CinetPay.
