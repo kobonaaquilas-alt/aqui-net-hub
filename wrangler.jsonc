@@ -10,8 +10,7 @@
       "/ads.txt",
       "/terms",
       "/privacy",
-      "/tiktokOsKTaCjvBEOEf2Di5eXocwwfXpXer12F.txt",
-      "/tiktok*",
+      "/tiktok*"
     ]
   },
   "main": "./worker/index.ts",
