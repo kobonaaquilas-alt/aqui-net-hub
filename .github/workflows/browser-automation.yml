@@ -1,0 +1,59 @@
+name: AQUI NET HUB - Browser automation
+run-name: Browser task ${{ inputs.request_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: Browser job identifier
+        required: true
+        type: string
+      target_url:
+        description: Public HTTPS page to inspect
+        required: true
+        type: string
+      steps_json:
+        description: Read-only browser steps in JSON
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install project dependencies
+        run: npm install
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Run read-only browser task
+        env:
+          REQUEST_ID: ${{ inputs.request_id }}
+          TARGET_URL: ${{ inputs.target_url }}
+          STEPS_JSON: ${{ inputs.steps_json }}
+        run: node scripts/run-browser-task.mjs
+
+      - name: Save browser result
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-result-${{ inputs.request_id }}
+          path: |
+            result.json
+            browser.png
+          if-no-files-found: ignore
+          retention-days: 2
