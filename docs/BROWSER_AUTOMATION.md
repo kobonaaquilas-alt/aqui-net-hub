@@ -1,4 +1,4 @@
-# Agent navigateur AQUI NET HUB
+# Automatisation navigateur AQUI NET HUB
 
 Le moteur navigateur utilise GitHub Actions et Playwright Chromium. Il est déclenché depuis l'espace d'administration du site et conserve les résultats dans Supabase.
 
