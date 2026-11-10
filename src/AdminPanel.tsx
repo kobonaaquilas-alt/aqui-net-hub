@@ -72,7 +72,7 @@ export default function AdminPanel(){
   <div className="section-heading"><span className="eyebrow">ESPACE PRIVÉ</span><h2>Administration AQUI NET HUB</h2><p>Connecté en tant que {session?.user.email}</p><button className="filter-button" disabled={busy} onClick={()=>void load()}>{busy?"…":"Actualiser"}</button></div>
   {notice&&<p className="account-message" role="status">{notice}</p>}
   <div className="account-card browser-automation-card">
-   <h3>Agent navigateur AQUI NET HUB</h3>
+   <h3>Automatisation navigateur (Playwright)</h3>
    <p>Navigation automatisée en lecture seule : consulter une page publique, extraire du texte, ouvrir un lien ou faire une capture.</p>
    <form className="admin-campaign-form" onSubmit={e=>void startBrowserTask(e)}>
     <input type="url" required value={browserUrl} onChange={e=>setBrowserUrl(e.target.value)} placeholder="https://exemple.com"/>
