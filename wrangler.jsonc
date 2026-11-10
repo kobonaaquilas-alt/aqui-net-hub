@@ -17,5 +17,8 @@
   "vars": {
     "SUPABASE_URL": "https://xbobkysbtvtmepqgtnbt.supabase.co",
     "SUPABASE_ANON_KEY": "sb_publishable_AGtfBQyqyKbH5C_4f5cQgw_bm0MmusA"
+  },
+  "triggers": {
+    "crons": ["0 * * * *"]
   }
 }
