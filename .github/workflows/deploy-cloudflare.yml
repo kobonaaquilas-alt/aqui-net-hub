@@ -27,7 +27,7 @@ jobs:
         run: npm install
 
       - name: Build and type-check
-        run: npm run build && npm run typecheck:worker
+        run: npm run build && npm run typecheck:worker && node --check scripts/run-browser-task.mjs
 
       - name: Explain skipped deployment when credentials are absent
         if: ${{ env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == '' }}
