@@ -245,7 +245,46 @@ const privacyBody = `
 <h2>7. Vos demandes</h2><p>Vous pouvez demander l'accès, la rectification ou la suppression des données associées à votre compte, sous réserve des obligations légales, en contactant l'assistance. Vous pouvez retirer les autorisations accordées à un service tiers depuis les paramètres de ce service.</p>
 <h2>8. Cookies et modifications</h2><p>Des mécanismes techniques peuvent être utilisés pour le fonctionnement et la sécurité du site. Cette politique peut être mise à jour ; sa date figure en haut de page.</p>`;
 
+async function runScheduledMaintenance(env: Env): Promise<void> {
+  if (!env.SUPABASE_URL || !serviceKey(env)) {
+    console.error("Scheduled maintenance skipped: Supabase service credentials are missing.");
+    return;
+  }
+  const base = env.SUPABASE_URL + "/rest/v1/";
+  const now = encodeURIComponent(new Date().toISOString());
+  const [subscriptions, oauthStates] = await Promise.all([
+    fetch(`${base}hub_subscriptions?status=eq.active&ends_at=lte.${now}`, {
+      method: "PATCH",
+      headers: headers(env),
+      body: JSON.stringify({ status: "expired" }),
+    }),
+    fetch(`${base}hub_facebook_oauth_states?expires_at=lt.${now}`, {
+      method: "DELETE",
+      headers: headers(env),
+    }),
+  ]);
+  if (!subscriptions.ok || !oauthStates.ok) {
+    console.error("Scheduled maintenance failed.", {
+      subscriptions_status: subscriptions.status,
+      oauth_cleanup_status: oauthStates.status,
+    });
+    throw new Error("Scheduled maintenance request failed.");
+  }
+  console.log("Scheduled maintenance completed.", {
+    subscriptions_expired: subscriptions.headers.get("content-range") || "updated",
+    oauth_states_cleanup: oauthStates.status,
+    executed_at: new Date().toISOString(),
+  });
+}
+
 export default {
+  scheduled(
+    _controller: { cron: string; scheduledTime: number },
+    env: Env,
+    context: { waitUntil(promise: Promise<unknown>): void },
+  ): void {
+    context.waitUntil(runScheduledMaintenance(env));
+  },
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     try {
