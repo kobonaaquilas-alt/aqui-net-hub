@@ -50,6 +50,12 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const [socialCount,setSocialCount]=useState(0);
   const [followStatus,setFollowStatus]=useState("none");
   const [socialSubscribed,setSocialSubscribed]=useState(false);
+  const [facebookPages,setFacebookPages]=useState<Array<{page_id:string;page_name:string}>>([]);
+  const [facebookPageId,setFacebookPageId]=useState("");
+  const [facebookConnected,setFacebookConnected]=useState(false);
+  const [facebookBusy,setFacebookBusy]=useState(false);
+  const [facebookReport,setFacebookReport]=useState<any>(null);
+  const [facebookNotice,setFacebookNotice]=useState("");
   const [tiktokProof,setTiktokProof]=useState("");
   const [facebookProof,setFacebookProof]=useState("");
   const [paymentBusy,setPaymentBusy]=useState(false);
@@ -207,6 +213,49 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     }catch(e){setSocialResult(e instanceof Error?e.message:"Erreur d'analyse.");}
     finally{setBusy(false);}
   }
+  useEffect(()=>{
+    if(!session?.access_token)return;
+    const status=new URLSearchParams(window.location.search).get("facebook");
+    if(status){
+      const messages:Record<string,string>={
+        connected:fr?"Facebook est connecté. Sélectionne une Page pour lancer l'analyse.":"Facebook connected. Select a Page to start analysis.",
+        denied:fr?"Autorisation Facebook refusée.":"Facebook authorization was declined.",
+        no_pages:fr?"Aucune Page administrée n'a été trouvée pour ce compte.":"No managed Facebook Pages were found for this account.",
+        expired:fr?"La demande de connexion a expiré. Recommence.":"The connection request expired. Try again.",
+        save_error:fr?"Facebook a répondu, mais l'enregistrement sécurisé a échoué.":"Facebook responded, but secure storage failed.",
+        token_error:fr?"Meta n'a pas fourni de jeton d'accès valide.":"Meta did not return a valid access token.",
+        invalid:fr?"Réponse Facebook invalide.":"Invalid Facebook response."
+      };
+      setFacebookNotice(messages[status]||"");
+      const clean=new URL(window.location.href);clean.searchParams.delete("facebook");window.history.replaceState({}, "", clean.toString());
+    }
+    fetch("/api/facebook/pages",{headers:{Authorization:"Bearer "+session.access_token}})
+      .then(r=>r.ok?r.json():Promise.reject())
+      .then(d=>{const pages=d.pages||[];setFacebookPages(pages);setFacebookConnected(!!d.connected);if(pages.length&&!facebookPageId)setFacebookPageId(pages[0].page_id);})
+      .catch(()=>{setFacebookConnected(false);});
+  },[session?.access_token,fr]);
+  async function connectFacebook(){
+    if(!session?.access_token){setFacebookNotice(fr?"Connecte-toi d'abord à AQUI NET HUB.":"Sign in to AQUI NET HUB first.");return;}
+    setFacebookBusy(true);setFacebookNotice("");
+    try{
+      const r=await fetch("/api/facebook/connect",{method:"POST",headers:{Authorization:"Bearer "+session.access_token}});
+      const d=await r.json();
+      if(!r.ok||!d.authorization_url)throw new Error(d.error||"Connexion Facebook indisponible.");
+      window.location.assign(d.authorization_url);
+    }catch(e){setFacebookNotice(e instanceof Error?e.message:"Connexion Facebook impossible.");setFacebookBusy(false);}
+  }
+  async function auditFacebook(){
+    if(!session?.access_token||!facebookPageId)return;
+    setFacebookBusy(true);setFacebookNotice("");setFacebookReport(null);
+    try{
+      const r=await fetch("/api/facebook/audit",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({page_id:facebookPageId})});
+      const d=await r.json();
+      if(!r.ok||!d.ok)throw new Error(d.error||"Analyse Facebook impossible.");
+      setFacebookReport(d.report);
+      setSocialResult("");
+    }catch(e){setFacebookNotice(e instanceof Error?e.message:"Erreur pendant l'analyse Facebook.");}
+    finally{setFacebookBusy(false);}
+  }
   async function submitFollowProof(){
     if(!session)return;setBusy(true);setSocialResult("");
     try{
@@ -349,7 +398,15 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     {session && hasActiveSubscription && service==="social" && <div className="account-card social-audit">
       <span className="eyebrow">AQUI SOCIAL AUDIT · {socialCount}/3 {fr?"analyses gratuites":"free reviews"}</span>
       <h3>{fr?"Diagnostic de ton compte":"Your account review"}</h3>
-      <p>{fr?"Renseigne les chiffres visibles dans les statistiques de ton réseau. Le rapport est calculé à partir de ces données déclarées : AQUI NET HUB ne se connecte pas encore directement à ton compte social.":"Enter figures from your platform analytics. The report uses the figures you provide; AQUI NET HUB does not yet connect directly to your social account."}</p>
+      <p>{fr?"Facebook peut être connecté via l'autorisation officielle Meta pour analyser automatiquement les Pages que tu administres. Pour les autres réseaux, les chiffres restent à saisir manuellement.":"Facebook can be connected through official Meta authorization to automatically analyze Pages you manage. For other networks, figures must still be entered manually."}</p>
+      <div className="follow-gate">
+        <h4>{fr?"Connexion réelle à Facebook":"Connect directly to Facebook"}</h4>
+        <p>{fr?"Le lien seul ne donne pas accès aux statistiques privées. Autorise AQUI NET HUB auprès de Facebook, puis choisis une Page que tu administres.":"A profile link alone cannot grant access to private insights. Authorize AQUI NET HUB with Facebook, then choose a Page you manage."}</p>
+        <button type="button" className="primary-button" disabled={facebookBusy||!backendReady} onClick={()=>void connectFacebook()}>{facebookBusy?"…":facebookConnected?(fr?"Reconnecter Facebook":"Reconnect Facebook"):(fr?"Connecter Facebook":"Connect Facebook")}</button>
+        {facebookConnected&&<><label>{fr?"Page Facebook à analyser":"Facebook Page to analyze"}<select value={facebookPageId} onChange={e=>setFacebookPageId(e.target.value)}><option value="">{fr?"Choisir une Page":"Choose a Page"}</option>{facebookPages.map(p=><option key={p.page_id} value={p.page_id}>{p.page_name}</option>)}</select></label><button type="button" className="filter-button" disabled={facebookBusy||!facebookPageId} onClick={()=>void auditFacebook()}>{facebookBusy?(fr?"Analyse…":"Analyzing…"):(fr?"Analyser automatiquement":"Analyze automatically")}</button></>}
+        {facebookNotice&&<p className="account-message" role="status">{facebookNotice}</p>}
+        {facebookReport&&<div className="social-report"><strong>{facebookReport.page_name}</strong><p>{fr?"Abonnés :":"Followers: "} {Number(facebookReport.followers).toLocaleString(fr?"fr-FR":"en-US")}</p><p>{fr?"Publications analysées :":"Posts analyzed: "} {facebookReport.posts_analyzed}</p><p>{fr?"J'aime moyens :":"Average likes: "} {facebookReport.average_likes} · {fr?"Commentaires moyens :":"Average comments: "} {facebookReport.average_comments}</p><p>{fr?"Impressions sur 28 jours :":"28-day impressions: "} {facebookReport.impressions_28d===null?(fr?"Indisponibles":"Unavailable"):Number(facebookReport.impressions_28d).toLocaleString()}</p><p>{fr?"Interactions sur 28 jours :":"28-day engagements: "} {facebookReport.engagements_28d===null?(fr?"Indisponibles":"Unavailable"):Number(facebookReport.engagements_28d).toLocaleString()}</p><small>{facebookReport.disclaimer}</small></div>}
+      </div>
       {(socialCount<3 || (followStatus==="approved"&&socialSubscribed)) ? <>
         <input type="url" value={socialUrl} onChange={e=>setSocialUrl(e.target.value)} placeholder="Lien public du profil (HTTPS)" required/>
         <input value={socialName} onChange={e=>setSocialName(e.target.value)} placeholder={fr?"Nom exact du compte":"Exact account name"} required/>
@@ -374,7 +431,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
         </>:<><p>{fr?"Abonnements validés. Étape 2 : active ton abonnement pour poursuivre les analyses.":"Follows verified. Step 2: activate a subscription to continue."}</p>{!socialSubscribed&&plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement indisponible":"Payment unavailable"):paymentBusy?"…":fr?"S'abonner et payer":"Subscribe and pay"}</button></article>)}{socialSubscribed&&<p className="account-message">{fr?"Abonnement actif : les analyses supplémentaires sont débloquées.":"Active subscription: additional reviews are unlocked."}</p>}</>}
       </div>}
       {socialResult&&<pre className="account-message social-report" role="status">{socialResult}</pre>}
-      <small className="account-footnote">{fr?"Les captures sont contrôlées manuellement. Les statistiques ne sont pas authentifiées automatiquement par TikTok ou Meta.":"Screenshots are reviewed manually. TikTok or Meta do not automatically authenticate these metrics here."}</small>
+      <small className="account-footnote">{fr?"Les captures sont contrôlées manuellement. Les statistiques saisies manuellement ne sont pas authentifiées automatiquement. Facebook connecté utilise les données autorisées par Meta.":"Screenshots are reviewed manually. TikTok or Meta do not automatically authenticate these metrics here."}</small>
     </div>}
     {session && hasActiveSubscription && service==="video" && <div className="account-card video-studio">
       <span className="eyebrow">AQUI VIDEO AI</span>
