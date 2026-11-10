@@ -201,6 +201,7 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
       method: "POST",
       headers: {
         apikey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || "",
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || ""}`,
         "Content-Type": "video/mp4",
         "x-upsert": "true",
       },
@@ -220,6 +221,7 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
       method: "POST",
       headers: {
         apikey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || "",
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || ""}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ expiresIn: 3600 }),
