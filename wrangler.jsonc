@@ -10,7 +10,8 @@
       "/ads.txt",
       "/terms",
       "/privacy",
-      "/tiktokOsKTaCjvBEOEf2Di5eXocwwfXpXer12F.txt"
+      "/tiktokOsKTaCjvBEOEf2Di5eXocwwfXpXer12F.txt",
+      "/tiktokMlPLJCTPGItAaJ20YSCk4T0TTmPTri69.txt"
     ]
   },
   "main": "./worker/index.ts",
