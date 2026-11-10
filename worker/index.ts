@@ -27,6 +27,7 @@ const json = (data: unknown, status = 200) => new Response(JSON.stringify(data),
 const serviceKey = (env: Env) => env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || "";
 const headers = (env: Env) => ({
   apikey: serviceKey(env),
+  Authorization: `Bearer ${serviceKey(env)}`,
   "Content-Type": "application/json",
   Prefer: "return=representation",
 });
