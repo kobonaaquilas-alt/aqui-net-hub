@@ -406,3 +406,31 @@ button.service-card{
 .tool-results-layout.has-selection{grid-template-columns:minmax(0,1fr)}
 .tool-results-layout.has-selection .tool-detail-page{position:relative;top:auto;grid-column:1/-1;margin-top:18px}
 @media(max-width:760px){.promo-ticker{top:76px}.tool-detail-page{scroll-margin-top:145px}}
+
+
+/* AQUI NET HUB browser automation results */
+.browser-job-result {
+  margin-top: 1rem;
+  min-width: 0;
+}
+.browser-job-result pre {
+  max-height: 24rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 1rem;
+  border: 1px solid var(--border, rgba(255,255,255,.14));
+  border-radius: 12px;
+  background: rgba(10, 16, 30, .72);
+  color: inherit;
+  font: .86rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.browser-automation-card select {
+  width: 100%;
+  min-height: 44px;
+  padding: .7rem .85rem;
+  border-radius: 10px;
+  border: 1px solid var(--border, rgba(255,255,255,.18));
+  background: rgba(10, 16, 30, .72);
+  color: inherit;
+}
