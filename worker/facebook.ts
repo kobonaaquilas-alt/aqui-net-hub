@@ -96,7 +96,7 @@ export async function handleFacebook(request:Request,env:Env){
     graphGet(env,page.page_id,{fields:"id,name,followers_count,fan_count",access_token:page.page_access_token}),
     graphGet(env,page.page_id+"/posts",{fields:"id,message,created_time,permalink_url,shares,likes.summary(true),comments.summary(true)",limit:"20",access_token:page.page_access_token})
    ]);
-   const items=(posts.data||[]) as Array<{likes?:{summary?:{total_count?:number}};comments?:{summary?:{total_count?:number}};created_time?:string;shares?:{count?:number}}>;
+   const items=(posts.data||[]) as Array<{id?:string;message?:string;permalink_url?:string;likes?:{summary?:{total_count?:number}};comments?:{summary?:{total_count?:number}};created_time?:string;shares?:{count?:number}}>;
    const average=(values:number[])=>values.length?values.reduce((a,b)=>a+b,0)/values.length:0;
    const likes=items.map(p=>Number(p.likes?.summary?.total_count||0));
    const comments=items.map(p=>Number(p.comments?.summary?.total_count||0));
