@@ -21,6 +21,7 @@ function reply(data: unknown, status = 200) {
 function serviceHeaders(env: VideoEnv) {
   return {
     apikey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || "",
+    Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || ""}`,
     "Content-Type": "application/json",
     Prefer: "return=representation",
   };
