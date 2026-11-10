@@ -34,7 +34,7 @@ const githubHeaders = (env: Env) => ({
   "User-Agent": "AQUI-NET-HUB",
 });
 async function currentUser(request: Request, env: Env): Promise<User | null> {
-  const token = request.headers.get("Authorization")?.replace(/^Bearer\\s+/i, "").trim();
+  const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "").trim();
   if (!token) return null;
   const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
     headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` },
@@ -46,11 +46,11 @@ async function currentUser(request: Request, env: Env): Promise<User | null> {
 function publicHttpsUrl(value: unknown): string | null {
   try {
     const url = new URL(String(value || ""));
-    const host = url.hostname.toLowerCase().replace(/^\\[|\\]$/g, "");
+    const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
     const blocked = host === "localhost" || host.endsWith(".localhost") ||
       host.endsWith(".local") || host === "0.0.0.0" || host === "::1" ||
-      /^(10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2\\d|3[01])\\.)/.test(host) ||
-      /^\\d{1,3}(\\.\\d{1,3}){3}$/.test(host) || host.includes(":");
+      /^(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host) ||
+      /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.includes(":");
     if (url.protocol !== "https:" || url.username || url.password || blocked || !host.includes(".")) return null;
     return url.toString();
   } catch { return null; }
@@ -218,7 +218,7 @@ export async function handleBrowser(request: Request, env: Env): Promise<Respons
     const url = new URL(request.url);
     if (request.method === "POST" && url.pathname === "/api/browser/jobs")
       return await createJob(request, env, user);
-    const match = url.pathname.match(/^\\/api\\/browser\\/jobs\\/([0-9a-f-]{36})$/i);
+    const match = url.pathname.match(/^\/api\/browser\/jobs\/([0-9a-f-]{36})$/i);
     if (request.method === "GET" && match) return await getJob(request, env, user, match[1]);
     return reply({ error: "Route navigateur introuvable." }, 404);
   } catch {
