@@ -11,7 +11,7 @@
       "/terms",
       "/privacy",
       "/tiktokOsKTaCjvBEOEf2Di5eXocwwfXpXer12F.txt",
-      "/tiktokOjhUgRdEzPMVLXmka4OU8ALtG9eDX3T2.txt",
+      "/tiktok*",
     ]
   },
   "main": "./worker/index.ts",
