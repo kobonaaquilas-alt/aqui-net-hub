@@ -1,7 +1,7 @@
 type Env = { SUPABASE_URL: string; SUPABASE_ANON_KEY: string; SUPABASE_SERVICE_ROLE_KEY?: string; SUPABASE_SECRET_KEY?: string };
 type User = { id: string };
 const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
-const headers=(env:Env)=>({apikey:env.SUPABASE_SERVICE_ROLE_KEY||env.SUPABASE_SECRET_KEY||"","Content-Type":"application/json",Prefer:"return=representation"});
+const headers=(env:Env)=>({apikey:env.SUPABASE_SERVICE_ROLE_KEY||env.SUPABASE_SECRET_KEY||"",Authorization:"Bearer "+(env.SUPABASE_SERVICE_ROLE_KEY||env.SUPABASE_SECRET_KEY||""),"Content-Type":"application/json",Prefer:"return=representation"});
 async function userFrom(request:Request,env:Env):Promise<User|null>{
  const token=request.headers.get("Authorization")?.replace(/^Bearer\s+/i,"").trim();
  if(!token)return null;
