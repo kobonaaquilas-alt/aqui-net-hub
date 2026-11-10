@@ -6,11 +6,17 @@ type RequestItem={id:string;user_id:string;contact_name:string;email:string;phon
 type Campaign={id:string;title:string;description:string;destination_url:string|null;image_url:string|null;starts_at:string|null;ends_at:string|null;is_active:boolean};
 type Follow={id:string;user_id:string;account_name:string;tiktok_proof_url:string;facebook_proof_url:string;status:string;created_at:string;admin_note:string|null};
 type Audit={id:string;user_id:string;platform:string;account_name:string;social_url:string;followers:number;average_views:number;average_likes:number;average_comments:number;posts_per_week:number;goal:string;created_at:string};
+type BrowserJob={request_id:string;status:string;error_message?:string|null;result?:{title?:string;final_url?:string;body_text?:string;steps?:unknown[]}|null};
 type Data={ads:RequestItem[];partners:RequestItem[];follows:Follow[];audits:Audit[]};
 export default function AdminPanel(){
  const [session,setSession]=useState<Session|null>(null),[authorized,setAuthorized]=useState(false),[checked,setChecked]=useState(false);
  const [data,setData]=useState<Data>({ads:[],partners:[],follows:[],audits:[]}),[campaigns,setCampaigns]=useState<Campaign[]>([]);
  const [notice,setNotice]=useState(""),[busy,setBusy]=useState(false),[adsense,setAdsense]=useState("");
+ const [browserUrl,setBrowserUrl]=useState("https://");
+ const [browserSelector,setBrowserSelector]=useState("body");
+ const [browserAction,setBrowserAction]=useState<"page"|"extract_text"|"click_link"|"screenshot">("page");
+ const [browserJob,setBrowserJob]=useState<BrowserJob|null>(null);
+ const [browserBusy,setBrowserBusy]=useState(false);
  const [draft,setDraft]=useState({title:"",description:"",destination_url:"",image_url:"",starts_at:"",ends_at:"",is_active:true});
  const auth=useCallback(async(s:Session|null)=>{
   setSession(s);setAuthorized(false);setChecked(false);
@@ -41,11 +47,50 @@ export default function AdminPanel(){
   catch(e){setNotice(e instanceof Error?e.message:"Création impossible.");}finally{setBusy(false);}
  }
  async function saveAdsense(){await action("/api/admin/settings","PATCH",{adsense_client:adsense});}
+ async function startBrowserTask(e:FormEvent){
+  e.preventDefault();setBrowserBusy(true);setNotice("");
+  try{
+   const steps=browserAction==="page"?[]:browserAction==="screenshot"?[{action:"screenshot",full_page:true}]:[{action:browserAction,selector:browserSelector}];
+   const result=await request("/api/browser/jobs",{method:"POST",body:JSON.stringify({target_url:browserUrl,steps})});
+   setBrowserJob({request_id:result.request_id,status:result.status});
+   setNotice("Tâche navigateur envoyée.");
+  }catch(error){setNotice(error instanceof Error?error.message:"Tâche navigateur impossible.");}
+  finally{setBrowserBusy(false);}
+ }
+ useEffect(()=>{
+  if(!browserJob?.request_id||["completed","failed"].includes(browserJob.status))return;
+  const timer=window.setInterval(async()=>{
+   try{const result=await request(`/api/browser/jobs/${browserJob.request_id}`);setBrowserJob(result);}
+   catch(error){setNotice(error instanceof Error?error.message:"Lecture du résultat impossible.");}
+  },5000);
+  return()=>window.clearInterval(timer);
+ },[browserJob?.request_id,browserJob?.status,request]);
+
  if(!checked||!authorized)return null;
  const group=(kind:"ads"|"partners",items:RequestItem[])=> <div className="account-card"><h3>{kind==="ads"?"Demandes publicitaires":"Demandes de partenariat"} · {items.length}</h3>{items.length===0&&<p>Aucune demande.</p>}{items.map(x=><article className="admin-request-row" key={x.id}><div><strong>{kind==="ads"?x.company_name:x.organization}</strong><p>{x.contact_name} · {x.email} · {x.phone||""}</p>{x.website&&<p><a href={x.website} target="_blank" rel="noreferrer">{x.website}</a></p>}<p>{x.message||x.proposal}</p><small>{new Date(x.created_at).toLocaleString("fr-FR")} · {x.status}</small></div><div className="admin-actions"><button disabled={busy} onClick={()=>void action(`/api/admin/requests/${kind}/${x.id}`,"PATCH",{status:"reviewing"})}>En cours</button><button disabled={busy} onClick={()=>void action(`/api/admin/requests/${kind}/${x.id}`,"PATCH",{status:"accepted"})}>Valider</button><button disabled={busy} onClick={()=>void action(`/api/admin/requests/${kind}/${x.id}`,"PATCH",{status:"declined"})}>Refuser</button></div></article>)}</div>;
  return <section className="section account-hub admin-private" id="admin-prive">
   <div className="section-heading"><span className="eyebrow">ESPACE PRIVÉ</span><h2>Administration AQUI NET HUB</h2><p>Connecté en tant que {session?.user.email}</p><button className="filter-button" disabled={busy} onClick={()=>void load()}>{busy?"…":"Actualiser"}</button></div>
   {notice&&<p className="account-message" role="status">{notice}</p>}
+  <div className="account-card browser-automation-card">
+   <h3>Agent navigateur AQUI NET HUB</h3>
+   <p>Navigation automatisée en lecture seule : consulter une page publique, extraire du texte, ouvrir un lien ou faire une capture.</p>
+   <form className="admin-campaign-form" onSubmit={e=>void startBrowserTask(e)}>
+    <input type="url" required value={browserUrl} onChange={e=>setBrowserUrl(e.target.value)} placeholder="https://exemple.com"/>
+    <select value={browserAction} onChange={e=>setBrowserAction(e.target.value as typeof browserAction)}>
+     <option value="page">Lire la page entière</option>
+     <option value="extract_text">Extraire un élément CSS</option>
+     <option value="click_link">Ouvrir un lien CSS</option>
+     <option value="screenshot">Faire une capture complète</option>
+    </select>
+    {browserAction!=="page"&&browserAction!=="screenshot"&&<input value={browserSelector} onChange={e=>setBrowserSelector(e.target.value)} placeholder="Sélecteur CSS (ex. main, h1, a.next)"/>}
+    <button className="primary-button" disabled={browserBusy||!!(browserJob&&!["completed","failed"].includes(browserJob.status))}>{browserBusy?"…":"Exécuter la tâche"}</button>
+   </form>
+   {browserJob&&<div className="browser-job-result">
+    <p><strong>État :</strong> {browserJob.status} · {browserJob.request_id}</p>
+    {browserJob.error_message&&<p className="account-message">{browserJob.error_message}</p>}
+    {browserJob.result&&<><strong>{browserJob.result.title||"Résultat"}</strong>{browserJob.result.final_url&&<p><a href={browserJob.result.final_url} target="_blank" rel="noreferrer">{browserJob.result.final_url}</a></p>}<pre>{browserJob.result.body_text||JSON.stringify(browserJob.result.steps||[],null,2)}</pre></>}
+   </div>}
+  </div>
   {group("ads",data.ads)}{group("partners",data.partners)}
   <div className="account-card"><h3>Vérification des abonnements TikTok et Facebook · {data.follows.length}</h3>{data.follows.length===0&&<p>Aucune preuve reçue.</p>}{data.follows.map(f=><article className="admin-request-row" key={f.id}><div><strong>{f.account_name} · {f.status}</strong><p>Utilisateur : {f.user_id}</p><p><a href={f.tiktok_proof_url} target="_blank" rel="noreferrer">Preuve TikTok</a> · <a href={f.facebook_proof_url} target="_blank" rel="noreferrer">Preuve Facebook</a></p><small>{new Date(f.created_at).toLocaleString("fr-FR")}</small></div><div className="admin-actions"><button disabled={busy} onClick={()=>void action(`/api/admin/follows/${f.id}`,"PATCH",{status:"approved"})}>Valider</button><button disabled={busy} onClick={()=>void action(`/api/admin/follows/${f.id}`,"PATCH",{status:"rejected"})}>Refuser</button></div></article>)}</div>
   <div className="account-card"><h3>Analyses sociales · {data.audits.length}</h3>{data.audits.map(a=><article className="admin-request-row" key={a.id}><div><strong>{a.platform} · {a.account_name}</strong><p><a href={a.social_url} target="_blank" rel="noreferrer">Profil</a> · {a.followers.toLocaleString("fr-FR")} abonnés · {a.average_views.toLocaleString("fr-FR")} vues moyennes</p><small>{a.user_id} · {new Date(a.created_at).toLocaleString("fr-FR")}</small></div></article>)}</div>
