@@ -7,6 +7,7 @@ Dans Supabase > SQL Editor, exécuter les migrations dans cet ordre, une seule f
 1. `supabase/migrations/20261106_hub_features.sql` — comptes, synchronisation, demandes ADS/Partners, campagnes, formules et commandes.
 2. `supabase/migrations/20261106_hub_entitlements.sql` — abonnements et fonction de confirmation atomique des paiements.
 3. `supabase/migrations/20261106000100_hub_plan_snapshot.sql` — conserve le nom et la durée de la formule au moment de la commande et sécurise l’extension des abonnements.
+4. `supabase/migrations/20261110000100_facebook_oauth.sql` et `supabase/migrations/20261110000200_facebook_service_role_grants.sql` — connexion Facebook OAuth et stockage des jetons côté serveur.
 
 La troisième migration dépend des deux premières. Elle protège les commandes déjà initiées si une formule est ensuite désactivée ou modifiée.
 
