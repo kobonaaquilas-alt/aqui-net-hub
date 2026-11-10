@@ -19,3 +19,4 @@ jobs:
       - run: npm install
       - run: npm run build
       - run: npm run typecheck:worker
+      - run: node --check scripts/run-browser-task.mjs
