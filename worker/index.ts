@@ -2,6 +2,7 @@ import { CinetPayClient, parseNotification, verifyNotification } from "cinetpay-
 import { handleAdmin } from "./admin";
 import { handleVideo } from "./video";
 import { handleSocial } from "./social";
+import { handleFacebook } from "./facebook";
 
 interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -14,6 +15,9 @@ interface Env {
   APP_BASE_URL?: string;
   GITHUB_TOKEN: string;
   VIDEO_WORKFLOW_REF?: string;
+  FACEBOOK_APP_ID?: string;
+  FACEBOOK_APP_SECRET?: string;
+  FACEBOOK_GRAPH_VERSION?: string;
 }
 type AuthUser = { id: string; email?: string };
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), {
@@ -234,7 +238,7 @@ const termsBody = `
 const privacyBody = `
 <h2>1. Responsable et contact</h2><p>AQUI NET HUB fournit ce service depuis le Togo. Contact : +228 92 24 46 53 ou <a href="https://wa.me/22892244653">WhatsApp</a>.</p>
 <h2>2. Données traitées</h2><p>Selon les fonctions utilisées, nous pouvons traiter les informations de compte (notamment adresse e-mail et identifiant), les demandes d'assistance, les informations de commande et d'abonnement, ainsi que les contenus que vous choisissez de transmettre.</p>
-<h2>3. Réseaux sociaux</h2><p>La connexion directe aux comptes TikTok et Facebook n'est pas encore activée. Lorsqu'une intégration officielle sera disponible, elle sera déclenchée à votre demande et après votre autorisation auprès de la plateforme concernée. Les données accessibles et les moyens de retirer l'accès seront alors précisés. Nous ne vous demanderons jamais votre mot de passe TikTok ou Facebook.</p>
+<h2>3. Réseaux sociaux</h2><p>La connexion Facebook, lorsqu'elle est configurée, utilise l'authentification officielle Meta et ne demande jamais votre mot de passe à AQUI NET HUB. Après autorisation, le service peut lire les Pages que vous administrez et les statistiques permises par Meta. Vous pouvez retirer l'accès depuis les paramètres de votre compte Facebook. Les données sont conservées pour fournir le service et supprimées sur demande, sous réserve des obligations légales. TikTok n'est pas encore connecté directement.</p>
 <h2>4. Finalités</h2><p>Les données servent à créer et sécuriser les comptes, fournir les fonctions demandées, gérer les abonnements et paiements, répondre aux demandes, prévenir les abus et améliorer le service.</p>
 <h2>5. Prestataires et partage</h2><p>Des prestataires techniques nécessaires au service peuvent traiter des données, notamment Cloudflare pour l'hébergement et Supabase pour la base de données. Le traitement des paiements peut impliquer le prestataire de paiement activé. Les données ne sont pas vendues à des annonceurs.</p>
 <h2>6. Conservation et sécurité</h2><p>Les données sont conservées pendant la durée nécessaire aux finalités décrites, sous réserve des obligations légales. Des mesures raisonnables de sécurité sont mises en œuvre, sans qu'une sécurité absolue puisse être garantie.</p>
@@ -268,6 +272,7 @@ export default {
       if (tiktokVerification) return new Response(`tiktok-developers-site-verification=${tiktokVerification[1]}`, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" } });
       if (request.method === "GET" && url.pathname === "/terms") return legalPage("Conditions d'utilisation", termsBody);
       if (request.method === "GET" && url.pathname === "/privacy") return legalPage("Politique de confidentialité", privacyBody);
+      if (url.pathname.startsWith("/api/facebook/")) return handleFacebook(request, env);
       if (url.pathname.startsWith("/api/social/")) return handleSocial(request, env);
       if (request.method === "GET" && url.pathname === "/api/health")
         return json({
@@ -281,6 +286,8 @@ export default {
           cinetpay_api_key: !!env.CINETPAY_API_KEY,
           cinetpay_api_password: !!env.CINETPAY_API_PASSWORD,
           video_github_token: !!env.GITHUB_TOKEN,
+          facebook_oauth: !!env.FACEBOOK_APP_ID && !!env.FACEBOOK_APP_SECRET,
+          facebook_app_id: !!env.FACEBOOK_APP_ID,
         });
       if (url.pathname === "/api/video/jobs" && request.method === "POST")
         return handleVideo(request, env);
