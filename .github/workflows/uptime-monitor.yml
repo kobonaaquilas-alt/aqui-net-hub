@@ -1,0 +1,54 @@
+name: AQUI NET HUB - Surveillance automatique
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aqui-net-hub-uptime
+  cancel-in-progress: true
+
+jobs:
+  uptime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier la page d'accueil
+        run: |
+          curl --fail --silent --show-error --location --retry 3 --retry-delay 5 \
+            https://aqui-net-hub.kobonaaquilas.workers.dev/ \
+            --output /dev/null
+
+      - name: Vérifier les pages légales
+        run: |
+          for path in privacy terms; do
+            curl --fail --silent --show-error --location --retry 2 \
+              "https://aqui-net-hub.kobonaaquilas.workers.dev/$path" \
+              --output /dev/null
+          done
+
+      - name: Vérifier l'API et la configuration
+        run: |
+          curl --fail --silent --show-error --location --retry 3 --retry-delay 5 \
+            https://aqui-net-hub.kobonaaquilas.workers.dev/api/health \
+            --output health.json
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const health = JSON.parse(fs.readFileSync('health.json', 'utf8'));
+          if (health.ok !== true) {
+            console.error('API health check failed:', health);
+            process.exit(1);
+          }
+          console.log('API accessible.');
+          for (const key of [
+            'supabase',
+            'cinetpay',
+            'video_github_token',
+            'facebook_oauth'
+          ]) {
+            console.log(key + ': ' + (health[key] ? 'configured' : 'not configured'));
+          }
+          NODE
