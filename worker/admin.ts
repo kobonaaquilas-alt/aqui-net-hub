@@ -1,7 +1,7 @@
 type Env = { SUPABASE_URL: string; SUPABASE_SERVICE_ROLE_KEY?: string; SUPABASE_SECRET_KEY?: string };
 type AuthUser = { id: string };
 const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
-const headers=(env:Env)=>({apikey:env.SUPABASE_SERVICE_ROLE_KEY||env.SUPABASE_SECRET_KEY||"","Content-Type":"application/json",Prefer:"return=representation"});
+const headers=(env:Env)=>({apikey:env.SUPABASE_SERVICE_ROLE_KEY||env.SUPABASE_SECRET_KEY||"",Authorization:"Bearer "+(env.SUPABASE_SERVICE_ROLE_KEY||env.SUPABASE_SECRET_KEY||""),"Content-Type":"application/json",Prefer:"return=representation"});
 async function isAdmin(env:Env,userId:string):Promise<boolean>{
  const r=await fetch(`${env.SUPABASE_URL}/rest/v1/hub_admin_users?user_id=eq.${encodeURIComponent(userId)}&select=user_id&limit=1`,{headers:headers(env)});
  if(!r.ok)throw new Error("Admin authorization lookup failed");
