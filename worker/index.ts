@@ -264,9 +264,8 @@ export default {
         const publisher = (rows[0]?.setting_value || "").replace(/^ca-pub-/, "");
         return new Response(/^\d{16}$/.test(publisher) ? `google.com, pub-${publisher}, DIRECT, f08c47fec0942fa0\n` : "", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=300" } });
       }
-      if (request.method === "GET" && url.pathname === "/tiktokOsKTaCjvBEOEf2Di5eXocwwfXpXer12F.txt") return new Response("tiktok-developers-site-verification=OsKTaCjvBEOEf2Di5eXocwwfXpXer12F", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" } });
-      if (request.method === "GET" && url.pathname === "/tiktokOjhUgRdEzPMVLXmka4OU8ALtG9eDX3T2.txt") return new Response("tiktok-developers-site-verification=OjhUgRdEzPMVLXmka4OU8ALtG9eDX3T2", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" } });
-      if (request.method === "GET" && url.pathname === "/tiktokMlPLJCTPGItAaJ20YSCk4T0TTmPTri69.txt") return new Response("tiktok-developers-site-verification=MlPLJCTPGItAaJ20YSCk4T0TTmPTri69", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" } });
+      const tiktokVerification = request.method === "GET" ? url.pathname.match(/^\/tiktok([A-Za-z0-9]+)\.txt$/) : null;
+      if (tiktokVerification) return new Response(`tiktok-developers-site-verification=${tiktokVerification[1]}`, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" } });
       if (request.method === "GET" && url.pathname === "/terms") return legalPage("Conditions d'utilisation", termsBody);
       if (request.method === "GET" && url.pathname === "/privacy") return legalPage("Politique de confidentialité", privacyBody);
       if (url.pathname.startsWith("/api/social/")) return handleSocial(request, env);
