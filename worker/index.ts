@@ -277,7 +277,7 @@ export default {
       if (request.method === "GET" && url.pathname === "/api/health")
         return json({
           ok: true,
-          health_schema: "2026-11-09-v2",
+          health_schema: "2026-11-10-facebook-oauth-v1",
           supabase: !!env.SUPABASE_URL && !!env.SUPABASE_ANON_KEY && !!serviceKey(env),
           supabase_url: !!env.SUPABASE_URL,
           supabase_anon_key: !!env.SUPABASE_ANON_KEY,
