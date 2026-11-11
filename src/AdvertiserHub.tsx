@@ -124,7 +124,7 @@ export default function AdvertiserHub({ accessToken, lang }: Props) {
     <p className="account-footnote">{subscriptionActive
       ? (fr ? "Abonnement actif : tes nouvelles campagnes suivent la date de fin de ton abonnement." : "Active subscription: new campaigns run until your subscription end date.")
       : trial
-        ? (trialExpired
+        ? (new Date(trial.ends_at).getTime() <= Date.now()
           ? (fr ? "Essai terminé. Un abonnement est nécessaire pour publier ou réactiver une campagne." : "Trial ended. A subscription is required to publish or reactivate a campaign.")
           : (fr ? "Essai en cours jusqu'au " + date(trial.ends_at) : "Trial active until " + date(trial.ends_at)))
         : (fr ? "Ton essai de 3 jours commencera à la publication de ta première campagne." : "Your 3-day trial starts when you publish your first campaign.")}</p>
