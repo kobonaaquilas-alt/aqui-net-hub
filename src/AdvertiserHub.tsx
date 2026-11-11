@@ -114,7 +114,6 @@ export default function AdvertiserHub({ accessToken, lang }: Props) {
   const date = (value: string | null) => value ? new Date(value).toLocaleString(fr ? "fr-FR" : "en-GB", {
     dateStyle: "medium", timeStyle: "short",
   }) : (fr ? "Non défini" : "Not set");
-  const trialExpired = !!trial && new Date(trial.ends_at).getTime() <= Date.now();
 
   return <div className="account-card advertiser-hub">
     <span className="eyebrow">AQUI NET ADS · SELF-SERVICE</span>
