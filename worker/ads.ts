@@ -22,7 +22,7 @@ const dbHeaders = (env: Env) => ({
 });
 
 async function currentUser(request: Request, env: Env): Promise<User | null> {
-  const token = request.headers.get("Authorization")?.replace(/^Bearer\\s+/i, "").trim();
+  const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "").trim();
   if (!token || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return null;
   const response = await fetch(env.SUPABASE_URL + "/auth/v1/user", {
     headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: "Bearer " + token },
@@ -37,11 +37,11 @@ function validPublicHttps(value: unknown, required = true): string | null | fals
   if (!raw && !required) return null;
   try {
     const url = new URL(raw);
-    const host = url.hostname.toLowerCase().replace(/^\\[|\\]$/g, "");
+    const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
     const blocked = host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") ||
       host === "0.0.0.0" || host === "::1" ||
-      /^(10\\.|127\\.|169\\.254\\.|192\\.168\\.|172\\.(1[6-9]|2\\d|3[01])\\.)/.test(host) ||
-      /^\\d{1,3}(\\.\\d{1,3}){3}$/.test(host);
+      /^(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host) ||
+      /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
     if (url.protocol !== "https:" || url.username || url.password || blocked || !host.includes(".")) return false;
     return url.toString();
   } catch { return false; }
@@ -205,7 +205,7 @@ export async function handleAds(request: Request, env: Env): Promise<Response> {
       return await listCampaigns(env, user.id);
     if (request.method === "POST" && url.pathname === "/api/ads/campaigns")
       return await createCampaign(request, env, user);
-    const match = url.pathname.match(/^\\/api\\/ads\\/campaigns\\/([0-9a-f-]{36})$/i);
+    const match = url.pathname.match(/^\/api\/ads\/campaigns\/([0-9a-f-]{36})$/i);
     if (match && request.method === "PATCH")
       return await updateCampaign(request, env, user, match[1]);
     if (match && request.method === "DELETE")
