@@ -69,7 +69,7 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
       return reply({ error: "La description doit contenir entre 3 et 1 200 caractères." }, 400);
     if (![2, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60].includes(duration))
       return reply({ error: "Durées disponibles : 2 secondes gratuites, puis de 15 à 60 secondes par paliers de 5 secondes." }, 400);
-    if (duration >= 2) {
+    if (duration > 2) {
       const access = await fetch(
         `${env.SUPABASE_URL}/rest/v1/hub_subscriptions?user_id=eq.${encodeURIComponent(user.id)}&status=eq.active&ends_at=gt.${encodeURIComponent(new Date().toISOString())}&select=id&limit=1`,
         { headers: serviceHeaders(env) },
