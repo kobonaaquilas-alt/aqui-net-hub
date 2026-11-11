@@ -4,6 +4,7 @@ import { handleVideo } from "./video";
 import { handleSocial } from "./social";
 import { handleFacebook } from "./facebook";
 import { handleBrowser } from "./browser";
+import { handleAds } from "./ads";
 
 interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -316,6 +317,7 @@ export default {
       if (url.pathname.startsWith("/api/browser/")) return handleBrowser(request, env);
       if (url.pathname.startsWith("/api/facebook/")) return handleFacebook(request, env);
       if (url.pathname.startsWith("/api/social/")) return handleSocial(request, env);
+      if (url.pathname.startsWith("/api/ads/")) return handleAds(request, env);
       if (request.method === "GET" && url.pathname === "/api/health")
         return json({
           ok: true,
