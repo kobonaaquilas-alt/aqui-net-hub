@@ -31,7 +31,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const [partner, setPartner] = useState({organization:"",contact_name:"",email:"",phone:"",website:"",proposal:""});
   const [videoImageUrl, setVideoImageUrl] = useState("");
   const [videoPrompt, setVideoPrompt] = useState("");
-  const [videoDuration, setVideoDuration] = useState("3");
+  const [videoDuration, setVideoDuration] = useState("2");
   const [videoRequestId, setVideoRequestId] = useState("");
   const [videoStatus, setVideoStatus] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
@@ -354,7 +354,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const input=(value:string,change:(v:string)=>void,placeholder:string,type="text",required=true)=><input type={type} value={value} onChange={e=>change(e.target.value)} placeholder={placeholder} required={required}/>;
   const hasActiveSubscription=!!summary?.subscriptions.some(item=>item.status==="active"&&new Date(item.ends_at).getTime()>Date.now());
   const videoSeconds=Number(videoDuration);
-  const videoPrice=videoSeconds<3?0:25+((videoSeconds-15)/5)*25;
+  const videoPrice=videoSeconds<15?0:25+((videoSeconds-15)/5)*25;
   const date=(value:string)=>new Date(value).toLocaleDateString(fr?"fr-FR":"en-GB");
   const paymentLabel=(status:string)=>status==="paid"?(fr?"Payé":"Paid"):status==="failed"?(fr?"Échoué":"Failed"):(fr?"En attente":"Pending");
   if (authOnly) return <section className="section account-hub account-access" id="account-access">
