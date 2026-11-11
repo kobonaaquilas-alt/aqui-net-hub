@@ -379,7 +379,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       {mode==="login" && <button type="button" className="text-button account-reset-link" disabled={busy} onClick={()=>void sendPasswordReset()}>{fr?"Mot de passe oublié ?":"Forgot password?"}</button>}
     </div> : <div className="account-card"><p>{fr?"Connecté avec":"Signed in as"} <strong>{session.user.email}</strong></p><p className="sync-status">{fr?"Favoris et progression synchronisés sur ce compte.":"Favorites and progress synced to this account."}</p><button className="filter-button" onClick={()=>void db.auth.signOut()}>{fr?"Se déconnecter":"Sign out"}</button></div>}
     {notice && <p className="account-message" role="status">{notice}</p>}
-    {session && !hasActiveSubscription && <div className="account-card subscription-required"><span className="eyebrow">AQUI NET HUB · ABONNEMENT</span><h3>{fr?"Abonnement requis":"Subscription required"}</h3><p>{fr?"Pour utiliser ce service, connecte-toi et active d’abord un abonnement. Choisis une formule ci-dessous.":"To use this service, sign in and activate a subscription first. Choose a plan below."}</p>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement bientôt disponible":"Payment coming soon"):paymentBusy?"…":fr?"S’abonner et payer":"Subscribe and pay"}</button></article>):<p>{fr?"Les formules d’abonnement seront affichées ici dès leur activation.":"Subscription plans will appear here when activated."}</p>}</div>}
+    {session && !hasActiveSubscription && service==="partners" && <div className="account-card subscription-required"><span className="eyebrow">AQUI NET HUB · ABONNEMENT</span><h3>{fr?"Abonnement requis":"Subscription required"}</h3><p>{fr?"Pour utiliser ce service, connecte-toi et active d’abord un abonnement. Choisis une formule ci-dessous.":"To use this service, sign in and activate a subscription first. Choose a plan below."}</p>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement bientôt disponible":"Payment coming soon"):paymentBusy?"…":fr?"S’abonner et payer":"Subscribe and pay"}</button></article>):<p>{fr?"Les formules d’abonnement seront affichées ici dès leur activation.":"Subscription plans will appear here when activated."}</p>}</div>}
 
     {session && recoveryMode && <div className="account-card password-recovery-card"><h3>{fr?"Définir un nouveau mot de passe":"Set a new password"}</h3>{input(newPassword,setNewPassword,fr?"Nouveau mot de passe (8 caractères minimum)":"New password (at least 8 characters)","password")}<button type="button" className="primary-button" disabled={busy||newPassword.length<8} onClick={()=>void updatePassword()}>{busy?"…":fr?"Mettre à jour le mot de passe":"Update password"}</button></div>}
 
@@ -395,7 +395,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     </div>}
 
 
-    {session && hasActiveSubscription && service==="social" && <div className="account-card social-audit">
+    {session && service==="social" && <div className="account-card social-audit">
       <span className="eyebrow">AQUI SOCIAL AUDIT · {socialCount}/3 {fr?"analyses gratuites":"free reviews"}</span>
       <h3>{fr?"Diagnostic de ton compte":"Your account review"}</h3>
       <p>{fr?"Facebook peut être connecté via l'autorisation officielle Meta pour analyser automatiquement les Pages que tu administres. Pour les autres réseaux, les chiffres restent à saisir manuellement.":"Facebook can be connected through official Meta authorization to automatically analyze Pages you manage. For other networks, figures must still be entered manually."}</p>
@@ -433,7 +433,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       {socialResult&&<pre className="account-message social-report" role="status">{socialResult}</pre>}
       <small className="account-footnote">{fr?"Les captures sont contrôlées manuellement. Les statistiques saisies manuellement ne sont pas authentifiées automatiquement. Facebook connecté utilise les données autorisées par Meta.":"Screenshots are reviewed manually. TikTok or Meta do not automatically authenticate these metrics here."}</small>
     </div>}
-    {session && hasActiveSubscription && service==="video" && <div className="account-card video-studio">
+    {session && service==="video" && <div className="account-card video-studio">
       <span className="eyebrow">AQUI VIDEO AI</span>
       <h3>{fr ? "Créer une vidéo à partir d'une image" : "Create a video from an image"}</h3>
       <p>{fr ? "Le moteur assemble des segments de 5 secondes. 2 secondes sont gratuites ; les vidéos longues sont proposées par paliers de 5 secondes, jusqu’à 60 secondes." : "The engine joins 5-second segments. 2 seconds are free; longer videos are offered in 5-second increments, up to 60 seconds."}</p>
@@ -456,7 +456,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       <small className="account-footnote">{fr ? "La génération est limitée à 60 secondes par demande dans cette version. Les performances et la disponibilité dépendent du moteur Wan 2.2 et de ses quotas." : "Generation is limited to 60 seconds per request in this version. Performance and availability depend on Wan 2.2 and its quotas."}</small>
     </div>}
 
-    {session && hasActiveSubscription && service==="partners" && <div className="account-grid">
+    {session && service==="partners" && <div className="account-grid">
       <form className="account-card" onSubmit={e=>{e.preventDefault();void submit("ads");}}><h3>AQUI NET ADS</h3><p>{fr?"Proposer une campagne publicitaire.":"Submit an advertising campaign."}</p>
         {input(ad.company_name,v=>setAd(s=>({...s,company_name:v})),fr?"Entreprise / marque":"Company / brand")}
         {input(ad.contact_name,v=>setAd(s=>({...s,contact_name:v})),fr?"Nom du contact":"Contact name")}
