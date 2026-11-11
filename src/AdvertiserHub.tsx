@@ -148,7 +148,8 @@ export default function AdvertiserHub({ accessToken, lang }: Props) {
     {!campaigns.length && <p className="account-footnote">{fr ? "Aucune campagne pour le moment." : "No campaigns yet."}</p>}
     {campaigns.map(campaign => {
       const expired = !!campaign.ends_at && new Date(campaign.ends_at).getTime() <= Date.now();
-      const status = !campaign.is_active ? (fr ? "En pause" : "Paused") : expired ? (fr ? "Essai / diffusion terminé" : "Trial / display ended") : (fr ? "En ligne" : "Live");
+      const currentlyLive = campaign.is_active && !expired;
+      const status = currentlyLive ? (fr ? "En ligne" : "Live") : expired ? (fr ? "Essai / diffusion terminé" : "Trial / display ended") : (fr ? "En pause" : "Paused");
       return <article className="subscription-row" key={campaign.id}>
         <div>
           <strong>{campaign.title}</strong>
@@ -158,7 +159,7 @@ export default function AdvertiserHub({ accessToken, lang }: Props) {
         </div>
         <div className="account-actions">
           <span className={campaign.is_active && !expired ? "account-status active" : "account-status"}>{status}</span>
-          <button type="button" className="filter-button" disabled={busy} onClick={() => void setCampaignActive(campaign, !campaign.is_active)}>{campaign.is_active ? (fr ? "Mettre en pause" : "Pause") : (fr ? "Réactiver" : "Reactivate")}</button>
+          <button type="button" className="filter-button" disabled={busy} onClick={() => void setCampaignActive(campaign, !currentlyLive)}>{currentlyLive ? (fr ? "Mettre en pause" : "Pause") : (fr ? "Réactiver" : "Reactivate")}</button>
           <button type="button" className="text-button" disabled={busy} onClick={() => void removeCampaign(campaign)}>{fr ? "Supprimer" : "Delete"}</button>
         </div>
       </article>;
