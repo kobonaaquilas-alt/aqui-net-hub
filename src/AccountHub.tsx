@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient, type Session } from "@supabase/supabase-js";
 import { Capacitor } from "@capacitor/core";
+import { Browser } from "@capacitor/browser";
 import AdvertiserHub from "./AdvertiserHub";
 
 const db = createClient("https://xbobkysbtvtmepqgtnbt.supabase.co", "sb_publishable_AGtfBQyqyKbH5C_4f5cQgw_bm0MmusA");
@@ -254,7 +255,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   async function connectTikTok(){
     if(!session?.access_token){setTiktokNotice(fr?"Connecte-toi d'abord à AQUI NET HUB.":"Sign in to AQUI NET HUB first.");return;}
     setTiktokBusy(true);setTiktokNotice("");
-    try{const r=await fetch("/api/tiktok/connect",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({native:Capacitor.isNativePlatform()})});const d=await r.json();if(!r.ok||!d.authorization_url)throw new Error(d.error||"Connexion TikTok indisponible.");window.location.assign(d.authorization_url);}
+    try{const r=await fetch("/api/tiktok/connect",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({native:Capacitor.isNativePlatform()})});const d=await r.json();if(!r.ok||!d.authorization_url)throw new Error(d.error||"Connexion TikTok indisponible.");if(Capacitor.isNativePlatform()) await Browser.open({url:d.authorization_url,toolbarColor:"#101C32"}); else window.location.assign(d.authorization_url);}
     catch(e){setTiktokNotice(e instanceof Error?e.message:"Connexion TikTok impossible.");setTiktokBusy(false);}
   }
   async function disconnectTikTok(){
@@ -300,7 +301,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     try{
       const r=await fetch("/api/payments/create",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({plan_id:plan.id,first_name,last_name,phone,native:Capacitor.isNativePlatform()})});
       const d=await r.json();if(!r.ok||!d.payment_url)throw new Error(d.error||"Initialisation du paiement impossible.");
-      window.location.assign(d.payment_url);
+      if(Capacitor.isNativePlatform()) await Browser.open({url:d.payment_url,toolbarColor:"#101C32"}); else window.location.assign(d.payment_url);
     }catch(e){setNotice(e instanceof Error?e.message:"Paiement indisponible.");}finally{setPaymentBusy(false);}
   }
 
