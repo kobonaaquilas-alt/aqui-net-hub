@@ -337,6 +337,9 @@ export default {
           video_github_token: !!env.GITHUB_TOKEN,
           facebook_oauth: !!env.FACEBOOK_APP_ID && !!env.FACEBOOK_APP_SECRET,
           facebook_app_id: !!env.FACEBOOK_APP_ID,
+          tiktok_client_key_configured: !!env.TIKTOK_CLIENT_KEY?.trim(),
+          tiktok_client_key_length: env.TIKTOK_CLIENT_KEY?.trim().length || 0,
+          tiktok_client_secret_configured: !!env.TIKTOK_CLIENT_SECRET?.trim(),
         });
       if (url.pathname === "/api/video/jobs" && request.method === "POST")
         return handleVideo(request, env);
