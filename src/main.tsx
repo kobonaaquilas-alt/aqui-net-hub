@@ -1,8 +1,27 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { Capacitor } from '@capacitor/core'
+import { App as CapacitorApp } from '@capacitor/app'
 import App from './App'
 import './styles.css'
+
+// Return OAuth and payment redirects to the bundled app without losing its session.
+if (Capacitor.isNativePlatform()) {
+  void CapacitorApp.addListener('appUrlOpen', ({ url }) => {
+    try {
+      const deepLink = new URL(url)
+      if (deepLink.protocol !== 'aquinet:' || deepLink.hostname !== 'oauth') return
+      const params = new URLSearchParams()
+      for (const key of ['tiktok', 'facebook', 'payment']) {
+        const value = deepLink.searchParams.get(key)
+        if (value) params.set(key, value)
+      }
+      window.location.href = '/?' + params.toString()
+    } catch {
+      // Ignore unrelated or malformed external links.
+    }
+  })
+}
 
 // Capacitor serves the bundled UI from a local origin. Route only Worker API
 // calls to production; keep Supabase SDK and all external requests untouched.
