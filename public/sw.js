@@ -39,7 +39,7 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  if (url.pathname.startsWith('/assets/') || /\\.(?:css|js|svg|png|webp|woff2?)$/i.test(url.pathname)) {
+  if (url.pathname.startsWith('/assets/') || /\.(?:css|js|svg|png|webp|woff2?)$/i.test(url.pathname)) {
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) return cached
