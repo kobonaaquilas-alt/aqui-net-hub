@@ -53,7 +53,7 @@ async function createPayment(request: Request, env: Env) {
     return json({ error: "Paiement non configuré : identifiants marchands absents." }, 503);
   const user = await authUser(request, env);
   if (!user) return json({ error: "Connexion requise." }, 401);
-  let body: { plan_id?: string; first_name?: string; last_name?: string; phone?: string };
+  let body: { plan_id?: string; first_name?: string; last_name?: string; phone?: string; native?: boolean };
   try { body = await request.json() as typeof body; }
   catch { return json({ error: "Corps de requête invalide." }, 400); }
   const firstName = body.first_name?.trim();
@@ -103,8 +103,8 @@ async function createPayment(request: Request, env: Env) {
       clientFirstName: firstName,
       clientLastName: lastName,
       ...(phone ? { clientPhoneNumber: phone } : {}),
-      successUrl: `${base}/?payment=return`,
-      failedUrl: `${base}/?payment=failed`,
+      successUrl: body.native ? `${base}/api/payments/return?status=return&native=1` : `${base}/?payment=return`,
+      failedUrl: body.native ? `${base}/api/payments/return?status=failed&native=1` : `${base}/?payment=failed`,
       notifyUrl: `${base}/api/payments/webhook`,
       channel: "PUSH",
     }, "TG");
@@ -347,6 +347,17 @@ export default {
         return handleVideo(request, env);
       if (request.method === "POST" && url.pathname === "/api/payments/create")
         return createPayment(request, env);
+      if (request.method === "GET" && url.pathname === "/api/payments/return") {
+        const status = url.searchParams.get("status") === "failed" ? "failed" : "return";
+        if (url.searchParams.get("native") === "1") {
+          const deepLink = new URL("aquinet://oauth");
+          deepLink.searchParams.set("payment", status);
+          return Response.redirect(deepLink.toString(), 302);
+        }
+        const destination = new URL((env.APP_BASE_URL || url.origin) + "/");
+        destination.searchParams.set("payment", status);
+        return Response.redirect(destination.toString(), 302);
+      }
       if (request.method === "POST" && url.pathname === "/api/payments/webhook")
         return webhook(request, env);
       if (request.method === "GET" && url.pathname === "/api/account/summary")
