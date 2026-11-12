@@ -74,7 +74,10 @@ export default function App() {
   const [request,setRequest]=useState("");
   const [submitted,setSubmitted]=useState("");
   const [selectedTool,setSelectedTool]=useState<Tool|null>(null);
-  const [activeService,setActiveService]=useState<Service|null>(null);
+  const [activeService,setActiveService]=useState<Service|null>(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.has("tiktok") || params.has("facebook") ? "social" : null
+  });
   const [campaigns,setCampaigns]=useState<Campaign[]>([]);
   const [adsenseClient,setAdsenseClient]=useState("");
   const fr=lang==="fr";
