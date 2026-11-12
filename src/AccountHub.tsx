@@ -57,6 +57,9 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const [facebookBusy,setFacebookBusy]=useState(false);
   const [facebookReport,setFacebookReport]=useState<any>(null);
   const [facebookNotice,setFacebookNotice]=useState("");
+  const [tiktokBusy,setTiktokBusy]=useState(false);
+  const [tiktokNotice,setTiktokNotice]=useState("");
+  const [tiktokData,setTiktokData]=useState<any>(null);
   const [tiktokProof,setTiktokProof]=useState("");
   const [facebookProof,setFacebookProof]=useState("");
   const [paymentBusy,setPaymentBusy]=useState(false);
@@ -126,6 +129,12 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     if (new URLSearchParams(window.location.search).get("password") === "recovery") setRecoveryMode(true);
   }, []);
 
+  useEffect(() => {
+    if(!session?.access_token||service!=="social")return;
+    const state=new URLSearchParams(window.location.search).get("tiktok");
+    if(state){const messages:Record<string,string>={connected:fr?"TikTok connecté. Chargement des statistiques…":"TikTok connected. Loading statistics…",denied:fr?"Autorisation TikTok refusée.":"TikTok authorization denied.",expired:fr?"Session TikTok expirée. Recommence la connexion.":"TikTok session expired. Reconnect.",save_error:fr?"Impossible d'enregistrer la connexion TikTok.":"Could not save TikTok connection.",invalid:fr?"Réponse TikTok invalide.":"Invalid TikTok response."};setTiktokNotice(messages[state]||"");const clean=new URL(window.location.href);clean.searchParams.delete("tiktok");window.history.replaceState({}, "", clean.toString());}
+    void loadTikTok();
+  },[session?.access_token,service,fr]);
   useEffect(() => {
     const paymentState = new URLSearchParams(window.location.search).get("payment");
     if (paymentState === "return")
@@ -235,6 +244,23 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       .then(d=>{const pages=d.pages||[];setFacebookPages(pages);setFacebookConnected(!!d.connected);if(pages.length&&!facebookPageId)setFacebookPageId(pages[0].page_id);})
       .catch(()=>{setFacebookConnected(false);});
   },[session?.access_token,fr]);
+  async function loadTikTok(){
+    if(!session?.access_token)return;
+    setTiktokBusy(true);setTiktokNotice("");
+    try{const r=await fetch("/api/tiktok/me",{headers:{Authorization:"Bearer "+session.access_token}});const d=await r.json();if(!r.ok)throw new Error(d.error||"Lecture TikTok impossible.");setTiktokData(d.connected?d:null);}
+    catch(e){setTiktokNotice(e instanceof Error?e.message:"Erreur TikTok.");}finally{setTiktokBusy(false);}
+  }
+  async function connectTikTok(){
+    if(!session?.access_token){setTiktokNotice(fr?"Connecte-toi d'abord à AQUI NET HUB.":"Sign in to AQUI NET HUB first.");return;}
+    setTiktokBusy(true);setTiktokNotice("");
+    try{const r=await fetch("/api/tiktok/connect",{method:"POST",headers:{Authorization:"Bearer "+session.access_token}});const d=await r.json();if(!r.ok||!d.authorization_url)throw new Error(d.error||"Connexion TikTok indisponible.");window.location.assign(d.authorization_url);}
+    catch(e){setTiktokNotice(e instanceof Error?e.message:"Connexion TikTok impossible.");setTiktokBusy(false);}
+  }
+  async function disconnectTikTok(){
+    if(!session?.access_token)return;setTiktokBusy(true);
+    try{const r=await fetch("/api/tiktok/disconnect",{method:"DELETE",headers:{Authorization:"Bearer "+session.access_token}});const d=await r.json();if(!r.ok)throw new Error(d.error||"Déconnexion impossible.");setTiktokData(null);setTiktokNotice(fr?"Compte TikTok déconnecté.":"TikTok account disconnected.");}
+    catch(e){setTiktokNotice(e instanceof Error?e.message:"Erreur.");}finally{setTiktokBusy(false);}
+  }
   async function connectFacebook(){
     if(!session?.access_token){setFacebookNotice(fr?"Connecte-toi d'abord à AQUI NET HUB.":"Sign in to AQUI NET HUB first.");return;}
     setFacebookBusy(true);setFacebookNotice("");
@@ -403,6 +429,22 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       <h3>{fr?"Diagnostic de ton compte":"Your account review"}</h3>
       <p>{fr?"Facebook peut être connecté via l'autorisation officielle Meta pour analyser automatiquement les Pages que tu administres. Pour les autres réseaux, les chiffres restent à saisir manuellement.":"Facebook can be connected through official Meta authorization to automatically analyze Pages you manage. For other networks, figures must still be entered manually."}</p>
       <div className="follow-gate">
+      <div className="follow-gate">
+        <h4>{fr?"Connexion directe à TikTok":"Connect directly to TikTok"}</h4>
+        <p>{fr?"Autorise AQUI NET HUB à lire les informations de profil, les statistiques disponibles et tes vidéos publiques.":"Authorize AQUI NET HUB to read your profile, available statistics and public videos."}</p>
+        <button type="button" className="primary-button" disabled={tiktokBusy||!backendReady} onClick={()=>void connectTikTok()}>{tiktokBusy?"…":tiktokData?(fr?"Reconnecter TikTok":"Reconnect TikTok"):(fr?"Connecter mon TikTok":"Connect my TikTok")}</button>
+        {tiktokData&&<button type="button" className="filter-button" disabled={tiktokBusy} onClick={()=>void loadTikTok()}>{fr?"Actualiser les statistiques":"Refresh statistics"}</button>}
+        {tiktokNotice&&<p className="account-message" role="status">{tiktokNotice}</p>}
+        {tiktokData?.profile&&<div className="social-report"><strong>{tiktokData.profile.display_name||"TikTok"}</strong>
+          <p>{fr?"Abonnés :":"Followers: "} {Number(tiktokData.profile.follower_count||0).toLocaleString()}</p>
+          <p>{fr?"Abonnements :":"Following: "} {Number(tiktokData.profile.following_count||0).toLocaleString()}</p>
+          <p>{fr?"J'aime :":"Likes: "} {Number(tiktokData.profile.likes_count||0).toLocaleString()}</p>
+          <p>{fr?"Vidéos publiées :":"Videos: "} {Number(tiktokData.profile.video_count||0).toLocaleString()}</p>
+          <small>{fr?"Données de l'API officielle TikTok, selon les autorisations accordées.":"Official TikTok API data, subject to granted permissions."}</small>
+          {tiktokData.videos?.length>0&&<div><strong>{fr?"Vidéos récentes":"Recent videos"}</strong>{tiktokData.videos.slice(0,5).map((v:any)=><p key={v.id}>{v.title||v.video_description||"TikTok video"} · {Number(v.view_count||0).toLocaleString()} {fr?"vues":"views"}</p>)}</div>}
+          <button type="button" className="filter-button" disabled={tiktokBusy} onClick={()=>void disconnectTikTok()}>{fr?"Déconnecter TikTok":"Disconnect TikTok"}</button>
+        </div>}
+      </div>
         <h4>{fr?"Connexion réelle à Facebook":"Connect directly to Facebook"}</h4>
         <p>{fr?"Le lien seul ne donne pas accès aux statistiques privées. Autorise AQUI NET HUB auprès de Facebook, puis choisis une Page que tu administres.":"A profile link alone cannot grant access to private insights. Authorize AQUI NET HUB with Facebook, then choose a Page you manage."}</p>
         <button type="button" className="primary-button" disabled={facebookBusy||!backendReady} onClick={()=>void connectFacebook()}>{facebookBusy?"…":facebookConnected?(fr?"Reconnecter Facebook":"Reconnect Facebook"):(fr?"Connecter Facebook":"Connect Facebook")}</button>
