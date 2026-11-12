@@ -15,7 +15,7 @@ async function currentUser(r:Request,e:Env):Promise<User|null>{
  const x=await fetch(e.SUPABASE_URL+"/auth/v1/user",{headers:{apikey:e.SUPABASE_ANON_KEY,Authorization:"Bearer "+t}});
  if(!x.ok)return null;const u=await x.json() as {id?:string};return u.id?{id:u.id}:null;
 }
-function done(r:Request,e:Env,s:string){const u=new URL(base(r,e)+"/");u.searchParams.set("tiktok",s);return Response.redirect(u.toString(),302);}
+function done(r:Request,e:Env,s:string,native=false){if(native){const u=new URL("aquinet://oauth");u.searchParams.set("tiktok",s);return Response.redirect(u.toString(),302);}const u=new URL(base(r,e)+"/");u.searchParams.set("tiktok",s);return Response.redirect(u.toString(),302);}
 async function tokenRequest(e:Env,body:URLSearchParams){
  const r=await fetch("https://open.tiktokapis.com/v2/oauth/token/",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body});
  const d=await r.json() as any;if(!r.ok||d.error||!d.access_token)throw new Error(d.error_description||d.error||"TikTok token exchange failed");return d;
@@ -37,7 +37,9 @@ export async function handleTikTok(r:Request,e:Env){
   if(r.method==="POST"&&u.pathname==="/api/tiktok/connect"){
    if(!e.TIKTOK_CLIENT_KEY||!e.TIKTOK_CLIENT_SECRET)return json({error:"Identifiants TikTok manquants dans les secrets Cloudflare."},503);
    const user=await currentUser(r,e);if(!user)return json({error:"Connecte-toi à AQUI NET HUB."},401);
-   const state=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,"0")).join("");
+   let body:{native?:boolean}={};try{body=await r.json() as typeof body;}catch{/* Optional for older web clients. */}
+   const native=body.native===true;
+   const state=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,"0")).join("")+(native?".native":"");
    const saved=await fetch(e.SUPABASE_URL+"/rest/v1/hub_tiktok_oauth_states",{method:"POST",headers:dbh(e),body:JSON.stringify({state,user_id:user.id,expires_at:new Date(Date.now()+10*60*1000).toISOString()})});
    if(!saved.ok)return json({error:"Impossible de créer la session sécurisée TikTok."},502);
    const auth=new URL("https://www.tiktok.com/v2/auth/authorize/");
@@ -47,19 +49,20 @@ export async function handleTikTok(r:Request,e:Env){
    return json({authorization_url:auth.toString()});
   }
   if(r.method==="GET"&&u.pathname==="/api/tiktok/callback"){
-   if(u.searchParams.has("error"))return done(r,e,"denied");
-   const code=u.searchParams.get("code")||"",state=u.searchParams.get("state")||"";
-   if(!code||!state||!e.TIKTOK_CLIENT_KEY||!e.TIKTOK_CLIENT_SECRET)return done(r,e,"invalid");
+   const state=u.searchParams.get("state")||"",native=state.endsWith(".native");
+   if(u.searchParams.has("error"))return done(r,e,"denied",native);
+   const code=u.searchParams.get("code")||"";
+   if(!code||!state||!e.TIKTOK_CLIENT_KEY||!e.TIKTOK_CLIENT_SECRET)return done(r,e,"invalid",native);
    const q=encodeURIComponent;
    const sr=await fetch(e.SUPABASE_URL+"/rest/v1/hub_tiktok_oauth_states?state=eq."+q(state)+"&expires_at=gt."+q(new Date().toISOString())+"&select=user_id,state",{headers:dbh(e)});
    const states=sr.ok?await sr.json() as Array<{user_id:string;state:string}>:[];
-   if(!states.length)return done(r,e,"expired");
+   if(!states.length)return done(r,e,"expired",native);
    await fetch(e.SUPABASE_URL+"/rest/v1/hub_tiktok_oauth_states?state=eq."+q(state),{method:"DELETE",headers:dbh(e)});
    const p=new URLSearchParams({client_key:e.TIKTOK_CLIENT_KEY,client_secret:e.TIKTOK_CLIENT_SECRET,code,grant_type:"authorization_code",redirect_uri:callback(r,e)});
    const d=await tokenRequest(e,p);const uid=states[0].user_id;
    const saved=await fetch(e.SUPABASE_URL+"/rest/v1/hub_tiktok_connections?on_conflict=user_id",{method:"POST",headers:{...dbh(e),Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({user_id:uid,open_id:d.open_id,display_name:"",access_token:d.access_token,refresh_token:d.refresh_token,expires_at:new Date(Date.now()+Number(d.expires_in||86400)*1000).toISOString(),refresh_expires_at:new Date(Date.now()+Number(d.refresh_expires_in||31536000)*1000).toISOString(),granted_scopes:d.scope||"",updated_at:new Date().toISOString()})});
-   if(!saved.ok)return done(r,e,"save_error");
-   return done(r,e,"connected");
+   if(!saved.ok)return done(r,e,"save_error",native);
+   return done(r,e,"connected",native);
   }
   const user=await currentUser(r,e);if(!user)return json({error:"Connexion AQUI NET HUB requise."},401);
   if(r.method==="DELETE"&&u.pathname==="/api/tiktok/disconnect"){
