@@ -9,6 +9,7 @@ on:
       - 'src/**'
       - 'public/**'
       - 'worker/**'
+      - 'scripts/**'
       - 'capacitor.config.ts'
       - 'package.json'
       - 'vite.config.ts'
@@ -19,6 +20,8 @@ on:
     paths:
       - 'src/**'
       - 'public/**'
+      - 'worker/**'
+      - 'scripts/**'
       - 'capacitor.config.ts'
       - 'package.json'
       - '.github/workflows/android-build.yml'
@@ -75,6 +78,7 @@ jobs:
             npx cap add android
           fi
           npx cap sync android
+          node scripts/patch-android-manifest.mjs
 
       - name: Build Android APK and App Bundle
         working-directory: android
