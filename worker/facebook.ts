@@ -22,7 +22,8 @@ async function currentUser(request:Request,env:Env):Promise<AuthUser|null>{
  const r=await fetch(env.SUPABASE_URL+"/auth/v1/user",{headers:{apikey:env.SUPABASE_ANON_KEY,Authorization:"Bearer "+token}});
  if(!r.ok)return null;const u=await r.json() as {id?:string};return u.id?{id:u.id}:null;
 }
-function redirect(request:Request,env:Env,status:string){
+function redirect(request:Request,env:Env,status:string,native=false){
+ if(native){const u=new URL("aquinet://oauth");u.searchParams.set("facebook",status);return Response.redirect(u.toString(),302);}
  const u=new URL(baseUrl(request,env)+"/");u.searchParams.set("facebook",status);
  return Response.redirect(u.toString(),302);
 }
@@ -40,7 +41,9 @@ export async function handleFacebook(request:Request,env:Env){
   if(request.method==="POST"&&url.pathname==="/api/facebook/connect"){
    if(!env.FACEBOOK_APP_ID||!env.FACEBOOK_APP_SECRET)return json({error:"Connexion Facebook en attente : les identifiants de l'application Meta doivent être configurés dans Cloudflare."},503);
    const user=await currentUser(request,env);if(!user)return json({error:"Connexion AQUI NET HUB requise."},401);
-   const state=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,"0")).join("");
+   let body:{native?:boolean}={};try{body=await request.json() as typeof body;}catch{/* Optional for older web clients. */}
+   const native=body.native===true;
+   const state=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,"0")).join("")+(native?".native":"");
    const saved=await fetch(env.SUPABASE_URL+"/rest/v1/hub_facebook_oauth_states",{method:"POST",headers:dbHeaders(env),body:JSON.stringify({state,user_id:user.id,expires_at:new Date(Date.now()+10*60*1000).toISOString()})});
    if(!saved.ok)return json({error:"Impossible de préparer la connexion sécurisée."},502);
    const auth=new URL("https://www.facebook.com/"+graph(env)+"/dialog/oauth");
@@ -51,22 +54,23 @@ export async function handleFacebook(request:Request,env:Env){
    return json({authorization_url:auth.toString()});
   }
   if(request.method==="GET"&&url.pathname==="/api/facebook/callback"){
-   if(url.searchParams.has("error"))return redirect(request,env,"denied");
-   const code=url.searchParams.get("code")||"",state=url.searchParams.get("state")||"";
-   if(!code||!state||!env.FACEBOOK_APP_ID||!env.FACEBOOK_APP_SECRET)return redirect(request,env,"invalid");
+   const state=url.searchParams.get("state")||"",native=state.endsWith(".native");
+   if(url.searchParams.has("error"))return redirect(request,env,"denied",native);
+   const code=url.searchParams.get("code")||"";
+   if(!code||!state||!env.FACEBOOK_APP_ID||!env.FACEBOOK_APP_SECRET)return redirect(request,env,"invalid",native);
    const q=encodeURIComponent;
    const stateResponse=await fetch(env.SUPABASE_URL+"/rest/v1/hub_facebook_oauth_states?state=eq."+q(state)+"&expires_at=gt."+q(new Date().toISOString())+"&select=user_id,state",{headers:dbHeaders(env)});
    const states=stateResponse.ok?await stateResponse.json() as Array<{user_id:string;state:string}>:[];
-   if(!states.length)return redirect(request,env,"expired");
+   if(!states.length)return redirect(request,env,"expired",native);
    await fetch(env.SUPABASE_URL+"/rest/v1/hub_facebook_oauth_states?state=eq."+q(state),{method:"DELETE",headers:dbHeaders(env)});
    const userId=states[0].user_id;
    const tokenData=await graphGet(env,"oauth/access_token",{client_id:env.FACEBOOK_APP_ID,client_secret:env.FACEBOOK_APP_SECRET,redirect_uri:callbackUrl(request,env),code});
    const longData=await graphGet(env,"oauth/access_token",{grant_type:"fb_exchange_token",client_id:env.FACEBOOK_APP_ID,client_secret:env.FACEBOOK_APP_SECRET,fb_exchange_token:String(tokenData.access_token)});
    const userToken=String(longData.access_token||tokenData.access_token||"");
-   if(!userToken)return redirect(request,env,"token_error");
+   if(!userToken)return redirect(request,env,"token_error",native);
    const pagesData=await graphGet(env,"me/accounts",{fields:"id,name,access_token,tasks",limit:"100",access_token:userToken});
    const pages=(pagesData.data||[]) as PageRow[];
-   if(!pages.length)return redirect(request,env,"no_pages");
+   if(!pages.length)return redirect(request,env,"no_pages",native);
    const expires=Number(longData.expires_in||0);
    const rows=pages.filter(p=>p.id&&p.access_token).map(p=>({
     user_id:userId,page_id:p.id,page_name:p.name||"Facebook Page",page_access_token:p.access_token,
@@ -74,8 +78,8 @@ export async function handleFacebook(request:Request,env:Env){
     granted_scopes:["pages_show_list","pages_read_engagement","read_insights"],updated_at:new Date().toISOString()
    }));
    const saved=await fetch(env.SUPABASE_URL+"/rest/v1/hub_facebook_connections?on_conflict=user_id,page_id",{method:"POST",headers:{...dbHeaders(env),Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(rows)});
-   if(!saved.ok)return redirect(request,env,"save_error");
-   return redirect(request,env,"connected");
+   if(!saved.ok)return redirect(request,env,"save_error",native);
+   return redirect(request,env,"connected",native);
   }
   const user=await currentUser(request,env);if(!user)return json({error:"Connexion AQUI NET HUB requise."},401);
   if(request.method==="GET"&&url.pathname==="/api/facebook/pages"){
