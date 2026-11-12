@@ -270,7 +270,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       const r=await fetch("/api/facebook/connect",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({native:Capacitor.isNativePlatform()})});
       const d=await r.json();
       if(!r.ok||!d.authorization_url)throw new Error(d.error||"Connexion Facebook indisponible.");
-      window.location.assign(d.authorization_url);
+      if(Capacitor.isNativePlatform()) await Browser.open({url:d.authorization_url,toolbarColor:"#101C32"}); else window.location.assign(d.authorization_url);
     }catch(e){setFacebookNotice(e instanceof Error?e.message:"Connexion Facebook impossible.");setFacebookBusy(false);}
   }
   async function auditFacebook(){
