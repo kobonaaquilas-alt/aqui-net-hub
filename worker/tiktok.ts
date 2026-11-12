@@ -54,7 +54,7 @@ export async function handleTikTok(r:Request,e:Env){
    const state=u.searchParams.get("state")||"",native=state.endsWith(".native");
    if(u.searchParams.has("error"))return done(r,e,"denied",native);
    const code=u.searchParams.get("code")||"";
-   if(!code||!state||!e.TIKTOK_CLIENT_KEY||!e.TIKTOK_CLIENT_SECRET)return done(r,e,"invalid",native);
+   if(!code||!state||!tiktokKey(e)||!tiktokSecret(e))return done(r,e,"invalid",native);
    const q=encodeURIComponent;
    const sr=await fetch(e.SUPABASE_URL+"/rest/v1/hub_tiktok_oauth_states?state=eq."+q(state)+"&expires_at=gt."+q(new Date().toISOString())+"&select=user_id,state",{headers:dbh(e)});
    const states=sr.ok?await sr.json() as Array<{user_id:string;state:string}>:[];
