@@ -3,6 +3,7 @@ import { handleAdmin } from "./admin";
 import { handleVideo } from "./video";
 import { handleSocial } from "./social";
 import { handleFacebook } from "./facebook";
+import { handleTikTok } from "./tiktok";
 import { handleBrowser } from "./browser";
 import { handleAds } from "./ads";
 
@@ -20,6 +21,8 @@ interface Env {
   FACEBOOK_APP_ID?: string;
   FACEBOOK_APP_SECRET?: string;
   FACEBOOK_GRAPH_VERSION?: string;
+  TIKTOK_CLIENT_KEY?: string;
+  TIKTOK_CLIENT_SECRET?: string;
 }
 type AuthUser = { id: string; email?: string };
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), {
@@ -317,6 +320,7 @@ export default {
       if (request.method === "GET" && url.pathname === "/privacy") return legalPage("Politique de confidentialité", privacyBody);
       if (url.pathname.startsWith("/api/browser/")) return handleBrowser(request, env);
       if (url.pathname.startsWith("/api/facebook/")) return handleFacebook(request, env);
+      if (url.pathname.startsWith("/api/tiktok/")) return handleTikTok(request, env);
       if (url.pathname.startsWith("/api/social/")) return handleSocial(request, env);
       if (url.pathname.startsWith("/api/ads/")) return handleAds(request, env);
       if (request.method === "GET" && url.pathname === "/api/health")
