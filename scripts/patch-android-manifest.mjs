@@ -24,6 +24,6 @@ if (!manifest.includes('android:scheme="aquinet"')) {
 
 const gradlePath = 'android/app/build.gradle'
 let gradle = readFileSync(gradlePath, 'utf8')
-gradle = gradle.replace(/versionCode\s*=?\s*\\d+/, 'versionCode 2')
+gradle = gradle.replace(/versionCode\s*=?\s*\d+/, 'versionCode 2')
 gradle = gradle.replace(/versionName\s*=?\s*['"][^'"]+['"]/, 'versionName "1.0.1"')
 writeFileSync(gradlePath, gradle)
