@@ -23,6 +23,12 @@ jobs:
         with:
           node-version: 24
 
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: Validate and prepare permanent signing key
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -49,12 +55,6 @@ jobs:
 
       - name: Build web application
         run: npm run build
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
 
       - name: Set up Android SDK
         env:
