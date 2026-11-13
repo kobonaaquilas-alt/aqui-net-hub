@@ -32,7 +32,8 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const [summaryBusy, setSummaryBusy] = useState(false);
   const [ad, setAd] = useState({company_name:"",contact_name:"",email:"",phone:"",website:"",budget:"",message:""});
   const [partner, setPartner] = useState({organization:"",contact_name:"",email:"",phone:"",website:"",proposal:""});
-  const [videoImageUrl, setVideoImageUrl] = useState("");
+  const [videoMode, setVideoMode] = useState<"image" | "text">("image");
+  const [videoImageFile, setVideoImageFile] = useState<File | null>(null);
   const [videoPrompt, setVideoPrompt] = useState("");
   const [videoDuration, setVideoDuration] = useState("2");
   const [videoRequestId, setVideoRequestId] = useState("");
@@ -82,7 +83,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
 
   useEffect(() => {
     db.auth.getSession().then(({data}) => setSession(data.session));
-    fetch("/api/health").then(r=>r.ok?r.json():Promise.reject()).then(d=>{setBackendReady(!!d.supabase);setVideoReady(!!d.supabase&&!!d.video_github_token);setCinetpayReady(!!d.cinetpay);}).catch(()=>{setBackendReady(false);setVideoReady(false);setCinetpayReady(false);});
+    fetch("/api/health").then(r=>r.ok?r.json():Promise.reject()).then(d=>{setBackendReady(!!d.supabase);setVideoReady(!!d.supabase&&!!d.fal_api_key);setCinetpayReady(!!d.cinetpay);}).catch(()=>{setBackendReady(false);setVideoReady(false);setCinetpayReady(false);});
     const {data:{subscription}} = db.auth.onAuthStateChange((event,next) => {
       if (event === "PASSWORD_RECOVERY") setRecoveryMode(true);
       setSession(next);
@@ -261,13 +262,19 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       setVideoNotice(fr ? "Connecte-toi pour utiliser le générateur." : "Sign in to use the generator.");
       return;
     }
-    if(!videoReady){setVideoNotice("Générateur indisponible : la clé Supabase privée et le jeton GitHub doivent être configurés.");return;}
+    if(!videoReady){setVideoNotice("Générateur indisponible : la clé FAL_KEY doit être configurée dans les secrets Cloudflare.");return;}
+    if(videoMode==="image"&&!videoImageFile){setVideoNotice(fr?"Téléverse d’abord une image.":"Upload an image first.");return;}
     setVideoBusy(true); setVideoNotice(""); setVideoUrl(""); setVideoStatus("");
     try {
+      const form = new FormData();
+      form.append("mode", videoMode);
+      form.append("prompt", videoPrompt.trim());
+      form.append("duration", videoDuration);
+      if (videoMode === "image" && videoImageFile) form.append("image", videoImageFile, videoImageFile.name);
       const response = await fetch("/api/video/jobs", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ image_url: videoImageUrl.trim(), prompt: videoPrompt.trim(), duration: Number(videoDuration) }),
+        headers: { Authorization: "Bearer " + session.access_token },
+        body: form,
       });
       const data = await response.json() as { request_id?: string; status?: string; error?: string; code?: string };
       if (response.status === 402 || data.code === "PAYMENT_REQUIRED") {
@@ -334,7 +341,6 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const input=(value:string,change:(v:string)=>void,placeholder:string,type="text",required=true)=><input type={type} value={value} onChange={e=>change(e.target.value)} placeholder={placeholder} required={required}/>;
   const hasActiveSubscription=!!summary?.subscriptions.some(item=>item.status==="active"&&new Date(item.ends_at).getTime()>Date.now());
   const videoSeconds=Number(videoDuration);
-  const videoPrice=videoSeconds<15?0:25+((videoSeconds-15)/5)*25;
   const date=(value:string)=>new Date(value).toLocaleDateString(fr?"fr-FR":"en-GB");
   const paymentLabel=(status:string)=>status==="paid"?(fr?"Payé":"Paid"):status==="failed"?(fr?"Échoué":"Failed"):(fr?"En attente":"Pending");
   if (authOnly) return <section className="section account-hub account-access" id="account-access">
@@ -429,26 +435,34 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       <small className="account-footnote">{fr?"Les captures sont contrôlées manuellement. Les statistiques saisies manuellement ne sont pas authentifiées automatiquement. Facebook connecté utilise les données autorisées par Meta.":"Screenshots are reviewed manually. TikTok or Meta do not automatically authenticate these metrics here."}</small>
     </div>}
     {session && service==="video" && <div className="account-card video-studio">
-      <span className="eyebrow">AQUI VIDEO AI</span>
-      <h3>{fr ? "Créer une vidéo à partir d'une image" : "Create a video from an image"}</h3>
-      <p>{fr ? "Le moteur assemble des segments de 5 secondes. 2 secondes sont gratuites ; les vidéos longues sont proposées par paliers de 5 secondes, jusqu’à 60 secondes." : "The engine joins 5-second segments. 2 seconds are free; longer videos are offered in 5-second increments, up to 60 seconds."}</p>
-      <input type="url" value={videoImageUrl} onChange={e=>setVideoImageUrl(e.target.value)} placeholder={fr ? "Lien direct public de l'image (JPG, PNG, WEBP)" : "Public direct image URL (JPG, PNG, WEBP)"} required />
-      <textarea value={videoPrompt} onChange={e=>setVideoPrompt(e.target.value)} placeholder={fr ? "Décris précisément le mouvement souhaité…" : "Describe the motion you want…"} required />
-      <label>{fr ? "Durée du clip" : "Clip duration"}
+      <span className="eyebrow">AQUI VIDEO AI · MINIMAX H3 MAX</span>
+      <h3>{fr ? "Crée une vidéo avec l’IA" : "Create an AI video"}</h3>
+      <p>{fr ? "Téléverse une image depuis ton téléphone ou génère directement à partir d’un texte. Aucun lien d’image externe n’est nécessaire." : "Upload an image from your phone or generate directly from a text prompt. No external image link is needed."}</p>
+      <div className="account-tabs">
+        <button type="button" className={videoMode==="image"?"active":""} onClick={()=>{setVideoMode("image");setVideoPaywall(false);}}>{fr?"Image → Vidéo":"Image → Video"}</button>
+        <button type="button" className={videoMode==="text"?"active":""} onClick={()=>{setVideoMode("text");setVideoPaywall(false);}}>{fr?"Texte → Vidéo":"Text → Video"}</button>
+      </div>
+      {videoMode==="image" && <div className="video-upload-area">
+        <label>{fr?"Image de départ (JPG, PNG ou WEBP · 8 Mo max.)":"Starting image (JPG, PNG or WEBP · max 8 MB)"}
+          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{const file=e.target.files?.[0]||null;setVideoImageFile(file);setVideoNotice("");}} />
+        </label>
+        {videoImageFile && <p className="account-message">{fr?"Image sélectionnée : ":"Selected image: "}{videoImageFile.name} · {(videoImageFile.size/1024/1024).toFixed(2)} Mo</p>}
+      </div>}
+      <label>{fr?"Décris la scène et le mouvement souhaité":"Describe the scene and desired motion"}
+        <textarea value={videoPrompt} onChange={e=>setVideoPrompt(e.target.value)} placeholder={videoMode==="image"?(fr?"Ex. : la personne sourit, tourne doucement la tête et marche vers la caméra…":"E.g. the person smiles, slowly turns their head and walks toward the camera…"):(fr?"Ex. : un lion majestueux traverse une savane africaine au coucher du soleil, plan cinématographique…":"E.g. a majestic lion walks across an African savanna at sunset, cinematic shot…")} required />
+      </label>
+      <label>{fr ? "Durée de la vidéo" : "Video duration"}
         <select value={videoDuration} onChange={e=>{setVideoDuration(e.target.value);setVideoPaywall(false);}}>
-          <option value="2">2 secondes · gratuit</option>{Array.from({length:10},(_,i)=>(i+3)*5).map(seconds=><option key={seconds} value={seconds}>{seconds} secondes · {(25+((seconds-15)/5)*25).toLocaleString("fr-FR")} FCFA</option>)}
+          <option value="2">2 secondes · {fr?"gratuit":"free"}</option><option value="5">5 secondes</option><option value="10">10 secondes</option><option value="15">15 secondes</option>
         </select>
       </label>
-      <p className="video-price">{fr?"Prix de cette génération :":"Price for this generation:"} <strong>{videoPrice===0?(fr?"Gratuit":"Free"):`${videoPrice.toLocaleString("fr-FR")} FCFA`}</strong></p>
-      <small className="account-footnote">{fr?"Tarif affiché : 15 s = 25 FCFA ; chaque tranche supplémentaire de 5 s ajoute 25 FCFA. Maximum proposé : 60 s (250 FCFA). Le paiement à la durée sera activé lorsque CinetPay sera configuré.":"Displayed price: 15 s = 25 XOF; each additional 5-second block adds 25 XOF. Maximum offered: 60 s (250 XOF). Per-duration payment will be enabled when CinetPay is configured."}</small>
-      <button type="button" className="primary-button" disabled={videoBusy || !videoReady || !videoImageUrl.trim() || videoPrompt.trim().length<3} onClick={()=>void startVideo()}>
-        {videoBusy ? "…" : (fr ? "Lancer la génération" : "Generate video")}
-      </button>
+      <small className="account-footnote">{fr?"Les clips de 2 secondes sont accessibles sans abonnement. Les durées de 5 à 15 secondes nécessitent un abonnement actif. Le moteur IA peut appliquer des limites ou des frais selon les crédits disponibles.":"2-second clips are available without a subscription. 5–15-second clips require an active subscription. The AI provider may apply limits or charges depending on available credits."}</small>
+      <button type="button" className="primary-button" disabled={videoBusy || !videoReady || (videoMode==="image"&&!videoImageFile) || videoPrompt.trim().length<3} onClick={()=>void startVideo()}>{videoBusy ? "…" : (fr ? "Générer ma vidéo" : "Generate my video")}</button>
       {videoRequestId && <p className="video-status">{fr ? "État :" : "Status:"} {videoStatus || "queued"} · {videoRequestId}</p>}
       {videoNotice && <p className="account-message" role="status">{videoNotice}</p>}
-      {videoPaywall && <div className="follow-gate"><h4>{fr?"Choisis ton abonnement pour débloquer les vidéos longues":"Choose a subscription to unlock longer videos"}</h4>{plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement indisponible":"Payment unavailable"):paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay"}</button></article>)}</div>}
+      {videoPaywall && <div className="follow-gate"><h4>{fr?"Choisis ton abonnement pour débloquer les vidéos longues":"Choose a subscription to unlock longer videos"}</h4>{plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement bientôt disponible":"Payment coming soon"):paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay"}</button></article>)}</div>}
       {videoUrl && <div className="video-result"><video controls playsInline src={videoUrl} /><a href={videoUrl} target="_blank" rel="noreferrer">{fr ? "Ouvrir / enregistrer le MP4" : "Open / save MP4"} ↗</a></div>}
-      <small className="account-footnote">{fr ? "La génération est limitée à 60 secondes par demande dans cette version. Les performances et la disponibilité dépendent du moteur Wan 2.2 et de ses quotas." : "Generation is limited to 60 seconds per request in this version. Performance and availability depend on Wan 2.2 and its quotas."}</small>
+      <small className="account-footnote">{fr?"Moteur : MiniMax H3 Max via fal.ai. Image source privée et résultat MP4 conservé dans le stockage sécurisé du compte.":"Engine: MiniMax H3 Max via fal.ai. Source image is private and the MP4 result is stored securely in the account."}</small>
     </div>}
 
     {session && service==="partners" && <div className="account-grid">
