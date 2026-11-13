@@ -452,7 +452,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       </label>
       <label>{fr ? "Durée de la vidéo" : "Video duration"}
         <select value={videoDuration} onChange={e=>{setVideoDuration(e.target.value);setVideoPaywall(false);}}>
-          <option value="2">2 secondes · {fr?"gratuit":"free"}</option><option value="5">5 secondes</option><option value="10">10 secondes</option><option value="15">15 secondes</option>
+          <option value="2">2 secondes · {fr?"sans abonnement":"no subscription"}</option><option value="5">5 secondes</option><option value="10">10 secondes</option><option value="15">15 secondes</option>
         </select>
       </label>
       <small className="account-footnote">{fr?"Les clips de 2 secondes sont accessibles sans abonnement. Les durées de 5 à 15 secondes nécessitent un abonnement actif. Le moteur IA peut appliquer des limites ou des frais selon les crédits disponibles.":"2-second clips are available without a subscription. 5–15-second clips require an active subscription. The AI provider may apply limits or charges depending on available credits."}</small>
