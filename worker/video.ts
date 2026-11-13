@@ -98,7 +98,7 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
       return reply({ error: "Formulaire de génération invalide." }, 400);
     }
     if (mode !== "text" && mode !== "image") return reply({ error: "Mode de génération invalide." }, 400);
-    if (prompt.length < 3 || prompt.length > 1800)
+    if (prompt.length < 3 || prompt.length > 1200)
       return reply({ error: "La description doit contenir entre 3 et 1 800 caractères." }, 400);
     if (mode === "image" && !image) return reply({ error: "Téléverse une image pour lancer le mode image vers vidéo." }, 400);
     if (mode === "text" && image) return reply({ error: "Retire l'image ou choisis le mode image vers vidéo." }, 400);
@@ -160,7 +160,8 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
     const endpoint = mode === "image" ? "minimax/h3-max/image-to-video" : "minimax/h3-max/text-to-video";
     const input: Record<string, unknown> = {
       prompt, prompt_expansion_mode: "balanced", duration,
-      resolution: "768P", aspect_ratio: "9:16", enable_safety_checker: true,
+      resolution: "768P", enable_safety_checker: true,
+      ...(mode === "text" ? { aspect_ratio: "9:16" } : {}),
     };
     if (mode === "image") input.image_url = imageUrl;
     const submitted = await fetch(`https://queue.fal.run/${endpoint}`, {
