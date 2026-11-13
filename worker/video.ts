@@ -1,16 +1,14 @@
-import { unzipSync } from "fflate";
-
 type VideoEnv = {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
   SUPABASE_SECRET_KEY?: string;
-  GITHUB_TOKEN: string;
-  VIDEO_WORKFLOW_REF?: string;
+  FAL_KEY?: string;
 };
 
-const VIDEO_REPO = "kobonaaquilas-alt/aqui-video-ai.";
-const WORKFLOW = "generate-video.yml";
+const INPUT_BUCKET = "aqui-video-inputs";
+const OUTPUT_BUCKET = "aqui-video-results";
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 function reply(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -18,10 +16,11 @@ function reply(data: unknown, status = 200) {
     headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
   });
 }
+const secret = (env: VideoEnv) => env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || "";
 function serviceHeaders(env: VideoEnv) {
   return {
-    apikey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || "",
-    Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || ""}`,
+    apikey: secret(env),
+    Authorization: `Bearer ${secret(env)}`,
     "Content-Type": "application/json",
     Prefer: "return=representation",
   };
@@ -36,39 +35,78 @@ async function currentUser(request: Request, env: VideoEnv): Promise<{ id: strin
   const user = await response.json() as { id?: string };
   return user.id ? { id: user.id } : null;
 }
-const githubHeaders = (env: VideoEnv) => ({
-  Authorization: `Bearer ${env.GITHUB_TOKEN}`,
-  Accept: "application/vnd.github+json",
-  "X-GitHub-Api-Version": "2022-11-28",
-  "User-Agent": "AQUI-NET-HUB",
-});
+async function signedStorageUrl(env: VideoEnv, bucket: string, path: string, expiresIn = 3600) {
+  const response = await fetch(
+    `${env.SUPABASE_URL}/storage/v1/object/sign/${bucket}/${path.split("/").map(encodeURIComponent).join("/")}`,
+    { method: "POST", headers: { ...serviceHeaders(env), Prefer: "" }, body: JSON.stringify({ expiresIn }) },
+  );
+  if (!response.ok) throw new Error("Impossible de créer un lien média sécurisé.");
+  const data = await response.json() as { signedURL?: string };
+  if (!data.signedURL) throw new Error("Lien média sécurisé absent.");
+  return data.signedURL.startsWith("http") ? data.signedURL : `${env.SUPABASE_URL}/storage/v1${data.signedURL}`;
+}
+async function updateJob(env: VideoEnv, requestId: string, values: Record<string, unknown>) {
+  const response = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/hub_video_jobs?request_id=eq.${encodeURIComponent(requestId)}`,
+    { method: "PATCH", headers: serviceHeaders(env), body: JSON.stringify(values) },
+  );
+  if (!response.ok) throw new Error("Mise à jour de la génération impossible.");
+}
+async function storeOutput(env: VideoEnv, userId: string, requestId: string, videoUrl: string) {
+  const parsed = new URL(videoUrl);
+  if (parsed.protocol !== "https:") throw new Error("URL vidéo du moteur invalide.");
+  const media = await fetch(parsed.toString());
+  if (!media.ok) throw new Error("Téléchargement de la vidéo générée impossible.");
+  const bytes = await media.arrayBuffer();
+  if (bytes.byteLength < 10000 || bytes.byteLength > 100 * 1024 * 1024)
+    throw new Error("Taille du fichier vidéo généré invalide.");
+  const path = `${userId}/${requestId}.mp4`;
+  const upload = await fetch(`${env.SUPABASE_URL}/storage/v1/object/${OUTPUT_BUCKET}/${path}`, {
+    method: "POST",
+    headers: {
+      apikey: secret(env), Authorization: `Bearer ${secret(env)}`,
+      "Content-Type": "video/mp4", "x-upsert": "true",
+    },
+    body: bytes,
+  });
+  if (!upload.ok) throw new Error("Enregistrement sécurisé du MP4 impossible.");
+  await updateJob(env, requestId, { status: "completed", storage_path: path, error_message: null });
+  return signedStorageUrl(env, OUTPUT_BUCKET, path);
+}
 
 export async function handleVideo(request: Request, env: VideoEnv): Promise<Response> {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !(env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY) || !env.GITHUB_TOKEN)
-    return reply({ error: "Service vidéo non configuré." }, 503);
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !secret(env))
+    return reply({ error: "Backend Supabase non configuré." }, 503);
+  if (!env.FAL_KEY?.trim())
+    return reply({ error: "Moteur vidéo non configuré : la clé FAL_KEY doit être ajoutée aux secrets Cloudflare." }, 503);
   const user = await currentUser(request, env);
   if (!user) return reply({ error: "Connexion requise." }, 401);
 
   if (request.method === "POST") {
-    let body: { image_url?: string; prompt?: string; duration?: number };
-    try { body = await request.json() as typeof body; }
-    catch { return reply({ error: "Corps de requête invalide." }, 400); }
-    const prompt = body.prompt?.trim() || "";
-    const imageUrl = body.image_url?.trim() || "";
-    const duration = Number(body.duration);
-    let parsed: URL;
-    try { parsed = new URL(imageUrl); }
-    catch { return reply({ error: "URL d'image invalide." }, 400); }
-    const host = parsed.hostname.toLowerCase();
-    const privateIpv4 = /^(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host);
-    if (parsed.protocol !== "https:" || parsed.username || parsed.password ||
-        host === "localhost" || host.endsWith(".localhost") || privateIpv4 ||
-        host === "0.0.0.0" || host === "::1")
-      return reply({ error: "Utilise une URL HTTPS publique directe vers une image." }, 400);
-    if (prompt.length < 3 || prompt.length > 1200)
-      return reply({ error: "La description doit contenir entre 3 et 1 200 caractères." }, 400);
-    if (![2, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60].includes(duration))
-      return reply({ error: "Durées disponibles : 2 secondes gratuites, puis de 15 à 60 secondes par paliers de 5 secondes." }, 400);
+    let mode = "text";
+    let prompt = "";
+    let duration = 5;
+    let image: File | null = null;
+    try {
+      const form = await request.formData();
+      mode = String(form.get("mode") || "text");
+      prompt = String(form.get("prompt") || "").trim();
+      duration = Number(form.get("duration") || 5);
+      const candidate = form.get("image");
+      if (candidate instanceof File && candidate.size > 0) image = candidate;
+    } catch {
+      return reply({ error: "Formulaire de génération invalide." }, 400);
+    }
+    if (mode !== "text" && mode !== "image") return reply({ error: "Mode de génération invalide." }, 400);
+    if (prompt.length < 3 || prompt.length > 1800)
+      return reply({ error: "La description doit contenir entre 3 et 1 800 caractères." }, 400);
+    if (mode === "image" && !image) return reply({ error: "Téléverse une image pour lancer le mode image vers vidéo." }, 400);
+    if (mode === "text" && image) return reply({ error: "Retire l'image ou choisis le mode image vers vidéo." }, 400);
+    if (image && (!["image/jpeg", "image/png", "image/webp"].includes(image.type) || image.size > MAX_IMAGE_BYTES))
+      return reply({ error: "Formats acceptés : JPG, PNG ou WEBP, 8 Mo maximum." }, 400);
+    if (![2, 5, 10, 15].includes(duration))
+      return reply({ error: "Durées disponibles : 2, 5, 10 ou 15 secondes." }, 400);
+
     if (duration > 2) {
       const access = await fetch(
         `${env.SUPABASE_URL}/rest/v1/hub_subscriptions?user_id=eq.${encodeURIComponent(user.id)}&status=eq.active&ends_at=gt.${encodeURIComponent(new Date().toISOString())}&select=id&limit=1`,
@@ -77,160 +115,122 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
       if (!access.ok) return reply({ error: "Vérification de l'abonnement impossible." }, 502);
       const active = await access.json() as unknown[];
       if (!active.length) return reply({
-        error: "La génération vidéo nécessite un abonnement AQUI NET HUB actif.",
+        error: "Un abonnement AQUI NET HUB actif est requis pour les vidéos de plus de 2 secondes.",
         code: "PAYMENT_REQUIRED",
       }, 402);
     }
 
     const jobsUrl = `${env.SUPABASE_URL}/rest/v1/hub_video_jobs`;
     const activeJobs = await fetch(
-      `${jobsUrl}?user_id=eq.${user.id}&status=in.(queued,running)&select=request_id&limit=1`,
+      `${jobsUrl}?user_id=eq.${encodeURIComponent(user.id)}&status=in.(queued,running)&select=request_id&limit=1`,
       { headers: serviceHeaders(env) },
     );
     if (!activeJobs.ok) return reply({ error: "Impossible de vérifier les demandes en cours." }, 502);
-    const active = await activeJobs.json() as Array<{ request_id: string }>;
-    if (active.length) return reply({ error: "Une génération est déjà en cours sur ce compte. Attends sa fin avant d'en lancer une autre." }, 429);
+    if ((await activeJobs.json() as unknown[]).length)
+      return reply({ error: "Une génération est déjà en cours sur ce compte." }, 429);
 
     const requestId = crypto.randomUUID();
+    let imageUrl = "";
+    let inputPath: string | null = null;
+    if (image) {
+      inputPath = `${user.id}/${requestId}-source.${image.type === "image/png" ? "png" : image.type === "image/webp" ? "webp" : "jpg"}`;
+      const uploaded = await fetch(`${env.SUPABASE_URL}/storage/v1/object/${INPUT_BUCKET}/${inputPath}`, {
+        method: "POST",
+        headers: {
+          apikey: secret(env), Authorization: `Bearer ${secret(env)}`,
+          "Content-Type": image.type, "x-upsert": "true",
+        },
+        body: await image.arrayBuffer(),
+      });
+      if (!uploaded.ok) return reply({ error: "Téléversement de l'image impossible. Vérifie le stockage Supabase." }, 502);
+      try { imageUrl = await signedStorageUrl(env, INPUT_BUCKET, inputPath, 3600); }
+      catch (error) { return reply({ error: error instanceof Error ? error.message : "Lien image impossible." }, 502); }
+    }
+
     const saved = await fetch(jobsUrl, {
       method: "POST",
       headers: serviceHeaders(env),
       body: JSON.stringify({
         user_id: user.id, request_id: requestId, prompt, image_url: imageUrl,
-        duration_seconds: duration, status: "queued",
+        duration_seconds: duration, status: "queued", mode, input_storage_path: inputPath,
       }),
     });
-    if (!saved.ok) return reply({ error: "Impossible d'enregistrer la demande vidéo." }, 500);
+    if (!saved.ok) return reply({ error: "Impossible d'enregistrer la demande vidéo. Applique la migration vidéo AQUI NET HUB." }, 500);
 
-    const dispatch = await fetch(
-      `https://api.github.com/repos/${VIDEO_REPO}/actions/workflows/${WORKFLOW}/dispatches`,
-      {
-        method: "POST",
-        headers: { ...githubHeaders(env), "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ref: env.VIDEO_WORKFLOW_REF || "main",
-          inputs: { request_id: requestId, image_url: imageUrl, prompt, duration: String(duration) },
-        }),
-      },
-    );
-    if (!dispatch.ok) {
-      await fetch(`${jobsUrl}?request_id=eq.${requestId}`, {
-        method: "PATCH", headers: serviceHeaders(env),
-        body: JSON.stringify({ status: "failed", error_message: "Le moteur vidéo a refusé la demande." }),
-      });
-      return reply({ error: "Le moteur vidéo a refusé la demande. Vérifie les autorisations GitHub Actions." }, 502);
+    const endpoint = mode === "image" ? "minimax/h3-max/image-to-video" : "minimax/h3-max/text-to-video";
+    const input: Record<string, unknown> = {
+      prompt, prompt_expansion_mode: "balanced", duration,
+      resolution: "768P", aspect_ratio: "9:16", enable_safety_checker: true,
+    };
+    if (mode === "image") input.image_url = imageUrl;
+    const submitted = await fetch(`https://queue.fal.run/${endpoint}`, {
+      method: "POST",
+      headers: { Authorization: `Key ${env.FAL_KEY.trim()}`, "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const queue = await submitted.json() as {
+      request_id?: string; status_url?: string; response_url?: string; detail?: string; error?: string;
+    };
+    if (!submitted.ok || !queue.request_id || !queue.status_url || !queue.response_url) {
+      await updateJob(env, requestId, { status: "failed", error_message: "Le moteur vidéo a refusé la demande." });
+      const detail = queue.detail || queue.error;
+      return reply({ error: detail ? `Moteur vidéo : ${String(detail).slice(0, 300)}` : "Le moteur vidéo a refusé la demande. Vérifie la clé FAL_KEY et ses autorisations." }, 502);
     }
-    return reply({ request_id: requestId, status: "queued", duration_seconds: duration }, 202);
+    await updateJob(env, requestId, {
+      fal_request_id: queue.request_id, fal_status_url: queue.status_url,
+      fal_response_url: queue.response_url, status: "running",
+    });
+    return reply({ request_id: requestId, status: "running", duration_seconds: duration, mode }, 202);
   }
 
   const requestId = new URL(request.url).pathname.split("/").pop() || "";
   if (!/^[0-9a-f-]{36}$/i.test(requestId)) return reply({ error: "Identifiant invalide." }, 400);
   const jobsUrl = `${env.SUPABASE_URL}/rest/v1/hub_video_jobs`;
   const lookup = await fetch(
-    `${jobsUrl}?request_id=eq.${requestId}&user_id=eq.${user.id}&select=request_id,status,duration_seconds,github_run_id,storage_path,error_message,created_at&limit=1`,
+    `${jobsUrl}?request_id=eq.${requestId}&user_id=eq.${encodeURIComponent(user.id)}&select=request_id,status,duration_seconds,storage_path,error_message,fal_request_id,fal_status_url,fal_response_url,created_at&limit=1`,
     { headers: serviceHeaders(env) },
   );
   if (!lookup.ok) return reply({ error: "Lecture du statut impossible." }, 502);
   const jobs = await lookup.json() as Array<{
-    request_id: string; status: string; duration_seconds: number; github_run_id: number | null;
-    storage_path: string | null; error_message: string | null; created_at: string;
+    request_id: string; status: string; duration_seconds: number; storage_path: string | null;
+    error_message: string | null; fal_request_id: string | null; fal_status_url: string | null;
+    fal_response_url: string | null; created_at: string;
   }>;
   const job = jobs[0];
   if (!job) return reply({ error: "Demande vidéo introuvable." }, 404);
   if (job.status === "failed") return reply(job);
+  if (job.status === "completed" && job.storage_path) {
+    try { return reply({ ...job, video_url: await signedStorageUrl(env, OUTPUT_BUCKET, job.storage_path) }); }
+    catch { return reply({ ...job, status: "completed" }); }
+  }
+  if (!job.fal_status_url || !job.fal_response_url) return reply({ ...job, status: "queued" });
 
-  const gh = githubHeaders(env);
-  let run: any = null;
-  if (job.github_run_id) {
-    const response = await fetch(
-      `https://api.github.com/repos/${VIDEO_REPO}/actions/runs/${job.github_run_id}`, { headers: gh },
-    );
-    if (response.ok) run = await response.json();
-  } else {
-    const response = await fetch(
-      `https://api.github.com/repos/${VIDEO_REPO}/actions/workflows/${WORKFLOW}/runs?event=workflow_dispatch&per_page=100`,
-      { headers: gh },
-    );
-    if (!response.ok) return reply({ error: "Impossible de vérifier la génération vidéo." }, 502);
-    const data = await response.json() as { workflow_runs?: any[] };
-    run = (data.workflow_runs || []).find(item =>
-      String(item.display_title || item.name || "").includes(requestId)
-    ) || null;
+  const auth = { Authorization: `Key ${env.FAL_KEY.trim()}` };
+  const statusResponse = await fetch(job.fal_status_url, { headers: auth });
+  if (!statusResponse.ok) return reply({ error: "Impossible de lire le statut du moteur vidéo." }, 502);
+  const status = await statusResponse.json() as { status?: string; error?: string };
+  if (status.status === "IN_QUEUE" || status.status === "IN_PROGRESS")
+    return reply({ ...job, status: "running" });
+  if (status.status !== "COMPLETED") return reply({ ...job, status: "running" });
+
+  const resultResponse = await fetch(job.fal_response_url, { headers: auth });
+  if (!resultResponse.ok) {
+    const detail = await resultResponse.text();
+    await updateJob(env, requestId, { status: "failed", error_message: detail.slice(0, 400) || "Résultat vidéo indisponible." });
+    return reply({ ...job, status: "failed", error_message: "Le moteur n'a pas fourni le résultat vidéo." });
   }
-  if (!run) return reply({ ...job, status: "queued" });
-  if (run.status !== "completed") {
-    await fetch(`${jobsUrl}?request_id=eq.${requestId}`, {
-      method: "PATCH", headers: serviceHeaders(env),
-      body: JSON.stringify({ status: "running", github_run_id: run.id }),
-    });
-    return reply({ ...job, status: "running", github_run_id: run.id });
+  const result = await resultResponse.json() as { video?: { url?: string }; output?: { video?: { url?: string } }; error?: string };
+  const outputUrl = result.video?.url || result.output?.video?.url;
+  if (!outputUrl) {
+    await updateJob(env, requestId, { status: "failed", error_message: result.error || "Fichier vidéo absent du résultat du moteur." });
+    return reply({ ...job, status: "failed", error_message: "Le moteur n'a pas renvoyé de fichier vidéo exploitable." });
   }
-  if (run.conclusion !== "success") {
-    const message = "La génération vidéo a échoué. Réessaie avec une autre image ou description.";
-    await fetch(`${jobsUrl}?request_id=eq.${requestId}`, {
-      method: "PATCH", headers: serviceHeaders(env),
-      body: JSON.stringify({ status: "failed", github_run_id: run.id, error_message: message }),
-    });
+  try {
+    const videoUrl = await storeOutput(env, user.id, requestId, outputUrl);
+    return reply({ ...job, status: "completed", video_url: videoUrl });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Enregistrement vidéo impossible.";
+    await updateJob(env, requestId, { status: "failed", error_message: message });
     return reply({ ...job, status: "failed", error_message: message });
   }
-
-  const artifactsResponse = await fetch(
-    `https://api.github.com/repos/${VIDEO_REPO}/actions/runs/${run.id}/artifacts`, { headers: gh },
-  );
-  if (!artifactsResponse.ok) return reply({ error: "Artefact vidéo indisponible." }, 502);
-  const artifactData = await artifactsResponse.json() as {
-    artifacts?: Array<{ name: string; archive_download_url: string; expired: boolean }>;
-  };
-  const artifact = (artifactData.artifacts || []).find(item => item.name === "aqui-video-mp4" && !item.expired);
-  if (!artifact) return reply({ ...job, status: "running", github_run_id: run.id });
-
-  const archive = await fetch(artifact.archive_download_url, { headers: gh });
-  if (!archive.ok) return reply({ error: "Téléchargement du MP4 impossible." }, 502);
-  const zip = new Uint8Array(await archive.arrayBuffer());
-  if (zip.byteLength > 100 * 1024 * 1024) return reply({ error: "Archive vidéo trop volumineuse." }, 413);
-  let extracted: Record<string, Uint8Array>;
-  try { extracted = unzipSync(zip); }
-  catch { return reply({ error: "Archive vidéo illisible." }, 502); }
-  const mp4 = Object.entries(extracted).find(([name, data]) => name.endsWith("output.mp4") && data.byteLength > 10000);
-  if (!mp4) return reply({ error: "Fichier MP4 absent de l'archive." }, 502);
-
-  const path = `${user.id}/${requestId}.mp4`;
-  const upload = await fetch(
-    `${env.SUPABASE_URL}/storage/v1/object/aqui-video-results/${path}`,
-    {
-      method: "POST",
-      headers: {
-        apikey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || "",
-        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || ""}`,
-        "Content-Type": "video/mp4",
-        "x-upsert": "true",
-      },
-      body: new Blob([mp4[1]], { type: "video/mp4" }),
-    },
-  );
-  if (!upload.ok) return reply({ error: "Enregistrement sécurisé du MP4 impossible." }, 502);
-  const update = await fetch(`${jobsUrl}?request_id=eq.${requestId}`, {
-    method: "PATCH", headers: serviceHeaders(env),
-    body: JSON.stringify({ status: "completed", github_run_id: run.id, storage_path: path, error_message: null }),
-  });
-  if (!update.ok) return reply({ error: "Mise à jour du résultat vidéo impossible." }, 502);
-
-  const signed = await fetch(
-    `${env.SUPABASE_URL}/storage/v1/object/sign/aqui-video-results/${path}`,
-    {
-      method: "POST",
-      headers: {
-        apikey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || "",
-        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || ""}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ expiresIn: 3600 }),
-    },
-  );
-  if (!signed.ok) return reply({ request_id: requestId, status: "completed", storage_path: path });
-  const result = await signed.json() as { signedURL?: string };
-  const videoUrl = result.signedURL?.startsWith("http")
-    ? result.signedURL
-    : result.signedURL ? `${env.SUPABASE_URL}/storage/v1${result.signedURL}` : null;
-  return reply({ request_id: requestId, status: "completed", storage_path: path, video_url: videoUrl });
 }
