@@ -16,8 +16,9 @@ interface Env {
   CINETPAY_API_KEY: string;
   CINETPAY_API_PASSWORD: string;
   APP_BASE_URL?: string;
-  GITHUB_TOKEN: string;
+  GITHUB_TOKEN?: string;
   VIDEO_WORKFLOW_REF?: string;
+  FAL_KEY?: string;
   FACEBOOK_APP_ID?: string;
   FACEBOOK_APP_SECRET?: string;
   FACEBOOK_GRAPH_VERSION?: string;
@@ -335,6 +336,7 @@ export default {
           cinetpay_api_key: !!env.CINETPAY_API_KEY,
           cinetpay_api_password: !!env.CINETPAY_API_PASSWORD,
           video_github_token: !!env.GITHUB_TOKEN,
+          fal_api_key: !!env.FAL_KEY?.trim(),
           facebook_oauth: !!env.FACEBOOK_APP_ID && !!env.FACEBOOK_APP_SECRET,
           facebook_app_id: !!env.FACEBOOK_APP_ID,
           tiktok_client_key_configured: !!env.TIKTOK_CLIENT_KEY?.trim(),
