@@ -49,3 +49,10 @@ Consulter [docs/CONFIGURATION_PRODUCTION.md](docs/CONFIGURATION_PRODUCTION.md) p
 - Les paiements réels nécessitent un compte marchand vérifié et administré par son titulaire adulte.
 
 Aucun revenu ni résultat commercial n'est garanti.
+
+## Catalogue et veille AQUI NET HUB
+- Catalogue complémentaire : `src/data/weekly-veille.ts`.
+- La section publique « Veille » présente les conditions de gratuité, les limites, les concurrents africains et les solutions de paiement à étudier.
+- Chaque outil doit conserver URL officielle, modèle de gratuité, limites, inscription, accès géographique et date de vérification.
+- Ne jamais présenter un essai temporaire comme gratuit permanent ; revalider quotas, conditions et accès au Togo avant publication.
+- Les prestataires de paiement restent à étudier : aucune activation sans compte marchand validé et secrets configurés côté serveur.
