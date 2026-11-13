@@ -429,7 +429,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     {session && service==="social" && <div className="account-card social-audit">
       <span className="eyebrow">AQUI SOCIAL AUDIT · {socialCount}/3 {fr?"analyses gratuites":"free reviews"}</span>
       <h3>{fr?"Diagnostic de ton compte":"Your account review"}</h3>
-      <p>{fr?"Facebook peut être connecté via l'autorisation officielle Meta pour analyser automatiquement les Pages que tu administres. Pour les autres réseaux, les chiffres restent à saisir manuellement.":"Facebook can be connected through official Meta authorization to automatically analyze Pages you manage. For other networks, figures must still be entered manually."}</p>
+      <p>{fr?"Analyse Facebook sans autorisation Meta : relève les chiffres dans Meta Business Suite, puis AQUI NET HUB calcule les indicateurs et conseils. Pour les autres réseaux, saisis les statistiques disponibles.":"Analyze Facebook without Meta permissions: get the figures from Meta Business Suite, then AQUI NET HUB calculates indicators and recommendations. Enter available metrics for other networks."}</p>
       <div className="follow-gate">
       <div className="follow-gate">
         <h4>{fr?"Connexion directe à TikTok":"Connect directly to TikTok"}</h4>
@@ -447,12 +447,9 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
           <button type="button" className="filter-button" disabled={tiktokBusy} onClick={()=>void disconnectTikTok()}>{fr?"Déconnecter TikTok":"Disconnect TikTok"}</button>
         </div>}
       </div>
-        <h4>{fr?"Connexion réelle à Facebook":"Connect directly to Facebook"}</h4>
-        <p>{fr?"Le lien seul ne donne pas accès aux statistiques privées. Autorise AQUI NET HUB auprès de Facebook, puis choisis une Page que tu administres.":"A profile link alone cannot grant access to private insights. Authorize AQUI NET HUB with Facebook, then choose a Page you manage."}</p>
-        <button type="button" className="primary-button" disabled={facebookBusy||!backendReady} onClick={()=>void connectFacebook()}>{facebookBusy?"…":facebookConnected?(fr?"Reconnecter Facebook":"Reconnect Facebook"):(fr?"Connecter Facebook":"Connect Facebook")}</button>
-        {facebookConnected&&<><label>{fr?"Page Facebook à analyser":"Facebook Page to analyze"}<select value={facebookPageId} onChange={e=>setFacebookPageId(e.target.value)}><option value="">{fr?"Choisir une Page":"Choose a Page"}</option>{facebookPages.map(p=><option key={p.page_id} value={p.page_id}>{p.page_name}</option>)}</select></label><button type="button" className="filter-button" disabled={facebookBusy||!facebookPageId} onClick={()=>void auditFacebook()}>{facebookBusy?(fr?"Analyse…":"Analyzing…"):(fr?"Analyser automatiquement":"Analyze automatically")}</button></>}
-        {facebookNotice&&<p className="account-message" role="status">{facebookNotice}</p>}
-        {facebookReport&&<div className="social-report"><strong>{facebookReport.page_name}</strong><p>{fr?"Abonnés :":"Followers: "} {Number(facebookReport.followers).toLocaleString(fr?"fr-FR":"en-US")}</p><p>{fr?"Publications analysées :":"Posts analyzed: "} {facebookReport.posts_analyzed}</p><p>{fr?"J'aime moyens :":"Average likes: "} {facebookReport.average_likes} · {fr?"Commentaires moyens :":"Average comments: "} {facebookReport.average_comments}</p><p>{fr?"Impressions sur 28 jours :":"28-day impressions: "} {facebookReport.impressions_28d===null?(fr?"Indisponibles":"Unavailable"):Number(facebookReport.impressions_28d).toLocaleString()}</p><p>{fr?"Interactions sur 28 jours :":"28-day engagements: "} {facebookReport.engagements_28d===null?(fr?"Indisponibles":"Unavailable"):Number(facebookReport.engagements_28d).toLocaleString()}</p><small>{facebookReport.disclaimer}</small></div>}
+        <h4>{fr?"Analyse Facebook sans connexion Meta":"Facebook analysis without Meta login"}</h4>
+        <p>{fr?"Pour éviter les autorisations Meta bloquées, ouvre Meta Business Suite → Statistiques/Insights. Relève tes abonnés, la moyenne des vues, des J’aime et des commentaires, puis renseigne les champs ci-dessous. AQUI NET HUB calcule automatiquement les indicateurs et les recommandations.":"To avoid blocked Meta permissions, open Meta Business Suite → Insights. Note your followers and average views, likes and comments, then enter the figures below. AQUI NET HUB automatically calculates indicators and recommendations."}</p>
+        <a className="filter-button" href="https://business.facebook.com/latest/insights" target="_blank" rel="noreferrer">{fr?"Ouvrir Meta Business Suite":"Open Meta Business Suite"} ↗</a>
       </div>
       {(socialCount<3 || (followStatus==="approved"&&socialSubscribed)) ? <>
         <input type="url" value={socialUrl} onChange={e=>setSocialUrl(e.target.value)} placeholder="Lien public du profil (HTTPS)" required/>
