@@ -6,7 +6,7 @@ text = path.read_text()
 
 if "signingConfigs {" not in text:
     text, count = re.subn(
-        r"android\\s*\\{",
+        r"android\s*\{",
         """android {
     signingConfigs {
         release {
@@ -23,13 +23,13 @@ if "signingConfigs {" not in text:
     if count != 1:
         raise SystemExit("Impossible de trouver le bloc android dans android/app/build.gradle")
 
-if not re.search(r"buildTypes\\s*\\{\\s*release\\s*\\{", text):
+if not re.search(r"buildTypes\s*\{\s*release\s*\{", text):
     raise SystemExit("Impossible de trouver buildTypes.release dans android/app/build.gradle")
 
 if "signingConfig signingConfigs.release" not in text:
     text, count = re.subn(
-        r"(buildTypes\\s*\\{\\s*release\\s*\\{)",
-        r"\\1\\n            signingConfig signingConfigs.release",
+        r"(buildTypes\s*\{\s*release\s*\{)",
+        r"\1\n            signingConfig signingConfigs.release",
         text,
         count=1,
     )
