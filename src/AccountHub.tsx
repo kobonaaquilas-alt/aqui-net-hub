@@ -53,12 +53,6 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const [socialCount,setSocialCount]=useState(0);
   const [followStatus,setFollowStatus]=useState("none");
   const [socialSubscribed,setSocialSubscribed]=useState(false);
-  const [facebookPages,setFacebookPages]=useState<Array<{page_id:string;page_name:string}>>([]);
-  const [facebookPageId,setFacebookPageId]=useState("");
-  const [facebookConnected,setFacebookConnected]=useState(false);
-  const [facebookBusy,setFacebookBusy]=useState(false);
-  const [facebookReport,setFacebookReport]=useState<any>(null);
-  const [facebookNotice,setFacebookNotice]=useState("");
   const [tiktokBusy,setTiktokBusy]=useState(false);
   const [tiktokNotice,setTiktokNotice]=useState("");
   const [tiktokData,setTiktokData]=useState<any>(null);
@@ -225,27 +219,6 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     }catch(e){setSocialResult(e instanceof Error?e.message:"Erreur d'analyse.");}
     finally{setBusy(false);}
   }
-  useEffect(()=>{
-    if(!session?.access_token)return;
-    const status=new URLSearchParams(window.location.search).get("facebook");
-    if(status){
-      const messages:Record<string,string>={
-        connected:fr?"Facebook est connecté. Sélectionne une Page pour lancer l'analyse.":"Facebook connected. Select a Page to start analysis.",
-        denied:fr?"Autorisation Facebook refusée.":"Facebook authorization was declined.",
-        no_pages:fr?"Aucune Page administrée n'a été trouvée pour ce compte.":"No managed Facebook Pages were found for this account.",
-        expired:fr?"La demande de connexion a expiré. Recommence.":"The connection request expired. Try again.",
-        save_error:fr?"Facebook a répondu, mais l'enregistrement sécurisé a échoué.":"Facebook responded, but secure storage failed.",
-        token_error:fr?"Meta n'a pas fourni de jeton d'accès valide.":"Meta did not return a valid access token.",
-        invalid:fr?"Réponse Facebook invalide.":"Invalid Facebook response."
-      };
-      setFacebookNotice(messages[status]||"");
-      const clean=new URL(window.location.href);clean.searchParams.delete("facebook");window.history.replaceState({}, "", clean.toString());
-    }
-    fetch("/api/facebook/pages",{headers:{Authorization:"Bearer "+session.access_token}})
-      .then(r=>r.ok?r.json():Promise.reject())
-      .then(d=>{const pages=d.pages||[];setFacebookPages(pages);setFacebookConnected(!!d.connected);if(pages.length&&!facebookPageId)setFacebookPageId(pages[0].page_id);})
-      .catch(()=>{setFacebookConnected(false);});
-  },[session?.access_token,fr]);
   async function loadTikTok(){
     if(!session?.access_token)return;
     setTiktokBusy(true);setTiktokNotice("");
@@ -262,28 +235,6 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     if(!session?.access_token)return;setTiktokBusy(true);
     try{const r=await fetch("/api/tiktok/disconnect",{method:"DELETE",headers:{Authorization:"Bearer "+session.access_token}});const d=await r.json();if(!r.ok)throw new Error(d.error||"Déconnexion impossible.");setTiktokData(null);setTiktokNotice(fr?"Compte TikTok déconnecté.":"TikTok account disconnected.");}
     catch(e){setTiktokNotice(e instanceof Error?e.message:"Erreur.");}finally{setTiktokBusy(false);}
-  }
-  async function connectFacebook(){
-    if(!session?.access_token){setFacebookNotice(fr?"Connecte-toi d'abord à AQUI NET HUB.":"Sign in to AQUI NET HUB first.");return;}
-    setFacebookBusy(true);setFacebookNotice("");
-    try{
-      const r=await fetch("/api/facebook/connect",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({native:Capacitor.isNativePlatform()})});
-      const d=await r.json();
-      if(!r.ok||!d.authorization_url)throw new Error(d.error||"Connexion Facebook indisponible.");
-      if(Capacitor.isNativePlatform()) await Browser.open({url:d.authorization_url,toolbarColor:"#101C32"}); else window.location.assign(d.authorization_url);
-    }catch(e){setFacebookNotice(e instanceof Error?e.message:"Connexion Facebook impossible.");setFacebookBusy(false);}
-  }
-  async function auditFacebook(){
-    if(!session?.access_token||!facebookPageId)return;
-    setFacebookBusy(true);setFacebookNotice("");setFacebookReport(null);
-    try{
-      const r=await fetch("/api/facebook/audit",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({page_id:facebookPageId})});
-      const d=await r.json();
-      if(!r.ok||!d.ok)throw new Error(d.error||"Analyse Facebook impossible.");
-      setFacebookReport(d.report);
-      setSocialResult("");
-    }catch(e){setFacebookNotice(e instanceof Error?e.message:"Erreur pendant l'analyse Facebook.");}
-    finally{setFacebookBusy(false);}
   }
   async function submitFollowProof(){
     if(!session)return;setBusy(true);setSocialResult("");
