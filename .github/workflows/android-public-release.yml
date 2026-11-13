@@ -1,0 +1,82 @@
+name: Publish AQUI NET HUB APK
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/android-public-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: aqui-net-hub-public-apk
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build web application
+        run: npm run build
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+
+      - name: Generate Android project and icons
+        run: |
+          if [ ! -d android ]; then npx cap add android; fi
+          npx cap sync android
+          node scripts/patch-android-manifest.mjs
+          node scripts/generate-app-icons.mjs
+
+      - name: Build installable APK
+        working-directory: android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon assembleDebug
+          mkdir -p ../release
+          cp app/build/outputs/apk/debug/*.apk ../release/AQUI-NET-HUB.apk
+
+      - name: Publish public APK release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-v1.0.1
+          name: AQUI NET HUB Android 1.0.1
+          target_commitish: main
+          body: |
+            Première version Android installable de AQUI NET HUB.
+            
+            Téléchargez AQUI-NET-HUB.apk puis autorisez l'installation depuis cette source sur Android si le téléphone le demande.
+            Cette distribution directe est indépendante de Google Play.
+          files: release/AQUI-NET-HUB.apk
+          draft: false
+          prerelease: false
+          make_latest: true
