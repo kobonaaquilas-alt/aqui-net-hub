@@ -327,7 +327,9 @@ export default {
       if (request.method === "GET" && url.pathname === "/api/health")
         return json({
           ok: true,
-          health_schema: "2026-11-10-facebook-oauth-v1",
+          health_schema: "2026-11-13-fal-video-v1",
+          video_engine: "MiniMax H3 Max",
+          video_engine_configured: !!env.FAL_KEY?.trim(),
           supabase: !!env.SUPABASE_URL && !!env.SUPABASE_ANON_KEY && !!serviceKey(env),
           supabase_url: !!env.SUPABASE_URL,
           supabase_anon_key: !!env.SUPABASE_ANON_KEY,
