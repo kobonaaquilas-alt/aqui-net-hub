@@ -235,7 +235,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       else{
         setSocialCount(d.count||socialCount+1);
         const x=d.report;
-        setSocialResult("Analyse "+d.count+"/3 · Engagement déclaré : "+x.engagement_rate+"% · Vues/abonnés : "+x.views_to_followers_percent+"%\nPoints forts : "+(x.strengths.join(" ; ")||"À confirmer avec davantage de données.")+"\nÀ améliorer : "+(x.issues.join(" ; ")||"Aucun signal critique dans les chiffres déclarés.")+"\nActions : "+x.actions.join(" ; ")+"\n\n"+x.disclaimer);
+        setSocialResult("Analyse "+d.count+"/3 · Indice : "+x.health_score+"/100 · Engagement/vues : "+x.engagement_rate_by_views+"% · Vues/abonnés : "+x.views_to_followers_percent+"%\nPoints forts : "+(x.strengths.join(" ; ")||"À confirmer avec davantage de données.")+"\nÀ améliorer : "+(x.issues.join(" ; ")||"Aucun signal critique dans les chiffres déclarés.")+"\nActions : "+x.actions.join(" ; ")+"\n\n"+x.disclaimer);
       }
       const sr=await fetch("/api/social/status",{headers:{Authorization:"Bearer "+session.access_token}});
       if(sr.ok){const s=await sr.json();setSocialCount(s.count||0);setFollowStatus(s.followStatus||"none");setSocialSubscribed(!!s.subscribed);}
