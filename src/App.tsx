@@ -117,7 +117,7 @@ export default function App() {
           <div className="help-contact-actions">
             <a className="primary-button" href="https://wa.me/22892244653?text=Bonjour%20AQUI%20NET%20HELP" target="_blank" rel="noreferrer">WhatsApp · +228 92 24 46 53 ↗</a>
             <a className="filter-button" href="mailto:kobonaquilas@gmail.com">kobonaquilas@gmail.com</a>
-            <a className="filter-button" href="https://paygateglobal.com/" target="_blank" rel="noreferrer">{fr ? "Soutenir le projet" : "Support the project"} ↗</a>
+            <a className="filter-button" href="https://wa.me/22892244653?text=Je%20souhaite%20soutenir%20AQUI%20NET%20HELP" target="_blank" rel="noreferrer">{fr ? "Soutenir le projet" : "Support the project"} ↗</a>
           </div>
         </section>
 
