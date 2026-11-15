@@ -91,3 +91,15 @@ La base de production contient actuellement des formules à 500 FCFA et 5 000 FC
 - Vérifier le statut auprès de CinetPay côté serveur avant de valider une commande. Le retour du navigateur ne constitue jamais une preuve de paiement.
 
 Les transactions réelles nécessitent un compte marchand vérifié et administré par son titulaire adulte.
+
+## 9. Publication Android
+
+Le workflow GitHub Actions produit un APK de test et un App Bundle. Pour produire un App Bundle signé destiné à Google Play, créer une clé de signature Android et enregistrer ces quatre secrets dans GitHub > Settings > Secrets and variables > Actions :
+
+- `ANDROID_KEYSTORE_BASE64` : fichier keystore encodé en Base64.
+- `ANDROID_KEYSTORE_PASSWORD` : mot de passe du keystore.
+- `ANDROID_KEY_ALIAS` : alias de la clé.
+- `ANDROID_KEY_PASSWORD` : mot de passe de la clé.
+
+Sans ces quatre secrets, l’APK de test est généré, mais le bundle de publication reste non signé. Conserver une sauvegarde sécurisée du keystore : sa perte peut empêcher les mises à jour de l’application.
+
