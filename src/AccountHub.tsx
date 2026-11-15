@@ -549,7 +549,10 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       {!videoReady ? <div className="follow-gate">
         <h4>{fr?"Générateur intégré en attente d’activation":"Integrated generator awaiting activation"}</h4>
         <p>{fr?"Le moteur vidéo intégré nécessite une clé API fournisseur. Aucun moteur payant n’est activé. En attendant, tu peux utiliser Kling AI depuis son site officiel ; sa formule gratuite comporte des quotas variables.":"The integrated video engine requires a provider API key. No paid engine is enabled. Meanwhile, you can use Kling AI on its official website; its free plan has variable quotas."}</p>
-        <a className="primary-button" href="https://kling.ai/" target="_blank" rel="noopener noreferrer">{fr?"Ouvrir Kling AI gratuitement":"Open Kling AI free tier"} ↗</a>
+        <div className="recommended-grid">
+          <a className="recommended-tool" href="https://labs.google/fx/tools/flow" target="_blank" rel="noopener noreferrer"><span>{fr?"50 crédits quotidiens annoncés":"50 daily credits announced"}</span><strong>Google Flow</strong><small>{fr?"Disponible au Togo selon la liste officielle. Génération de base sans abonnement ; limites et heures de pointe applicables.":"Available in Togo according to Google's official list. Basic generation without a subscription; limits and peak-hour restrictions apply."}</small><b>{fr?"Essayer Google Flow":"Try Google Flow"} ↗</b></a>
+          <a className="recommended-tool" href="https://kling.ai/" target="_blank" rel="noopener noreferrer"><span>{fr?"Crédits gratuits variables":"Variable free credits"}</span><strong>Kling AI</strong><small>{fr?"Génération texte-vers-vidéo et image-vers-vidéo ; quotas et droits d'utilisation à vérifier dans le compte.":"Text-to-video and image-to-video; check account quotas and usage rights."}</small><b>{fr?"Ouvrir Kling AI":"Open Kling AI"} ↗</b></a>
+        </div>
       </div> : <>
       <div className="account-tabs">
         <button type="button" className={videoMode==="image"?"active":""} onClick={()=>{setVideoMode("image");setVideoPaywall(false);}}>{fr?"Image → Vidéo":"Image → Video"}</button>
