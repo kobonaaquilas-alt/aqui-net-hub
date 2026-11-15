@@ -271,11 +271,18 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
   if (job.fal_status_url === "magichour") {
     const response = await fetch(job.fal_response_url, { headers: { Authorization: `Bearer ${env.MAGIC_HOUR_API_KEY?.trim() || ""}` } });
     if (!response.ok) return reply({ error: "Impossible de lire le statut Magic Hour." }, 502);
-    const project = await response.json() as { status?: string; error?: string; downloads?: Array<{ url?: string }> };
+    const project = await response.json() as {
+      status?: string;
+      error?: string | { code?: string; message?: string };
+      downloads?: Array<{ url?: string }>;
+    };
     if (project.status === "queued" || project.status === "rendering" || project.status === "draft")
       return reply({ ...job, status: "running", provider: "Magic Hour" });
     if (project.status === "error" || project.status === "canceled") {
-      const message = project.error || "Magic Hour n'a pas pu terminer la génération.";
+      const providerError = typeof project.error === "string"
+        ? project.error
+        : project.error?.message || project.error?.code;
+      const message = providerError || "Magic Hour n'a pas pu terminer la génération.";
       await updateJob(env, requestId, { status: "failed", error_message: message });
       return reply({ ...job, status: "failed", error_message: message, provider: "Magic Hour" });
     }
