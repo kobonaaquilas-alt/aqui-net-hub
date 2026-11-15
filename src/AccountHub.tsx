@@ -225,7 +225,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     if(!session)return;
     if(!backendReady){setSocialResult("Service temporairement indisponible : la clé privée Supabase du Worker doit être configurée.");return;}
     let platform="Réseau social";
-    try{const host=new URL(socialUrl).hostname.toLowerCase();if(host.includes("tiktok"))platform="TikTok";else if(host.includes("facebook")||host.includes("fb."))platform="Facebook";else if(host.includes("instagram"))platform="Instagram";else if(host.includes("youtube"))platform="YouTube";else if(host.includes("x.com")||host.includes("twitter"))platform="X";else if(host.includes("linkedin"))platform="LinkedIn";else throw new Error("Plateforme non reconnue.");}
+    try{const host=new URL(socialUrl).hostname.toLowerCase();if(host.includes("tiktok"))platform="TikTok";else if(host.includes("facebook")||host.includes("fb."))platform="Facebook";else if(host.includes("instagram"))platform="Instagram";else if(host.includes("youtube"))platform="YouTube";else throw new Error("Seuls TikTok, Facebook, Instagram et YouTube sont pris en charge.");}
     catch{setSocialResult("Lien de profil invalide ou réseau non pris en charge.");return;}
     setBusy(true);setSocialResult("");
     try{
