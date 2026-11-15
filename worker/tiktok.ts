@@ -38,7 +38,7 @@ export async function handleTikTok(r:Request,e:Env){
  try{
   if(r.method==="POST"&&u.pathname==="/api/tiktok/connect"){
    if(!tiktokKey(e)||!tiktokSecret(e))return json({error:"Identifiants TikTok manquants dans les secrets Cloudflare."},503);
-   const user=await currentUser(r,e);if(!user)return json({error:"Connecte-toi à AQUI NET HUB."},401);
+   const user=await currentUser(r,e);if(!user)return json({error:"Connecte-toi à AQUI NET HELP."},401);
    let body:{native?:boolean}={};try{body=await r.json() as typeof body;}catch{/* Optional for older web clients. */}
    const native=body.native===true;
    const state=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,"0")).join("")+(native?".native":"");
@@ -66,7 +66,7 @@ export async function handleTikTok(r:Request,e:Env){
    if(!saved.ok)return done(r,e,"save_error",native);
    return done(r,e,"connected",native);
   }
-  const user=await currentUser(r,e);if(!user)return json({error:"Connexion AQUI NET HUB requise."},401);
+  const user=await currentUser(r,e);if(!user)return json({error:"Connexion AQUI NET HELP requise."},401);
   if(r.method==="DELETE"&&u.pathname==="/api/tiktok/disconnect"){
    const d=await fetch(e.SUPABASE_URL+"/rest/v1/hub_tiktok_connections?user_id=eq."+encodeURIComponent(user.id),{method:"DELETE",headers:dbh(e)});
    if(!d.ok)return json({error:"Déconnexion impossible."},502);return json({ok:true});
