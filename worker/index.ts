@@ -304,6 +304,42 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     try {
+      const campaignEvent = url.pathname.match(/^\/api\/public\/campaigns\/([0-9a-f-]{36})\/(impression|click)$/i);
+      if (campaignEvent && (
+        (campaignEvent[2] === "impression" && request.method === "POST") ||
+        (campaignEvent[2] === "click" && request.method === "GET")
+      )) {
+        const campaignResponse = await fetch(
+          `${env.SUPABASE_URL}/rest/v1/hub_campaigns?id=eq.${encodeURIComponent(campaignEvent[1])}&is_active=eq.true&select=id,owner_user_id,destination_url,starts_at,ends_at&limit=1`,
+          { headers: headers(env) },
+        );
+        if (!campaignResponse.ok) return json({ error: "Campagne indisponible." }, 502);
+        const rows = await campaignResponse.json() as Array<{
+          id: string; owner_user_id: string | null; destination_url: string | null;
+          starts_at: string | null; ends_at: string | null;
+        }>;
+        const campaign = rows[0];
+        const now = Date.now();
+        if (!campaign ||
+            (campaign.starts_at && new Date(campaign.starts_at).getTime() > now) ||
+            (campaign.ends_at && new Date(campaign.ends_at).getTime() < now))
+          return json({ error: "Campagne inactive ou expirée." }, 404);
+        await fetch(`${env.SUPABASE_URL}/rest/v1/hub_ad_events`, {
+          method: "POST",
+          headers: headers(env),
+          body: JSON.stringify({
+            campaign_id: campaign.id,
+            owner_user_id: campaign.owner_user_id,
+            event_type: campaignEvent[2],
+          }),
+        });
+        if (campaignEvent[2] === "click") {
+          if (!campaign.destination_url || !campaign.destination_url.startsWith("https://"))
+            return Response.redirect(new URL("/", request.url).toString(), 302);
+          return Response.redirect(campaign.destination_url, 302);
+        }
+        return json({ ok: true });
+      }
       if (request.method === "GET" && url.pathname === "/api/public/campaigns") {
         const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_campaigns?is_active=eq.true&select=id,title,description,destination_url,image_url,starts_at,ends_at&order=created_at.desc&limit=100`, { headers: { apikey: env.SUPABASE_ANON_KEY } });
         if (!response.ok) return json({ error: "Publicités indisponibles." }, 502);
