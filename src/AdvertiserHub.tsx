@@ -155,6 +155,7 @@ export default function AdvertiserHub({ accessToken, lang }: Props) {
           <strong>{campaign.title}</strong>
           <p>{campaign.description}</p>
           <small>{fr ? "Fin de diffusion : " : "Display ends: "}{date(campaign.ends_at)}</small>
+          <small>{fr ? "Impressions : " : "Impressions: "}{Number(campaign.impressions_count||0).toLocaleString(fr?"fr-FR":"en-GB")} · {fr ? "Clics : " : "Clicks: "}{Number(campaign.clicks_count||0).toLocaleString(fr?"fr-FR":"en-GB")} · CTR {Number(campaign.ctr_percent||0).toFixed(2)}%</small>
           {campaign.destination_url && <p><a href={campaign.destination_url} target="_blank" rel="noreferrer">{fr ? "Voir la destination" : "Open destination"} ↗</a></p>}
         </div>
         <div className="account-actions">
