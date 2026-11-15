@@ -14,16 +14,18 @@ Plateforme numérique pour découvrir des outils, apprendre, structurer des proj
 - NET ASSIST et parcours AQUI NET ACADEMY
 - Espace membre avec création de compte et connexion Supabase
 - Synchronisation des favoris et de la progression entre appareils
-- AQUI NET ADS en libre-service : création, pause, réactivation et suppression de campagnes
+- AQUI NET ADS en libre-service : création, pause, réactivation, suppression et statistiques d’impressions, de clics et de CTR
 - Essai publicitaire gratuit de 3 jours, une seule fois par compte, sans prélèvement automatique
 - Prolongation des campagnes après confirmation d'un abonnement CinetPay
 - Formulaires complémentaires de demandes AQUI NET ADS et AQUI NET PARTNERS
 - Affichage public des campagnes actives et non expirées
-- AQUI VIDEO AI : génération à partir d'une image, 2 secondes gratuites et durées payantes de 15 à 60 secondes
-- AQUI SOCIAL AUDIT : 3 diagnostics gratuits et connexion Facebook officielle lorsque les autorisations Meta sont configurées
+- AQUI VIDEO AI : téléversement direct d’une image ou prompt texte, clips de 2/5/10/15 secondes, Magic Hour en priorité et fal.ai facultatif
+- AQUI SOCIAL AUDIT : 3 diagnostics gratuits, préremplissage depuis les statistiques TikTok et connexion Facebook officielle pour analyser les Pages autorisées par Meta
 - Initialisation de paiement côté serveur et réception de notifications CinetPay
 - Création d'un abonnement uniquement après confirmation serveur du paiement
 - Surveillance de disponibilité et de déploiement via GitHub Actions
+- Maintenance horaire : expiration des abonnements et nettoyage des états OAuth Facebook/TikTok
+- Espace d’administration disponible via `/?admin=1`, protégé par la liste des administrateurs Supabase
 
 ## Démarrage local
 1. Installer Node.js (version LTS).
