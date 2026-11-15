@@ -71,6 +71,8 @@ Scopes demandés : `user.info.basic`, `user.info.profile`, `user.info.stats` et 
 ## 6. AQUI VIDEO AI
 
 - Fournisseur principal : Magic Hour, avec génération texte-vers-vidéo et image-vers-vidéo.
+- Une clé API Magic Hour peut être créée depuis https://magichour.ai/developer. La FAQ du fournisseur annonce 400 crédits à l’inscription sans carte bancaire ; ces crédits sont limités et ne constituent pas une offre gratuite illimitée.
+- Important : selon la FAQ Magic Hour, les vidéos créées sans abonnement, achat de crédits ou facturation payante autorisée sont réservées à un usage personnel et non commercial. Ne pas les utiliser pour des campagnes commerciales.
 - L’image est téléversée directement depuis l’appareil ; elle n’a pas besoin d’une URL publique.
 - Interface actuelle : 2, 5, 10 ou 15 secondes. Les clips de 2 secondes sont prévus sans abonnement ; les durées supérieures nécessitent un abonnement actif.
 - fal.ai est un secours facultatif payant : ne définir `VIDEO_ALLOW_PAID_FALLBACK=true` que si tu acceptes ces coûts.
