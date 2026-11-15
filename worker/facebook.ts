@@ -40,7 +40,7 @@ export async function handleFacebook(request:Request,env:Env){
  try{
   if(request.method==="POST"&&url.pathname==="/api/facebook/connect"){
    if(!env.FACEBOOK_APP_ID||!env.FACEBOOK_APP_SECRET)return json({error:"Connexion Facebook en attente : les identifiants de l'application Meta doivent être configurés dans Cloudflare."},503);
-   const user=await currentUser(request,env);if(!user)return json({error:"Connexion AQUI NET HELP requise."},401);
+   const user=await currentUser(request,env);if(!user)return json({error:"Connexion AQUI NET HUB requise."},401);
    let body:{native?:boolean}={};try{body=await request.json() as typeof body;}catch{/* Optional for older web clients. */}
    const native=body.native===true;
    const state=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,"0")).join("")+(native?".native":"");
@@ -81,7 +81,7 @@ export async function handleFacebook(request:Request,env:Env){
    if(!saved.ok)return redirect(request,env,"save_error",native);
    return redirect(request,env,"connected",native);
   }
-  const user=await currentUser(request,env);if(!user)return json({error:"Connexion AQUI NET HELP requise."},401);
+  const user=await currentUser(request,env);if(!user)return json({error:"Connexion AQUI NET HUB requise."},401);
   if(request.method==="GET"&&url.pathname==="/api/facebook/pages"){
    const r=await fetch(env.SUPABASE_URL+"/rest/v1/hub_facebook_connections?user_id=eq."+encodeURIComponent(user.id)+"&select=page_id,page_name,updated_at&order=page_name.asc",{headers:dbHeaders(env)});
    if(!r.ok)return json({error:"Impossible de lire les Pages Facebook connectées."},502);
