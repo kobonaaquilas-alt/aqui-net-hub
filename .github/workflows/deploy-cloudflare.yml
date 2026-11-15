@@ -40,3 +40,22 @@ jobs:
           apiToken: ${{ env.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
+
+      - name: Smoke test production Worker
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        env:
+          WORKER_URL: https://aqui-net-hub.kobonaaquilas.workers.dev
+        run: |
+          for attempt in $(seq 1 12); do
+            if curl -fsS "$WORKER_URL/api/health" -o /tmp/aqui-health.json; then
+              if jq -e '.ok == true and .supabase == true' /tmp/aqui-health.json >/dev/null; then
+                cat /tmp/aqui-health.json
+                curl -fsS "$WORKER_URL/api/public/campaigns" | jq -e '.campaigns | type == "array"'
+                exit 0
+              fi
+            fi
+            sleep 5
+          done
+          cat /tmp/aqui-health.json || true
+          echo "::error::Production health check failed."
+          exit 1
