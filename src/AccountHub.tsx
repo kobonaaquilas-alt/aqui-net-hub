@@ -448,7 +448,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
         {videoImageFile && <p className="account-message">{fr?"Image sélectionnée : ":"Selected image: "}{videoImageFile.name} · {(videoImageFile.size/1024/1024).toFixed(2)} Mo</p>}
       </div>}
       <label>{fr?"Décris la scène et le mouvement souhaité":"Describe the scene and desired motion"}
-        <textarea value={videoPrompt} onChange={e=>setVideoPrompt(e.target.value)} placeholder={videoMode==="image"?(fr?"Ex. : la personne sourit, tourne doucement la tête et marche vers la caméra…":"E.g. the person smiles, slowly turns their head and walks toward the camera…"):(fr?"Ex. : un lion majestueux traverse une savane africaine au coucher du soleil, plan cinématographique…":"E.g. a majestic lion walks across an African savanna at sunset, cinematic shot…")} required />
+        <textarea maxLength={1200} value={videoPrompt} onChange={e=>setVideoPrompt(e.target.value)} placeholder={videoMode==="image"?(fr?"Ex. : la personne sourit, tourne doucement la tête et marche vers la caméra…":"E.g. the person smiles, slowly turns their head and walks toward the camera…"):(fr?"Ex. : un lion majestueux traverse une savane africaine au coucher du soleil, plan cinématographique…":"E.g. a majestic lion walks across an African savanna at sunset, cinematic shot…")} required />
       </label>
       <label>{fr ? "Durée de la vidéo" : "Video duration"}
         <select value={videoDuration} onChange={e=>{setVideoDuration(e.target.value);setVideoPaywall(false);}}>
