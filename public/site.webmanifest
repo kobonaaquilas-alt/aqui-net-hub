@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "AQUI NET HUB",
-  "short_name": "AQUI NET",
-  "description": "L'écosystème numérique intelligent pour créer, apprendre et entreprendre.",
+  "name": "AQUI NET HELP",
+  "short_name": "AQUI HELP",
+  "description": "Le copilote intelligent pour analyser et développer vos réseaux sociaux.",
   "lang": "fr",
   "start_url": "/",
   "scope": "/",
@@ -10,7 +10,7 @@
   "orientation": "portrait-primary",
   "background_color": "#0d1729",
   "theme_color": "#101c32",
-  "categories": ["business", "education", "productivity", "social"],
+  "categories": ["business", "social", "productivity"],
   "icons": [
     {
       "src": "/icons/icon-192.png",
