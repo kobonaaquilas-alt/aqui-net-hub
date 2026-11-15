@@ -23,6 +23,8 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const [recoveryMode, setRecoveryMode] = useState(false);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [profileName, setProfileName] = useState("");
+  const [profilePhone, setProfilePhone] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [syncReady, setSyncReady] = useState(false);
@@ -98,6 +100,18 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   }, []);
 
   useEffect(() => {
+    if (!session?.user.id) { setProfileName(""); setProfilePhone(""); return; }
+    let active = true;
+    db.from("profiles").select("display_name,phone").eq("id", session.user.id).maybeSingle().then(({data,error}) => {
+      if (!active) return;
+      if (error) { setNotice(fr ? "Impossible de charger le profil." : "Could not load profile."); return; }
+      setProfileName(data?.display_name || String(session.user.user_metadata?.full_name || ""));
+      setProfilePhone(data?.phone || String(session.user.user_metadata?.phone || ""));
+    });
+    return () => { active = false; };
+  }, [session?.user.id, fr]);
+
+  useEffect(() => {
     if (!session?.user.id) { setSyncReady(false); return; }
     let active = true;
     db.from("hub_user_data").select("payload").eq("user_id",session.user.id).maybeSingle().then(({data}) => {
@@ -159,11 +173,24 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       setNotice(fr ? "Le paiement n'a pas été confirmé. Consulte son statut ci-dessous." : "Payment was not confirmed. Check its status below.");
   }, [fr]);
 
+  async function saveProfile() {
+    if (!session) return;
+    if (!profileName.trim()) { setNotice(fr ? "Saisis ton nom complet." : "Enter your full name."); return; }
+    setBusy(true); setNotice("");
+    try {
+      const {error} = await db.from("profiles").upsert({id:session.user.id,display_name:profileName.trim(),phone:profilePhone.trim()||null},{onConflict:"id"});
+      if (error) throw error;
+      setNotice(fr ? "Profil enregistré." : "Profile saved.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : (fr ? "Enregistrement impossible." : "Could not save profile."));
+    } finally { setBusy(false); }
+  }
+
   async function authenticate() {
     setBusy(true); setNotice("");
     try {
       const result = mode === "signup"
-        ? await db.auth.signUp({email:email.trim().toLowerCase(),password,options:{data:{full_name:fullName.trim(),phone:phone.trim()}}})
+        ? await db.auth.signUp({email:email.trim().toLowerCase(),password,options:{data:{full_name:fullName.trim(),phone:phone.trim()},emailRedirectTo:window.location.origin}})
         : await db.auth.signInWithPassword({email:email.trim().toLowerCase(),password});
       if (result.error) setNotice(result.error.message);
       else if (mode === "signup" && !result.data.session) setNotice(fr ? "Compte créé : confirme ton adresse e-mail." : "Account created: confirm your email.");
@@ -420,6 +447,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const hasActiveSubscription=!!summary?.subscriptions.some(item=>item.status==="active"&&new Date(item.ends_at).getTime()>Date.now());
   const date=(value:string)=>new Date(value).toLocaleDateString(fr?"fr-FR":"en-GB");
   const paymentLabel=(status:string)=>status==="paid"?(fr?"Payé":"Paid"):status==="failed"?(fr?"Échoué":"Failed"):(fr?"En attente":"Pending");
+  const profileCard = session ? <div className="account-card account-profile"><h3>{fr?"Mon profil":"My profile"}</h3><p>{fr?"Adresse e-mail":"Email address"} : <strong>{session.user.email}</strong></p>{input(profileName,setProfileName,fr?"Nom complet":"Full name")}{input(profilePhone,setProfilePhone,fr?"Téléphone (facultatif)":"Phone (optional)","tel",false)}<button type="button" className="primary-button" disabled={busy||!profileName.trim()} onClick={()=>void saveProfile()}>{busy?"…":fr?"Enregistrer mon profil":"Save my profile"}</button><button type="button" className="filter-button" onClick={()=>void db.auth.signOut()}>{fr?"Se déconnecter":"Sign out"}</button></div> : null;
   if (authOnly) return <section className="section account-hub account-access" id="account-access">
     <div className="section-heading"><div><span className="eyebrow">AQUI NET HUB · ESPACE MEMBRE</span><h2>{fr?"Créer un compte ou se connecter":"Create an account or sign in"}</h2><p>{fr?"Un compte est nécessaire pour utiliser les trois services protégés.":"An account is required to use the three protected services."}</p></div></div>
     {!session ? <div className="account-card">
@@ -429,7 +457,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       <button className="primary-button" disabled={busy||!email||password.length<8} onClick={()=>void authenticate()}>{busy?"…":mode==="login"?(fr?"Se connecter":"Sign in"):(fr?"Créer mon compte":"Create account")}</button>
       {mode==="login" && <button type="button" className="text-button account-reset-link" disabled={busy} onClick={()=>void sendPasswordReset()}>{fr?"Mot de passe oublié ?":"Forgot password?"}</button>}
       {notice && <p className="account-message" role="status">{notice}</p>}
-    </div> : <div className="account-card"><p>{fr?"Connecté avec":"Signed in as"} <strong>{session.user.email}</strong></p><button className="filter-button" onClick={()=>void db.auth.signOut()}>{fr?"Se déconnecter":"Sign out"}</button></div>}
+    </div> : profileCard}
   </section>;
 
   return <section className="section account-hub" id="diagnostic">
@@ -440,7 +468,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       {input(email,setEmail,"E-mail","email")}{input(password,setPassword,fr?"Mot de passe (8 caractères minimum)":"Password (8 characters minimum)","password")}
       <button className="primary-button" disabled={busy||!email||password.length<8} onClick={()=>void authenticate()}>{busy?"…":mode==="login"?(fr?"Se connecter":"Sign in"):(fr?"Créer mon compte":"Create account")}</button>
       {mode==="login" && <button type="button" className="text-button account-reset-link" disabled={busy} onClick={()=>void sendPasswordReset()}>{fr?"Mot de passe oublié ?":"Forgot password?"}</button>}
-    </div> : <div className="account-card"><p>{fr?"Connecté avec":"Signed in as"} <strong>{session.user.email}</strong></p><p className="sync-status">{fr?"Favoris et progression synchronisés sur ce compte.":"Favorites and progress synced to this account."}</p><button className="filter-button" onClick={()=>void db.auth.signOut()}>{fr?"Se déconnecter":"Sign out"}</button></div>}
+    </div> : <>{profileCard}<div className="account-card"><p className="sync-status">{fr?"Favoris et progression synchronisés sur ce compte.":"Favorites and progress synced to this account."}</p></div></>}
     {notice && <p className="account-message" role="status">{notice}</p>}
     {session && !hasActiveSubscription && service==="partners" && <div className="account-card subscription-required"><span className="eyebrow">AQUI NET HUB · ABONNEMENT</span><h3>{fr?"Abonnement requis":"Subscription required"}</h3><p>{fr?"Pour prolonger la diffusion après l’essai publicitaire gratuit de 3 jours ou débloquer les fonctions payantes, choisis une formule ci-dessous.":"Choose a plan to continue campaigns after the 3-day free ad trial or unlock paid features."}</p>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement bientôt disponible":"Payment coming soon"):paymentBusy?"…":fr?"S’abonner et payer":"Subscribe and pay"}</button></article>):<p>{fr?"Les formules d’abonnement seront affichées ici dès leur activation.":"Subscription plans will appear here when activated."}</p>}</div>}
 
