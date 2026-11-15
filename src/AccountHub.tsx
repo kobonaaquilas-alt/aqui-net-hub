@@ -52,18 +52,15 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const [socialComments,setSocialComments]=useState("0");
   const [socialFrequency,setSocialFrequency]=useState("3");
   const [socialCount,setSocialCount]=useState(0);
-  const [followStatus,setFollowStatus]=useState("none");
   const [socialSubscribed,setSocialSubscribed]=useState(false);
   const [tiktokBusy,setTiktokBusy]=useState(false);
   const [tiktokNotice,setTiktokNotice]=useState("");
   const [tiktokData,setTiktokData]=useState<any>(null);
-  const [tiktokProof,setTiktokProof]=useState("");
   const [facebookBusy,setFacebookBusy]=useState(false);
   const [facebookNotice,setFacebookNotice]=useState("");
   const [facebookPages,setFacebookPages]=useState<Array<{page_id:string;page_name:string}>>([]);
   const [facebookPageId,setFacebookPageId]=useState("");
   const [facebookAudit,setFacebookAudit]=useState<any>(null);
-  const [facebookProof,setFacebookProof]=useState("");
   const [paymentBusy,setPaymentBusy]=useState(false);
   const [backendReady,setBackendReady]=useState(false);
   const [videoReady,setVideoReady]=useState(false);
@@ -218,7 +215,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     if(!session?.access_token)return;
     fetch("/api/social/status",{headers:{Authorization:"Bearer "+session.access_token}})
       .then(r=>r.ok?r.json():Promise.reject())
-      .then(d=>{setSocialCount(d.count||0);setFollowStatus(d.followStatus||"none");setSocialSubscribed(!!d.subscribed);})
+      .then(d=>{setSocialCount(d.count||0);setSocialSubscribed(!!d.subscribed);})
       .catch(()=>{});
   },[session?.access_token]);
   async function startSocialAudit(){
@@ -238,7 +235,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
         setSocialResult("Analyse "+d.count+"/3 · Indice : "+x.health_score+"/100 · Engagement/vues : "+x.engagement_rate_by_views+"% · Vues/abonnés : "+x.views_to_followers_percent+"%\nPoints forts : "+(x.strengths.join(" ; ")||"À confirmer avec davantage de données.")+"\nÀ améliorer : "+(x.issues.join(" ; ")||"Aucun signal critique dans les chiffres déclarés.")+"\nActions : "+x.actions.join(" ; ")+"\n\n"+x.disclaimer);
       }
       const sr=await fetch("/api/social/status",{headers:{Authorization:"Bearer "+session.access_token}});
-      if(sr.ok){const s=await sr.json();setSocialCount(s.count||0);setFollowStatus(s.followStatus||"none");setSocialSubscribed(!!s.subscribed);}
+      if(sr.ok){const s=await sr.json();setSocialCount(s.count||0);setSocialSubscribed(!!s.subscribed);}
     }catch(e){setSocialResult(e instanceof Error?e.message:"Erreur d'analyse.");}
     finally{setBusy(false);}
   }
@@ -326,14 +323,6 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     finally{setFacebookBusy(false);}
   }
 
-  async function submitFollowProof(){
-    if(!session)return;setBusy(true);setSocialResult("");
-    try{
-      const r=await fetch("/api/social/follow-verification",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({account_name:socialName,tiktok_proof_url:tiktokProof,facebook_proof_url:facebookProof})});
-      const d=await r.json();if(!r.ok)throw new Error(d.error||"Envoi impossible.");
-      setFollowStatus("pending");setSocialResult("Preuves envoyées. La validation sera effectuée par l'administrateur.");
-    }catch(e){setSocialResult(e instanceof Error?e.message:"Erreur.");}finally{setBusy(false);}
-  }
   async function startPayment(plan:Plan){
     if(!session?.access_token){setNotice("Connecte-toi pour payer.");return;}
     if(!cinetpayReady){setNotice("Paiement indisponible : les clés API CinetPay ne sont pas encore configurées.");return;}
