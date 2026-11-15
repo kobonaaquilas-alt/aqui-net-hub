@@ -19,6 +19,8 @@ interface Env {
   GITHUB_TOKEN: string;
   VIDEO_WORKFLOW_REF?: string;
   FAL_KEY?: string;
+  MAGIC_HOUR_API_KEY?: string;
+  VIDEO_ALLOW_PAID_FALLBACK?: string;
   FACEBOOK_APP_ID?: string;
   FACEBOOK_APP_SECRET?: string;
   FACEBOOK_GRAPH_VERSION?: string;
@@ -327,9 +329,12 @@ export default {
       if (request.method === "GET" && url.pathname === "/api/health")
         return json({
           ok: true,
-          health_schema: "2026-11-13-fal-video-v1",
-          video_engine: "MiniMax H3 Max",
-          video_engine_configured: !!env.FAL_KEY?.trim(),
+          health_schema: "2026-11-15-multi-video-provider-v1",
+          video_engine: "Multi-provider (Magic Hour first, fal.ai optional paid fallback)",
+          video_engine_configured: !!env.MAGIC_HOUR_API_KEY?.trim() || (!!env.FAL_KEY?.trim() && env.VIDEO_ALLOW_PAID_FALLBACK === "true"),
+          video_provider_available: !!env.MAGIC_HOUR_API_KEY?.trim() || (!!env.FAL_KEY?.trim() && env.VIDEO_ALLOW_PAID_FALLBACK === "true"),
+          magic_hour_api_key: !!env.MAGIC_HOUR_API_KEY?.trim(),
+          fal_paid_fallback: !!env.FAL_KEY?.trim() && env.VIDEO_ALLOW_PAID_FALLBACK === "true",
           supabase: !!env.SUPABASE_URL && !!env.SUPABASE_ANON_KEY && !!serviceKey(env),
           supabase_url: !!env.SUPABASE_URL,
           supabase_anon_key: !!env.SUPABASE_ANON_KEY,
