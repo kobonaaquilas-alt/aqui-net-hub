@@ -21,24 +21,44 @@ async function entitlement(env:Env,userId:string){
  const f=await follow.json() as Array<{status:string}>; const s=await sub.json() as unknown[];
  return {followStatus:f[0]?.status||"none",subscribed:s.length>0};
 }
-function analyze(body:any){
- const followers=Number(body.followers),views=Number(body.average_views),likes=Number(body.average_likes),comments=Number(body.average_comments),frequency=Number(body.posts_per_week);
- const engagement=followers>0?(likes+comments)/followers*100:0;
- const viewRatio=followers>0?views/followers*100:0;
- const strengths:string[]=[]; const issues:string[]=[]; const actions:string[]=[];
- if(followers>0&&views>followers)strengths.push("La moyenne de vues dépasse le nombre d'abonnés : certains contenus touchent déjà au-delà de l'audience existante.");
- if(engagement>=3)strengths.push("Le taux d'interactions déclaré est encourageant.");
- if(frequency>=3)strengths.push("La fréquence de publication déclarée crée une bonne régularité.");
- if(views===0)issues.push("La moyenne de vues n'est pas renseignée : impossible d'évaluer la portée.");
- else if(viewRatio<20)issues.push("Les vues moyennes restent faibles par rapport à la taille de l'audience déclarée.");
- if(followers>0&&engagement<1)issues.push("Le taux d'interactions déclaré est faible : les contenus doivent mieux susciter commentaires et partages.");
- if(frequency<2)issues.push("La cadence déclarée est irrégulière.");
- actions.push("Renforcer les 2 premières secondes avec une promesse, une question ou une scène surprenante.");
- actions.push("Construire 3 à 4 séries récurrentes pour donner une raison de revenir.");
- actions.push("Ajouter un appel à l'action simple et naturel, puis répondre rapidement aux commentaires.");
- actions.push("Comparer les performances de 5 publications et reproduire les formats qui retiennent le mieux l'audience.");
- if(frequency<3)actions.push("Tester au moins 3 publications par semaine pendant 3 semaines, sans sacrifier la qualité.");
- return {engagement_rate:Number(engagement.toFixed(2)),views_to_followers_percent:Number(viewRatio.toFixed(1)),strengths,issues,actions,disclaimer:"Analyse indicative calculée à partir des chiffres déclarés par l'utilisateur. Les statistiques n'ont pas été vérifiées auprès du réseau social."};
+function analyze(body:any, platform:string){
+  const followers=Number(body.followers),views=Number(body.average_views),likes=Number(body.average_likes),comments=Number(body.average_comments),frequency=Number(body.posts_per_week);
+  const interactions=likes+comments;
+  const engagementFollowers=followers>0?interactions/followers*100:0;
+  const engagementViews=views>0?interactions/views*100:0;
+  const viewRatio=followers>0?views/followers*100:0;
+  const commentShare=interactions>0?comments/interactions*100:0;
+  const clamp=(n:number,min=0,max=100)=>Math.max(min,Math.min(max,n));
+  const reachScore=followers>0?clamp(viewRatio/150*30):0;
+  const engagementScore=views>0?clamp(engagementViews/8*30):0;
+  const consistencyScore=clamp(frequency/5*25);
+  const conversationScore=interactions>0?clamp(commentShare/25*15):0;
+  const healthScore=Math.round(reachScore+engagementScore+consistencyScore+conversationScore);
+  const strengths:string[]=[]; const issues:string[]=[]; const actions:string[]=[];
+  if(followers>0&&viewRatio>=100)strengths.push("La portée moyenne atteint ou dépasse la taille de l'audience.");
+  if(views>0&&engagementViews>=4)strengths.push("Les interactions rapportées représentent une part encourageante des vues.");
+  if(frequency>=4)strengths.push("La cadence de publication est régulière.");
+  if(commentShare>=20)strengths.push("Les commentaires occupent une bonne part des interactions.");
+  if(views===0)issues.push("Les vues moyennes manquent : la portée ne peut pas être évaluée.");
+  else if(viewRatio<25)issues.push("La portée moyenne est faible par rapport au nombre d'abonnés.");
+  if(views>0&&engagementViews<2)issues.push("Les interactions rapportées sont faibles par rapport aux vues.");
+  if(frequency<3)issues.push("La fréquence de publication est basse pour construire une habitude d'audience.");
+  if(interactions>0&&commentShare<8)issues.push("Les contenus déclenchent peu de commentaires par rapport aux mentions J'aime.");
+  actions.push("Teste trois accroches différentes sur les prochaines publications et compare la rétention dès les premières secondes.");
+  actions.push("Transforme les sujets qui fonctionnent en séries récurrentes avec un rendez-vous identifiable.");
+  actions.push("Termine chaque contenu par une question précise qui donne une vraie raison de commenter.");
+  if(frequency<3)actions.push("Teste trois publications par semaine pendant trois semaines, puis ajuste selon les résultats.");
+  if(/vente|business|client|revenu|monet/i.test(String(body.goal||""))) actions.push("Ajoute un appel à l'action commercial clair dans la bio et les contenus, sans surcharger chaque publication.");
+  return {
+    platform,
+    health_score:healthScore,
+    engagement_rate:Number(engagementFollowers.toFixed(2)),
+    engagement_rate_by_views:Number(engagementViews.toFixed(2)),
+    views_to_followers_percent:Number(viewRatio.toFixed(1)),
+    comment_share_percent:Number(commentShare.toFixed(1)),
+    strengths,issues,actions,
+    disclaimer:"Indice indicatif fondé sur les chiffres fournis ou importés. Les statistiques saisies manuellement ne sont pas vérifiées par le réseau social. Les résultats dépendent aussi du format, de la rétention, de la période et de l'audience."
+  };
 }
 export async function handleSocial(request:Request,env:Env){
  if(!env.SUPABASE_URL||!env.SUPABASE_ANON_KEY||!(env.SUPABASE_SERVICE_ROLE_KEY||env.SUPABASE_SECRET_KEY))return json({error:"Service social non configuré."},503);
@@ -65,7 +85,7 @@ export async function handleSocial(request:Request,env:Env){
    if(profile.protocol!=="https:"||account.length<2)return json({error:"Renseigne un profil HTTPS et le nom du compte."},400);
    const fields=["followers","average_views","average_likes","average_comments","posts_per_week"];
    for(const k of fields){const n=Number(b[k]);if(!Number.isFinite(n)||n<0||n>100000000000)return json({error:`Valeur invalide : ${k}`},400);}
-   const report=analyze(b);
+   const report=analyze(b,platform);
    const saved=await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/create_hub_social_audit`,{
     method:"POST",headers:headers(env),
     body:JSON.stringify({
