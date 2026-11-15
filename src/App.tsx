@@ -117,6 +117,8 @@ export default function App() {
           <div className="help-contact-actions">
             <a className="primary-button" href="https://wa.me/22892244653?text=Bonjour%20AQUI%20NET%20HELP" target="_blank" rel="noreferrer">WhatsApp · +228 92 24 46 53 ↗</a>
             <a className="filter-button" href="mailto:kobonaquilas@gmail.com">kobonaquilas@gmail.com</a>
+            <a className="filter-button" href="https://wa.me/22892244653?text=Je%20souhaite%20un%20accompagnement%20pour%20la%20monetisation.%20Tarif%3A%205000%20FCFA." target="_blank" rel="noreferrer">{fr ? "Accompagnement monétisation · 5 000 FCFA" : "Monetization setup · 5,000 XOF"} ↗</a>
+            <small>{fr ? "L'éligibilité dépend des critères officiels de chaque réseau. Aucun compte ni revenu n'est garanti." : "Eligibility depends on each platform's official criteria. No account or revenue is guaranteed."}</small>
             <a className="filter-button" href="https://wa.me/22892244653?text=Je%20souhaite%20soutenir%20AQUI%20NET%20HELP" target="_blank" rel="noreferrer">{fr ? "Soutenir le projet" : "Support the project"} ↗</a>
           </div>
         </section>
