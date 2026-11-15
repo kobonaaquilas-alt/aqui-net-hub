@@ -1,177 +1,141 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AccountHub from "./AccountHub";
 import AdminPanel from "./AdminPanel";
-import { weeklyTools, competitorWatch, paymentOptions } from "./data/weekly-veille";
 
-type Service = "tools" | "video" | "social" | "partners";
-type Campaign = {id:string;title:string;description:string;destination_url:string|null};
-type Tool = { name:string; category:string; description:string; url:string; keywords:string[]; how:string[]; benefits:string[]; exactIntents?:string[]; freeModel?:string; limits?:string; signup?:string; access?:string; checkedAt?:string; sourceUrl?:string };
-const baseTools:Tool[] = [
-  {name:"ChatGPT",category:"Assistant IA",exactIntents:["content_writing","idea_generation"],description:"Préparer des idées, des scripts, des textes et des plans de travail.",url:"https://chatgpt.com/",keywords:["idee","idée","texte","script","ecrire","écrire","rediger","rédiger","plan","apprendre","expliquer","strategie","stratégie","contenu"],how:["Ouvre le site et crée un compte gratuit si nécessaire.","Décris ton objectif avec le contexte et le résultat attendu.","Demande une réponse structurée, puis affine avec des précisions."],benefits:["Aide à clarifier une idée et organiser un projet.","Produit des brouillons et des plans rapidement.","Formule gratuite disponible, avec limites d'utilisation."]},
-  {name:"Gemini",category:"Assistant IA",exactIntents:["content_writing","image_generation"],description:"Assistant IA pour rechercher des idées, comprendre et rédiger.",url:"https://gemini.google.com/",keywords:["idee","idée","recherche","texte","apprendre","expliquer","image","document","contenu"],how:["Connecte-toi avec un compte Google.","Décris précisément la tâche à accomplir.","Vérifie les informations importantes avec des sources fiables."],benefits:["Intégration avec l'écosystème Google.","Aide à comprendre, rédiger et explorer des idées.","Accès gratuit avec limites et fonctions variables."]},
-  {name:"Perplexity",category:"Recherche",exactIntents:["web_research"],description:"Rechercher des informations sur le Web avec des références.",url:"https://www.perplexity.ai/",keywords:["recherche","information","source","actualite","actualité","comparaison","etude","étude","marche","marché"],how:["Saisis une question précise.","Consulte les sources affichées sous la réponse.","Ouvre les sources originales pour vérifier les faits."],benefits:["Références consultables.","Utile pour comparer et faire une première recherche.","Formule gratuite disponible."]},
-  {name:"Canva",category:"Design",exactIntents:["logo_design","visual_design","image_generation"],description:"Créer des affiches, présentations, miniatures et visuels.",url:"https://www.canva.com/",keywords:["affiche","visuel","design","flyer","miniature","presentation","présentation","logo","publication","post","image"],how:["Crée un compte gratuit.","Choisis un format ou un modèle.","Modifie textes, couleurs et éléments, puis exporte."],benefits:["Modèles prêts à personnaliser.","Formats adaptés aux réseaux sociaux.","Nombreux éléments gratuits, certains contenus sont payants."]},
-  {name:"Photopea",category:"Retouche photo",exactIntents:["photo_editing"],description:"Retoucher des images dans un éditeur proche de Photoshop.",url:"https://www.photopea.com/",keywords:["photo","retouche","detourer","détourer","montage","image","calque","png"],how:["Ouvre Photopea dans ton navigateur.","Importe une image depuis ton appareil.","Utilise les calques et outils de retouche, puis exporte."],benefits:["Fonctionne dans le navigateur.","Prend en charge PSD et de nombreux formats.","Utilisation gratuite avec publicité."]},
-  {name:"Remove.bg",category:"Détourage",exactIntents:["background_removal"],description:"Supprimer automatiquement l'arrière-plan d'une photo.",url:"https://www.remove.bg/",keywords:["fond","arriere-plan","arrière-plan","detourer","détourer","transparent","photo","portrait"],how:["Téléverse une image nette.","Laisse l'outil détecter le sujet.","Télécharge le résultat selon les options gratuites disponibles."],benefits:["Très rapide pour isoler un sujet.","Aucune compétence avancée nécessaire.","Téléchargement gratuit limité en résolution/crédits."]},
-  {name:"CapCut",category:"Montage vidéo",exactIntents:["video_editing"],description:"Monter des vidéos verticales, ajouter du texte et des sous-titres.",url:"https://www.capcut.com/",keywords:["video","vidéo","montage","tiktok","reel","short","sous-titre","sous titre","clip"],how:["Importe tes séquences dans un nouveau projet.","Coupe les passages inutiles et ajoute texte ou sous-titres.","Exporte en format vertical pour TikTok, Reels ou Shorts."],benefits:["Interface accessible aux débutants.","Outils de montage adaptés aux réseaux sociaux.","Fonctions gratuites et options Pro payantes."]},
-  {name:"Clipchamp",category:"Montage vidéo",exactIntents:["video_editing"],description:"Monter des vidéos et enregistrer des contenus depuis le navigateur.",url:"https://clipchamp.com/",keywords:["video","vidéo","montage","couper","assembler","presentation","présentation","youtube"],how:["Connecte-toi et crée un projet vidéo.","Importe tes médias et organise la timeline.","Ajoute titres et transitions, puis exporte."],benefits:["Montage simple dans le navigateur.","Utile pour des vidéos explicatives.","Offre gratuite disponible avec conditions d'export." ]},
-  {name:"Audacity",category:"Audio",exactIntents:["audio_editing"],description:"Enregistrer, nettoyer et monter des fichiers audio.",url:"https://www.audacityteam.org/",keywords:["audio","son","voix","musique","enregistrement","nettoyer","podcast"],how:["Installe Audacity sur un ordinateur.","Importe ou enregistre ton audio.","Réduis le bruit, coupe les erreurs et exporte."],benefits:["Logiciel libre et gratuit.","Outils de nettoyage et montage audio.","Pas d'abonnement nécessaire."]},
-  {name:"Google Docs",category:"Documents",exactIntents:["document_creation"],description:"Rédiger et partager des documents en ligne.",url:"https://docs.google.com/",keywords:["document","rapport","lettre","rediger","rédiger","texte","memoire","mémoire"],how:["Ouvre Google Docs avec ton compte Google.","Crée un document vierge ou utilise un modèle.","Rédige et partage avec les droits adaptés."],benefits:["Sauvegarde en ligne.","Collaboration en temps réel.","Utilisation gratuite avec un compte Google."]},
-  {name:"Google Sheets",category:"Tableur",exactIntents:["spreadsheet"],description:"Créer des tableaux, budgets et suivis de données.",url:"https://sheets.google.com/",keywords:["tableau","budget","calcul","liste","statistique","donnee","donnée","comptabilite","comptabilité"],how:["Crée une feuille de calcul.","Organise les données en colonnes.","Utilise formules et filtres pour les analyser."],benefits:["Formules et graphiques intégrés.","Collaboration en temps réel.","Accès gratuit avec un compte Google."]},
-  {name:"Notion",category:"Organisation",exactIntents:["project_organization"],description:"Organiser des notes, tâches et projets.",url:"https://www.notion.so/",keywords:["organiser","organisation","projet","tache","tâche","planning","notes","equipe","équipe"],how:["Crée un espace gratuit.","Choisis une page ou un modèle de projet.","Ajoute tâches, dates et informations utiles."],benefits:["Centralise notes et tâches.","Pages personnalisables.","Formule gratuite pour usage individuel."]},
-  {name:"freeCodeCamp",category:"Formation",exactIntents:["learn_programming"],description:"Apprendre la programmation avec des exercices pratiques.",url:"https://www.freecodecamp.org/",keywords:["programmer","programmation","code","coder","html","css","javascript","site web","developper","développer"],how:["Crée un compte gratuit.","Choisis un parcours de formation.","Suis les leçons et valide les exercices pratiques."],benefits:["Cours et exercices gratuits.","Apprentissage progressif par la pratique.","Certifications gratuites sur les parcours proposés."]},
-  {name:"Khan Academy",category:"Formation",exactIntents:["learning"],description:"Apprendre les mathématiques, sciences et autres matières.",url:"https://fr.khanacademy.org/",keywords:["cours","etudier","étudier","math","mathematique","mathématique","science","formation","apprendre"],how:["Choisis ta matière et ton niveau.","Suis les leçons courtes.","Fais les exercices pour mesurer tes progrès."],benefits:["Ressources éducatives gratuites.","Exercices et suivi de progression.","Adapté à plusieurs niveaux."]},
-  {name:"WordPress.com",category:"Création de site",exactIntents:["website_creation"],description:"Créer un site ou un blog avec une formule de départ gratuite.",url:"https://wordpress.com/",keywords:["site","blog","web","page internet","vitrine","publier"],how:["Crée un compte et choisis un thème.","Ajoute tes pages et tes contenus.","Publie avec l'adresse gratuite proposée."],benefits:["Création sans programmation obligatoire.","Thèmes et éditeur de pages.","Formule gratuite avec adresse et fonctions limitées."]},
-  {name:"Google Sites",category:"Création de site",exactIntents:["website_creation"],description:"Créer simplement un site vitrine ou un espace de présentation.",url:"https://sites.google.com/",keywords:["site","web","page internet","vitrine","portfolio","presentation","présentation"],how:["Ouvre Google Sites avec ton compte Google.","Choisis un modèle et ajoute tes sections.","Publie le site et partage son adresse."],benefits:["Très simple à prendre en main.","Hébergement inclus dans le service.","Gratuit avec un compte Google."]},
-  {name:"Rosebud AI",category:"Création de jeux vidéo avec IA",description:"Générer un jeu vidéo jouable à partir d'une description en langage naturel, puis modifier le code, les visuels et les mécaniques avec l'assistant IA.",url:"https://www.play.rosebud.ai/",keywords:["jeu video","jeux video","jeu vidéo","jeux vidéo","game","gameplay","rpg","plateforme","platformer","jeu mobile","jeu 2d","jeu 3d","creer un jeu","créer un jeu","developper un jeu","développer un jeu","generer un jeu","générer un jeu"],exactIntents:["game_creation"],how:["Ouvre Rosebud AI et décris le jeu que tu veux créer : genre, univers, personnages et règles.","Réponds aux questions de l'assistant pour définir la première version jouable.","Teste le jeu dans le navigateur puis demande des modifications à l'IA.","Publie ou partage le jeu lorsque le résultat te convient."],benefits:["Produit une première version réellement jouable à partir d'un prompt.","Peut créer des jeux 2D, 3D et des expériences multijoueurs.","Permet d'itérer en langage naturel. Offre et limites à vérifier sur le site officiel."]},
-  {name:"GDevelop AI",category:"Création de jeux vidéo avec IA",description:"Créer et modifier les scènes, objets, événements et mécaniques d'un vrai projet de jeu dans le moteur GDevelop à l'aide d'un agent IA.",url:"https://gdevelop.io/",keywords:["jeu video","jeux video","jeu vidéo","jeux vidéo","game","gameplay","rpg","plateforme","platformer","jeu mobile","jeu 2d","creer un jeu","créer un jeu","developper un jeu","développer un jeu","generer un jeu","générer un jeu","moteur de jeu"],exactIntents:["game_creation"],how:["Installe ou ouvre GDevelop et crée un projet de jeu.","Ouvre Ask AI dans l'éditeur.","Décris une mécanique précise ou demande à l'IA de construire des éléments du jeu.","Teste le projet et ajuste les scènes et événements avant l'export."],benefits:["L'IA agit directement sur les éléments du projet GDevelop.","Peut créer scènes, objets, comportements, variables et événements.","Le moteur permet de construire des jeux sans coder chaque mécanique manuellement. Vérifie les limites de l'offre IA."]}
+type Campaign = { id: string; title: string; description: string; destination_url: string | null };
 
-  ,{name:"Fliki",category:"Création vidéo IA",exactIntents:["video_generation"],description:"Transformer une idée, un texte ou un article en vidéo avec voix IA, images, séquences et sous-titres.",url:"https://fliki.ai/",keywords:["video","vidéo","texte en vidéo","text to video","voix ia","avatar","faceless","tiktok","short"],how:["Crée un compte gratuit sans carte bancaire.","Colle un script ou décris ton idée, puis choisis une voix et un format.","Prévisualise et exporte selon les crédits gratuits disponibles."],benefits:["Offre gratuite annoncée : 3 minutes de vidéo par mois.","Voix IA en plusieurs langues et médias intégrés.","Export gratuit en 720p avec filigrane ; droits commerciaux réservés aux offres payantes."]},
-  {name:"Krea",category:"Génération et retouche d’images IA",exactIntents:["image_generation","photo_editing"],description:"Générer des images à partir d'un texte et modifier ou améliorer des visuels avec l'IA.",url:"https://www.krea.ai/",keywords:["image","photo","generer image","générer image","retouche","ameliorer","améliorer","upscale","image ia","visuel"],how:["Ouvre Krea et crée un compte gratuit.","Choisis la génération ou l'édition d'image.","Décris le résultat souhaité et utilise les crédits gratuits disponibles."],benefits:["Offre gratuite annoncée : 100 unités par jour.","Accès gratuit à des modèles de génération d'images et à certains outils de retouche.","Les fonctions disponibles consomment des unités et varient selon le modèle."]},
-  {name:"Bing Image Creator",category:"Génération d’images IA",exactIntents:["image_generation"],description:"Créer des images à partir d'une description, avec des créations gratuites et des limites qui peuvent évoluer.",url:"https://www.bing.com/images/create",keywords:["image","photo","dessin","illustration","image ia","generer une image","générer une image","visuel"],how:["Connecte-toi avec un compte Microsoft.","Décris l'image à créer et lance la génération.","Télécharge le résultat et vérifie les conditions d'utilisation avant un usage commercial."],benefits:["Accès gratuit avec un compte Microsoft.","Créations rapides à partir d'un prompt.","Les quotas et modes de génération peuvent changer."]},
-];
-const tools:Tool[] = [...baseTools, ...weeklyTools];
-
-const norm=(s:string)=>s.toLocaleLowerCase("fr").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-const intentRules:[string,string[]][]=[
-  ["game_creation",["jeu video","jeux video","video game","video games","jeu 2d","jeu 3d","jeu mobile","creer un jeu","creer mon jeu","faire un jeu","fabriquer un jeu","construire un jeu","developper un jeu","generer un jeu","creation de jeu video","creer un jeu video","jeu video avec ia","game development","create a game","make a game","build a game","make my own game"]],
-  ["image_generation",["generer une image","creer une image","faire une image","image ia","image avec ia","dessin ia","illustration ia","generer un dessin","creer une illustration","texte en image","text to image"]],
-  ["video_generation",["generer une video","creer une video","faire une video avec ia","video ia","video a partir d'un texte","texte en video","text to video","generer un clip","creer un clip video"]],
-  ["website_creation",["creer un site","creation de site","site internet","site web","faire un site","construire un site","developper un site","boutique en ligne","site e commerce","page web"]],
-  ["photo_editing",["retoucher une photo","restaurer une photo","ameliorer une photo","reparer une vieille photo","coloriser une photo","augmenter la qualite d'une photo","modifier une photo"]],
-  ["background_removal",["supprimer le fond","enlever le fond","retirer l'arriere plan","detourer une photo","fond transparent"]],
-  ["video_editing",["montage video","monter une video","couper une video","modifier une video","sous titres video","assembler des videos"]],
-  ["logo_design",["creer un logo","faire un logo","concevoir un logo","generer un logo","logo professionnel"]],
-  ["visual_design",["creer une affiche","faire un flyer","miniature youtube","visuel reseaux sociaux","creer un poster","design graphique"]],
-  ["audio_editing",["montage audio","nettoyer un audio","enregistrer une voix","modifier un son","editer un fichier audio","podcast"]],
-  ["document_creation",["rediger un document","creer un document","faire un rapport","lettre administrative","rediger une lettre","document pdf"]],
-  ["spreadsheet",["tableur","feuille de calcul","tableau de calcul","budget avec formules","creer un tableau excel","analyser des donnees"]],
-  ["project_organization",["organiser un projet","gerer mes taches","planning de projet","suivre mes projets","organiser mon equipe"]],
-  ["learn_programming",["apprendre a programmer","apprendre le code","apprendre javascript","apprendre html","creer une application","developper une application"]],
-  ["web_research",["rechercher des informations","faire une recherche web","trouver des sources","verifier une information","faire une veille"]],
-  ["content_writing",["rediger un texte","ecrire un texte","ecrire un script","creer du contenu","rediger une publication","ecrire un article"]],
-  ["idea_generation",["trouver des idees","generer des idees","brainstorming","idees de contenu","idees de business"]],
-  ["learning",["apprendre une matiere","suivre des cours","faire des exercices","apprendre une langue","apprendre l'anglais"]]
-];
-function getIntent(q:string) {
-  const query=norm(q).replace(/[’']/g," ");
-  return intentRules.filter(([,phrases])=>phrases.some(p=>{
-    const phrase=norm(p).replace(/[’']/g," ");
-    return query.includes(phrase);
-  })).map(([id])=>id);
-}
-function matchesTool(t:Tool,q:string) {
-  const query=norm(q);
-  const intents=getIntent(q);
-  if(intents.length) return !!t.exactIntents?.some(intent=>intents.includes(intent));
-  const words=[...new Set(query.split(/[^a-z0-9]+/).filter(w=>w.length>2))];
-  const toolWords=new Set(norm([t.name,t.category,...t.keywords].join(" ")).split(/[^a-z0-9]+/).filter(w=>w.length>2));
-  if(words.some(w=>norm(t.name).split(/[^a-z0-9]+/).includes(w))) return true;
-  const hits=words.filter(w=>toolWords.has(w));
-  // En l'absence d'intention reconnue, exiger plusieurs indices concordants.
-  return hits.length>=2;
-}
 export default function App() {
-  const [lang,setLang]=useState<"fr"|"en">("fr");
-  const [request,setRequest]=useState("");
-  const [submitted,setSubmitted]=useState("");
-  const [selectedTool,setSelectedTool]=useState<Tool|null>(null);
-  const [activeService,setActiveService]=useState<Service|null>(() => {
-    const params = new URLSearchParams(window.location.search)
-    return params.has("tiktok") || params.has("facebook") ? "social" : null
-  });
-  const [campaigns,setCampaigns]=useState<Campaign[]>([]);
-  const [adsenseClient,setAdsenseClient]=useState("");
-  const fr=lang==="fr";
-  const showAdmin=new URLSearchParams(window.location.search).get("admin")==="1";
-  const recommendations=useMemo(()=>{if(!submitted)return [];const matches=tools.filter(t=>matchesTool(t,submitted));const intents=getIntent(submitted);return intents.length?matches:matches.slice(0,4);},[submitted]);
-  useEffect(()=>{fetch("/api/public/campaigns").then(r=>r.ok?r.json():Promise.reject()).then(d=>{const list=d.campaigns||[];setCampaigns(list);for(const campaign of list)fetch(`/api/public/campaigns/${campaign.id}/impression`,{method:"POST"}).catch(()=>{});}).catch(()=>{});fetch("/api/public/settings").then(r=>r.ok?r.json():Promise.reject()).then(d=>setAdsenseClient(d.adsense_client||"")).catch(()=>{});},[]);
-  useEffect(()=>{if(!adsenseClient||!/^ca-pub-[0-9]{16}$/.test(adsenseClient)||document.querySelector("script[data-aqui-adsense]"))return;const s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";s.dataset.aquiAdsense="true";s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client="+adsenseClient;document.head.appendChild(s);},[adsenseClient]);
-  useEffect(()=>{if(!activeService)return;const frame=requestAnimationFrame(()=>document.getElementById(activeService==="tools"?"demande-outils":"compte")?.scrollIntoView({behavior:"smooth",block:"start"}));return()=>cancelAnimationFrame(frame);},[activeService]);
-  useEffect(()=>{if(!selectedTool)return;const frame=requestAnimationFrame(()=>document.getElementById("outil-detail-selectionne")?.scrollIntoView({behavior:"smooth",block:"start"}));return()=>cancelAnimationFrame(frame);},[selectedTool]);
-  const syncRemote=useCallback((_favorites:string[],_progress:string[])=>{},[]);
+  const [lang, setLang] = useState<"fr" | "en">("fr");
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [adsenseClient, setAdsenseClient] = useState("");
+  const fr = lang === "fr";
+  const showAdmin = new URLSearchParams(window.location.search).get("admin") === "1";
+  const syncRemote = useCallback((_favorites: string[], _progress: string[]) => {}, []);
 
-  return <div className="site-shell">
-    <header className="topbar">
-      <a className="brand" href="#accueil"><span className="brand-mark">A</span><span>AQUI NET <strong>HUB</strong></span></a>
-      <nav className="main-nav"><a href="#accueil">{fr?"Accueil":"Home"}</a><a href="#services">{fr?"Services":"Services"}</a><a href="#net-assist">NET ASSIST</a><a href="#academy">ACADEMY</a><a href="#ideas">{fr?"Idées":"Ideas"}</a><a href="#account-access">{fr?"Compte":"Account"}</a><a href="#veille-aqui">{fr?"Veille":"Watch"}</a></nav>
-      <button className="language-button" onClick={()=>setLang(fr?"en":"fr")}>{fr?"EN":"FR"}</button>
-    </header>
-    <section className="promo-ticker" aria-label={fr?"Bandeau d’informations":"Information ticker"}><div className="promo-track">{[...(campaigns.length?campaigns:[{id:"hub-1",title:fr?"AQUI NET HUB · Trouve les outils adaptés à tes projets":"AQUI NET HUB · Find tools that fit your projects",description:fr?"Des solutions numériques sélectionnées selon ton besoin.":"Digital tools selected for your needs.",destination_url:null},{id:"hub-2",title:fr?"Création IA · Vidéo · Réseaux sociaux":"AI creation · Video · Social media",description:fr?"Découvre les services et les ressources disponibles.":"Explore services and available resources.",destination_url:null}]),...(campaigns.length?campaigns:[{id:"hub-1",title:fr?"AQUI NET HUB · Trouve les outils adaptés à tes projets":"AQUI NET HUB · Find tools that fit your projects",description:fr?"Des solutions numériques sélectionnées selon ton besoin.":"Digital tools selected for your needs.",destination_url:null},{id:"hub-2",title:fr?"Création IA · Vidéo · Réseaux sociaux":"AI creation · Video · Social media",description:fr?"Découvre les services et les ressources disponibles.":"Explore services and available resources.",destination_url:null}])].map((campaign,i)=><a key={campaign.id+"-"+i} href={campaign.destination_url?(campaign.id.startsWith("hub-")?campaign.destination_url:`/api/public/campaigns/${campaign.id}/click`):"#services"} target={campaign.destination_url?"_blank":undefined} rel="noreferrer"><span>✦</span> {campaign.title} <small>{campaign.description}</small> <b>{fr?"En savoir plus":"Learn more"} ↗</b></a>)}</div></section>
-    <main>
-      <section className="hub-hero" id="accueil">
-        <span className="eyebrow">AQUI NET HUB · DIGITAL ACTION CENTER</span>
-        <h1>{fr?"Ton idée. Les bons outils. Des résultats concrets.":"Your idea. The right tools. Practical results."}</h1>
-        <p>{fr?"Un seul espace pour trouver des outils gratuits, créer des vidéos, améliorer tes réseaux sociaux et proposer des partenariats.":"One place to find free tools, create videos, improve your social accounts and propose partnerships."}</p>
-        <a className="primary-button" href="#services">{fr?"Commencer maintenant":"Get started"}</a>
+  useEffect(() => {
+    fetch("/api/public/campaigns")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => {
+        const list = (data.campaigns || []) as Campaign[];
+        setCampaigns(list);
+        for (const campaign of list) {
+          fetch(`/api/public/campaigns/${campaign.id}/impression`, { method: "POST" }).catch(() => {});
+        }
+      })
+      .catch(() => {});
+    fetch("/api/public/settings")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => setAdsenseClient(data.adsense_client || ""))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!adsenseClient || !/^ca-pub-[0-9]{16}$/.test(adsenseClient) || document.querySelector("script[data-aqui-adsense]")) return;
+    const script = document.createElement("script");
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    script.dataset.aquiAdsense = "true";
+    script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + adsenseClient;
+    document.head.appendChild(script);
+  }, [adsenseClient]);
+
+  const fallback: Campaign[] = [
+    { id: "help-1", title: "AQUI NET HELP · Comprends tes statistiques", description: fr ? "Transforme tes données sociales en décisions concrètes." : "Turn social data into practical decisions.", destination_url: null },
+    { id: "help-2", title: fr ? "Visibilité · Engagement · Croissance" : "Reach · Engagement · Growth", description: fr ? "Un diagnostic clair pour chaque créateur." : "A clear account diagnosis for every creator.", destination_url: null },
+  ];
+  const tickerItems = campaigns.length ? campaigns : fallback;
+
+  return (
+    <div className="site-shell help-shell">
+      <header className="topbar">
+        <a className="brand" href="#accueil" aria-label="AQUI NET HELP">
+          <span className="brand-mark">A</span>
+          <span>AQUI NET <strong>HELP</strong></span>
+        </a>
+        <nav className="main-nav" aria-label={fr ? "Navigation principale" : "Main navigation"}>
+          <a href="#accueil">{fr ? "Accueil" : "Home"}</a>
+          <a href="#diagnostic">{fr ? "Diagnostic" : "Audit"}</a>
+          <a href="#fonctionnalites">{fr ? "Fonctionnalités" : "Features"}</a>
+          <a href="#contact">{fr ? "Assistance" : "Support"}</a>
+        </nav>
+        <button className="language-button" onClick={() => setLang(fr ? "en" : "fr")}>{fr ? "EN" : "FR"}</button>
+      </header>
+
+      <section className="promo-ticker" aria-label={fr ? "Publicités et annonces" : "Advertisements and announcements"}>
+        <div className="promo-track">
+          {[...tickerItems, ...tickerItems].map((campaign, index) => (
+            <a
+              key={campaign.id + "-" + index}
+              href={campaign.destination_url ? (campaign.id.startsWith("help-") ? campaign.destination_url : `/api/public/campaigns/${campaign.id}/click`) : "#diagnostic"}
+              target={campaign.destination_url ? "_blank" : undefined}
+              rel="noreferrer"
+            >
+              <span>✦</span> {campaign.title} <small>{campaign.description}</small>
+              <b>{fr ? "Découvrir" : "Discover"} ↗</b>
+            </a>
+          ))}
+        </div>
       </section>
 
-      <section className="hub-services section" id="services">
-        <div className="section-heading"><span className="eyebrow">AQUI NET HUB · SERVICES</span><h2>{fr?"Choisis un service":"Choose a service"}</h2><p>{fr?"Appuie sur une option pour découvrir uniquement ses fonctions.":"Select a service to reveal its features."}</p></div>
-        <div className="service-grid">
-          <button type="button" className={"service-card service-public "+(activeService==="tools"?"selected":"")} onClick={()=>{setActiveService("tools");setSelectedTool(null);}}><span className="service-number">01</span><span className="service-symbol">✦</span><h3>{fr?"Trouver des outils":"Find tools"}</h3><span className="service-action">{fr?"Ouvrir le service":"Open service"} ↗</span></button>
-          <button type="button" className={"service-card "+(activeService==="video"?"selected":"")} onClick={()=>setActiveService("video")}><span className="service-number">02</span><span className="service-symbol">▶</span><h3>{fr?"Génération vidéo IA":"AI video generation"}</h3><span className="service-action">{fr?"Ouvrir le service":"Open service"} ↗</span></button>
-          <button type="button" className={"service-card "+(activeService==="social"?"selected":"")} onClick={()=>setActiveService("social")}><span className="service-number">03</span><span className="service-symbol">◎</span><h3>{fr?"Analyse des réseaux sociaux":"Social account analysis"}</h3><span className="service-action">{fr?"Ouvrir le service":"Open service"} ↗</span></button>
-          <button type="button" className={"service-card "+(activeService==="partners"?"selected":"")} onClick={()=>setActiveService("partners")}><span className="service-number">04</span><span className="service-symbol">◇</span><h3>{fr?"Partenariats & publicité":"Partnerships & advertising"}</h3><span className="service-action">{fr?"Ouvrir le service":"Open service"} ↗</span></button>
-        </div>
-      </section>
-      <section className="section request-section" id="net-assist">
-        <div className="section-heading"><span className="eyebrow">AQUI NET HUB · NET ASSIST</span><h2>{fr?"Ton assistant pour passer de l'idée à l'action":"Your assistant to turn ideas into action"}</h2><p>{fr?"Décris ton objectif : NET ASSIST identifie les outils adaptés et t'oriente vers leurs guides.":"Describe your goal: NET ASSIST matches suitable tools and guides you through using them."}</p></div>
-        <div className="service-grid"><a className="service-card service-public" href="#demande-outils"><span className="service-number">01</span><span className="service-symbol">✦</span><h3>{fr?"Trouver un outil adapté":"Find the right tool"}</h3><span className="service-action">{fr?"Décrire mon besoin":"Describe my goal"} ↗</span></a><a className="service-card" href="#academy"><span className="service-number">02</span><span className="service-symbol">↗</span><h3>{fr?"Apprendre gratuitement":"Learn for free"}</h3><span className="service-action">{fr?"Accéder aux formations":"Explore courses"} ↗</span></a></div>
-      </section>
-      <section className="section request-section" id="academy">
-        <div className="section-heading"><span className="eyebrow">AQUI NET HUB · ACADEMY</span><h2>{fr?"Apprends une compétence numérique gratuitement":"Learn a digital skill for free"}</h2><p>{fr?"Des parcours accessibles pour apprendre à ton rythme. Les conditions dépendent des plateformes.":"Accessible learning paths you can follow at your own pace. Conditions depend on each provider."}</p></div>
-        <div className="recommended-grid">
-          <a className="recommended-tool" href="https://www.freecodecamp.org/learn/" target="_blank" rel="noopener noreferrer"><span>Programmation</span><strong>freeCodeCamp</strong><small>{fr?"HTML, CSS, JavaScript et projets pratiques.":"HTML, CSS, JavaScript and practical projects."}</small><b>{fr?"Commencer gratuitement":"Start for free"} ↗</b></a>
-          <a className="recommended-tool" href="https://fr.khanacademy.org/" target="_blank" rel="noopener noreferrer"><span>Sciences et fondamentaux</span><strong>Khan Academy</strong><small>{fr?"Mathématiques, sciences et apprentissage progressif.":"Math, science and structured learning."}</small><b>{fr?"Accéder aux cours":"Explore courses"} ↗</b></a>
-          <a className="recommended-tool" href="https://learndigital.withgoogle.com/digitalgarage" target="_blank" rel="noopener noreferrer"><span>Compétences professionnelles</span><strong>Google Ateliers Numériques</strong><small>{fr?"Marketing digital et compétences professionnelles.":"Digital marketing and professional skills."}</small><b>{fr?"Découvrir les formations":"Explore training"} ↗</b></a>
-          <a className="recommended-tool" href="https://skillsbuild.org/" target="_blank" rel="noopener noreferrer"><span>Technologie et carrière</span><strong>IBM SkillsBuild</strong><small>{fr?"Ressources de formation en technologie et compétences professionnelles.":"Technology and workplace skills learning resources."}</small><b>{fr?"Explorer les ressources":"Explore resources"} ↗</b></a>
-        </div>
-      </section>
-      <section className="section request-section" id="veille-aqui">
-        <div className="section-heading"><span className="eyebrow">AQUI NET HUB · VEILLE & OPPORTUNITÉS</span><h2>{fr?"Outils vérifiés et tendances du numérique":"Verified tools and digital trends"}</h2><p>{fr?"Catalogue enrichi : gratuité, quotas et restrictions sont distingués des essais temporaires. Vérification initiale : 13 novembre 2026.":"Expanded directory: free tiers, quotas and restrictions are distinguished from temporary trials. Initial check: 13 November 2026."}</p></div>
-        <div className="recommended-grid">{weeklyTools.map(t=><article className="recommended-tool" key={t.name}><span>{t.category}</span><strong>{t.name}</strong><small>{t.description}</small><small><b>{fr?"Gratuité : ":"Free: "}</b>{t.freeModel}</small><small><b>{fr?"Limites : ":"Limits: "}</b>{t.limits}</small><a href={t.url} target="_blank" rel="noopener noreferrer">{fr?"Site officiel":"Official website"} ↗</a></article>)}</div>
-        <div className="section-heading"><span className="eyebrow">CONCURRENTS · AFRIQUE & INTERNATIONAL</span><h3>{fr?"Acteurs à surveiller":"Players to watch"}</h3></div>
-        <div className="recommended-grid">{competitorWatch.map(c=><article className="recommended-tool" key={c.name}><span>{c.type}</span><strong>{c.name}</strong><small>{c.description}</small><small><b>{fr?"Modèle : ":"Model: "}</b>{c.model}</small><a href={c.url} target="_blank" rel="noopener noreferrer">{fr?"Consulter":"Visit"} ↗</a></article>)}</div>
-        <div className="section-heading"><span className="eyebrow">PAIEMENTS · AFRIQUE DE L’OUEST</span><h3>{fr?"Solutions à étudier pour AQUI NET ADS":"Payment options to assess for AQUI NET ADS"}</h3></div>
-        <div className="recommended-grid">{paymentOptions.map(p=><article className="recommended-tool" key={p.name}><span>{p.coverage}</span><strong>{p.name}</strong><small>{p.description}</small><small><b>{fr?"À confirmer : ":"To confirm: "}</b>{p.caveat}</small><a href={p.url} target="_blank" rel="noopener noreferrer">{fr?"Documentation officielle":"Official documentation"} ↗</a></article>)}</div>
-        <p className="free-disclaimer">{fr?"Veille éditoriale : disponibilité au Togo, quotas et tarifs doivent être revérifiés avant chaque publication ou intégration. Aucun contournement de paiement ou de restriction n'est recommandé.":"Editorial watch: availability in Togo, quotas and prices must be rechecked before publication or integration. No payment or restriction bypass is recommended."}</p>
-      </section>
-      <section className="section request-section" id="ideas">
-        <div className="section-heading"><span className="eyebrow">AQUI NET HUB · CREATOR IDEAS</span><h2>{fr?"Idées de contenus à adapter":"Content ideas to adapt"}</h2><p>{fr?"Des formats créatifs réutilisables, pas un classement de tendances en temps réel.":"Reusable creative formats, not a live trend ranking."}</p></div>
-        <div className="recommended-grid">
-          <article className="recommended-tool"><span>Humour · Vidéo courte</span><strong>{fr?"Le problème et la solution inattendue":"The problem and the unexpected solution"}</strong><small>{fr?"Mets en scène une situation quotidienne, puis termine par une chute surprenante.":"Stage an everyday situation and end with an unexpected punchline."}</small></article>
-          <article className="recommended-tool"><span>IA · Démonstration</span><strong>{fr?"Avant / après avec une IA gratuite":"Before / after with a free AI tool"}</strong><small>{fr?"Montre le résultat brut, les étapes et les limites réelles de l'outil.":"Show the raw result, steps and actual tool limitations."}</small></article>
-          <article className="recommended-tool"><span>Éducation · 30 secondes</span><strong>{fr?"Une astuce numérique expliquée simplement":"One digital tip, simply explained"}</strong><small>{fr?"Réponds à une question fréquente avec une démonstration rapide.":"Answer a common question with a quick demonstration."}</small></article>
-          <article className="recommended-tool"><span>Afrique · Créativité</span><strong>{fr?"Une idée locale, une solution numérique":"A local idea, a digital solution"}</strong><small>{fr?"Présente un besoin concret en Afrique et un outil accessible pour y répondre.":"Present a real need in Africa and an accessible tool that can help."}</small></article>
-        </div>
-      </section>
-      <AccountHub service="video" favorites={[]} progress={[]} lang={lang} onRemoteSync={syncRemote} authOnly />
-      
-      {activeService==="tools"&&<section className="section request-section" id="demande-outils">
-        <div className="section-heading"><span className="eyebrow">01 · SMART TOOL FINDER</span><h2>{fr?"Décris ce que tu veux accomplir":"Describe what you want to achieve"}</h2><p>{fr?"Exemple : je veux créer un logo, monter une vidéo TikTok, apprendre l'anglais ou construire un site web.":"Example: I want to create a logo, edit a TikTok video, learn English or build a website."}</p></div>
-        <form className="tool-request-form" onSubmit={e=>{e.preventDefault();setSubmitted(request.trim());setSelectedTool(null);}}>
-          <textarea value={request} onChange={e=>setRequest(e.target.value)} rows={3} placeholder={fr?"Décris ton objectif avec tes propres mots…":"Describe your goal in your own words…"} required />
-          <button className="primary-button" type="submit" disabled={!request.trim()}>{fr?"Trouver les outils gratuits adaptés":"Find suitable free tools"} ↗</button>
-        </form>
-        {submitted && <div className={selectedTool ? "tool-results-layout has-selection" : "tool-results-layout"}><div className="recommendation-results">
-          <div className="recommendation-heading"><h3>{fr?"Outils correspondant à ta demande":"Tools matching your request"}</h3><button className="text-button" onClick={()=>{setSubmitted("");setSelectedTool(null);}}>{fr?"Nouvelle recherche":"New search"}</button></div>
-          {recommendations.length ? <div className="recommended-grid">{recommendations.map(t=><button className="recommended-tool" key={t.name} onClick={()=>setSelectedTool(t)}><span>{t.category}</span><strong>{t.name}</strong><small>{t.description}</small><b>{fr?"Voir le guide":"View guide"} ↗</b></button>)}</div> : <p className="no-match">{fr?"Je n'ai pas encore identifié d'outil vérifié qui réalise exactement cette tâche. Je préfère ne pas te proposer une alternative qui ne répondrait pas à ton besoin.":"I couldn't confidently match a tool. Rephrase your goal and specify the expected result."}</p>}
-        </div>
-        {selectedTool && <article className="tool-detail-page" id="outil-detail-selectionne">
-          <button className="text-button" onClick={()=>setSelectedTool(null)}>← {fr?"Retour aux résultats":"Back to results"}</button>
-          <span className="eyebrow">{selectedTool.category}</span><h3>{selectedTool.name}</h3><p>{selectedTool.description}</p>
-          <a className="primary-button" href={selectedTool.url} target="_blank" rel="noopener noreferrer">{fr?"Ouvrir le site officiel":"Open official website"} ↗</a>
-          <small className="free-disclaimer">{fr?"Les services indiqués proposent une formule ou un usage gratuit ; des limites, crédits ou options payantes peuvent s'appliquer selon l'outil. Vérifie les conditions sur le site officiel.":"These services offer a free tier or free usage; limits, credits or paid options may apply. Check the official terms."}</small>
-          {selectedTool.freeModel&&<div className="tool-free-conditions"><h4>{fr?"Conditions de gratuité":"Free-plan conditions"}</h4><p><strong>{fr?"Modèle : ":"Model: "}</strong>{selectedTool.freeModel}</p>{selectedTool.limits&&<p><strong>{fr?"Limites : ":"Limits: "}</strong>{selectedTool.limits}</p>}{selectedTool.signup&&<p><strong>{fr?"Inscription : ":"Sign-up: "}</strong>{selectedTool.signup}</p>}{selectedTool.access&&<p><strong>{fr?"Accès : ":"Access: "}</strong>{selectedTool.access}</p>}<p><strong>{fr?"Vérifié le : ":"Checked: "}</strong>{selectedTool.checkedAt||"13 novembre 2026"}</p><a href={selectedTool.sourceUrl||selectedTool.url} target="_blank" rel="noopener noreferrer">{fr?"Vérifier les conditions officielles":"Verify official terms"} ↗</a></div>}
-        </article>}
-        {selectedTool && <div className="tool-guide"><h4>{fr?"Guide d’utilisation":"User guide"}</h4><div className="tool-detail-columns"><div><h4>{fr?"Comment utiliser cet outil":"How to use this tool"}</h4><ol>{selectedTool.how.map(x=><li key={x}>{x}</li>)}</ol></div><div><h4>{fr?"Avantages":"Benefits"}</h4><ul>{selectedTool.benefits.map(x=><li key={x}>{x}</li>)}</ul></div></div></div>}
-      </div>}
-      </section>}
+      <main>
+        <section className="hub-hero help-hero" id="accueil">
+          <span className="eyebrow">AQUI NET HELP · SOCIAL INTELLIGENCE</span>
+          <h1>{fr ? <>Fais grandir tes réseaux avec <span>des décisions intelligentes.</span></> : <>Grow your social presence with <span>smarter decisions.</span></>}</h1>
+          <p>
+            {fr
+              ? "Analyse TikTok, Facebook, Instagram et YouTube. Comprends ce qui fonctionne, détecte ce qui bloque et reçois un plan d'action concret pour progresser."
+              : "Analyze TikTok, Facebook, Instagram and YouTube. Understand what works, identify what holds you back and get a practical action plan."}
+          </p>
+          <a className="primary-button" href="#diagnostic">{fr ? "Analyser mon compte" : "Analyze my account"} ↗</a>
+          <div className="help-platforms" aria-label="TikTok, Facebook, Instagram, YouTube">
+            <span>TikTok</span><span>Facebook</span><span>Instagram</span><span>YouTube</span>
+          </div>
+        </section>
 
-      {activeService && activeService!=="tools" && <AccountHub service={activeService} favorites={[]} progress={[]} lang={lang} onRemoteSync={syncRemote}/>}
-      {showAdmin&&<AdminPanel lang={lang}/>}
-    </main>
-    <footer className="site-footer"><a className="brand footer-brand" href="#accueil"><span className="brand-mark">A</span><span>AQUI NET <strong>HUB</strong></span></a><p>{fr?"Des outils et des opportunités pour avancer dans le numérique.":"Tools and opportunities to move forward digitally."}</p><div className="footer-links"><a href="https://tiktok.com/@el.maestro907" target="_blank" rel="noreferrer">TikTok · S’abonner</a><a href="https://www.facebook.com/profile.php?id=61582777979597" target="_blank" rel="noreferrer">Facebook · S’abonner</a></div><div className="footer-contact"><strong>{fr?"Contact, assistance et dons":"Contact, support and donations"}</strong><a href="tel:+22892244653">+228 92 24 46 53</a><a href="tel:+22898393862">+228 98 39 38 62</a><a href="https://wa.me/22892244653" target="_blank" rel="noreferrer">WhatsApp</a></div><small>© {new Date().getFullYear()} AQUI NET HUB</small></footer>
-  </div>;
+        <section className="help-value section" id="fonctionnalites">
+          <div className="section-heading">
+            <span className="eyebrow">ONE PLATFORM · FOUR NETWORKS</span>
+            <h2>{fr ? "Un véritable copilote de croissance" : "A real growth co-pilot"}</h2>
+            <p>{fr ? "Des indicateurs compréhensibles, des recommandations personnalisées et un suivi de progression." : "Understandable metrics, personalized recommendations and progress tracking."}</p>
+          </div>
+          <div className="help-feature-grid">
+            <article className="help-feature"><span>01</span><h3>{fr ? "Diagnostic précis" : "Clear diagnosis"}</h3><p>{fr ? "Mesure l'engagement, la portée et la régularité à partir des données disponibles." : "Measure engagement, reach and consistency from available data."}</p></article>
+            <article className="help-feature"><span>02</span><h3>{fr ? "Plan d'action IA" : "AI action plan"}</h3><p>{fr ? "Identifie les priorités et propose des actions adaptées à ton objectif." : "Prioritize improvements and get actions aligned with your goal."}</p></article>
+            <article className="help-feature"><span>03</span><h3>{fr ? "Analyse multi-réseaux" : "Cross-platform analysis"}</h3><p>{fr ? "Centralise les diagnostics de tes comptes TikTok, Facebook, Instagram et YouTube." : "Bring TikTok, Facebook, Instagram and YouTube account audits together."}</p></article>
+            <article className="help-feature"><span>04</span><h3>{fr ? "Monétisation" : "Monetization"}</h3><p>{fr ? "Repère les leviers de revenus, les pistes de partenariats et les points à améliorer." : "Identify revenue levers, partnership opportunities and areas to improve."}</p></article>
+          </div>
+        </section>
+
+        <AccountHub service="social" favorites={[]} progress={[]} lang={lang} onRemoteSync={syncRemote} />
+
+        <section className="help-contact section" id="contact">
+          <div>
+            <span className="eyebrow">AQUI NET HELP · CUSTOMER CARE</span>
+            <h2>{fr ? "Besoin d'aide ou envie de soutenir le projet ?" : "Need help or want to support the project?"}</h2>
+            <p>{fr ? "Notre assistance est disponible par WhatsApp et par e-mail. Les partenariats publicitaires et les propositions commerciales sont également les bienvenus." : "Reach support by WhatsApp or email. Advertising partnerships and business proposals are welcome."}</p>
+          </div>
+          <div className="help-contact-actions">
+            <a className="primary-button" href="https://wa.me/22892244653?text=Bonjour%20AQUI%20NET%20HELP" target="_blank" rel="noreferrer">WhatsApp · +228 92 24 46 53 ↗</a>
+            <a className="filter-button" href="mailto:kobonaquilas@gmail.com">kobonaquilas@gmail.com</a>
+            <a className="filter-button" href="https://paygateglobal.com/" target="_blank" rel="noreferrer">{fr ? "Soutenir le projet" : "Support the project"} ↗</a>
+          </div>
+        </section>
+
+        {showAdmin && <AdminPanel lang={lang} />}
+      </main>
+
+      <footer className="site-footer" id="footer">
+        <a className="brand footer-brand" href="#accueil"><span className="brand-mark">A</span><span>AQUI NET <strong>HELP</strong></span></a>
+        <p>{fr ? "Le copilote intelligent de tes réseaux sociaux." : "The intelligent co-pilot for your social media."}</p>
+        <div className="footer-contact" id="footer-contact">
+          <strong>{fr ? "Contact et assistance" : "Contact and support"}</strong>
+          <a href="tel:+22892244653">+228 92 24 46 53</a>
+          <a href="https://wa.me/22892244653" target="_blank" rel="noreferrer">WhatsApp</a>
+          <a href="mailto:kobonaquilas@gmail.com">kobonaquilas@gmail.com</a>
+        </div>
+        <div className="footer-links"><a href="/terms">{fr ? "Conditions d'utilisation" : "Terms of use"}</a><a href="/privacy">{fr ? "Confidentialité" : "Privacy"}</a></div>
+        <small>© {new Date().getFullYear()} AQUI NET HELP</small>
+      </footer>
+    </div>
+  );
 }
