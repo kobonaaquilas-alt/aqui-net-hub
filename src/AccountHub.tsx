@@ -261,10 +261,10 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     setSocialViews(String(average("view_count")));
     setSocialLikes(String(average("like_count")));
     setSocialComments(String(average("comment_count")));
-    setTiktokNotice(fr?"Statistiques transférées dans le formulaire AQUI SOCIAL AUDIT. Vérifie le lien du profil puis lance l'analyse.":"Metrics copied into the AQUI SOCIAL AUDIT form. Check the profile link, then run the audit.");
+    setTiktokNotice(fr?"Statistiques transférées dans le formulaire AQUI NET HELP · SOCIAL AUDIT. Vérifie le lien du profil puis lance l'analyse.":"Metrics copied into the AQUI NET HELP · SOCIAL AUDIT form. Check the profile link, then run the audit.");
   }
   async function connectTikTok(){
-    if(!session?.access_token){setTiktokNotice(fr?"Connecte-toi d'abord à AQUI NET HUB.":"Sign in to AQUI NET HUB first.");return;}
+    if(!session?.access_token){setTiktokNotice(fr?"Connecte-toi d'abord à AQUI NET HELP.":"Sign in to AQUI NET HELP first.");return;}
     setTiktokBusy(true);setTiktokNotice("");
     try{const r=await fetch("/api/tiktok/connect",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({native:Capacitor.isNativePlatform()})});const d=await r.json();if(!r.ok||!d.authorization_url)throw new Error(d.error||"Connexion TikTok indisponible.");if(Capacitor.isNativePlatform()){await Browser.open({url:d.authorization_url,toolbarColor:"#101C32"});setTiktokBusy(false);}else window.location.assign(d.authorization_url);}
     catch(e){setTiktokNotice(e instanceof Error?e.message:"Connexion TikTok impossible.");setTiktokBusy(false);}
@@ -288,7 +288,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     finally{setFacebookBusy(false);}
   }
   async function connectFacebook(){
-    if(!session?.access_token){setFacebookNotice(fr?"Connecte-toi d'abord à AQUI NET HUB.":"Sign in to AQUI NET HUB first.");return;}
+    if(!session?.access_token){setFacebookNotice(fr?"Connecte-toi d'abord à AQUI NET HELP.":"Sign in to AQUI NET HELP first.");return;}
     setFacebookBusy(true);setFacebookNotice("");
     try{
       const r=await fetch("/api/facebook/connect",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({native:Capacitor.isNativePlatform()})});
@@ -321,7 +321,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       setSocialFollowers(String(report.followers||0));
       setSocialLikes(String(report.average_likes||0));
       setSocialComments(String(report.average_comments||0));
-      setFacebookNotice(fr?"Statistiques récupérées depuis Meta. Tu peux maintenant lancer l'analyse AQUI SOCIAL AUDIT.":"Statistics retrieved from Meta. You can now run the AQUI SOCIAL AUDIT analysis.");
+      setFacebookNotice(fr?"Statistiques récupérées depuis Meta. Tu peux maintenant lancer l'analyse AQUI NET HELP · SOCIAL AUDIT.":"Statistics retrieved from Meta. You can now run the AQUI NET HELP · SOCIAL AUDIT analysis.");
     }catch(e){setFacebookNotice(e instanceof Error?e.message:"Erreur pendant la lecture des statistiques Facebook.");}
     finally{setFacebookBusy(false);}
   }
@@ -368,7 +368,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       const data = await response.json() as { request_id?: string; status?: string; error?: string; code?: string };
       if (response.status === 402 || data.code === "PAYMENT_REQUIRED") {
         setVideoPaywall(true);
-        setVideoNotice(data.error || (fr ? "Un abonnement AQUI NET HUB actif est requis pour utiliser le générateur." : "An active AQUI NET HUB subscription is required to use the generator."));
+        setVideoNotice(data.error || (fr ? "Un abonnement AQUI NET HELP actif est requis pour utiliser le générateur." : "An active AQUI NET HELP subscription is required to use the generator."));
         return;
       }
       if (!response.ok || !data.request_id) throw new Error(data.error || "Video request failed.");
@@ -416,7 +416,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       const {error} = await db.from(table).insert({...values,user_id:session.user.id});
       if (error) setNotice(error.message);
       else {
-        setNotice(fr ? "Demande envoyée à l'équipe AQUI NET HUB." : "Request sent to the AQUI NET HUB team.");
+        setNotice(fr ? "Demande envoyée à l'équipe AQUI NET HELP." : "Request sent to the AQUI NET HELP team.");
         if (kind === "ads") setAd({company_name:"",contact_name:"",email:"",phone:"",website:"",budget:"",message:""});
         else setPartner({organization:"",contact_name:"",email:"",phone:"",website:"",proposal:""});
       }
@@ -432,7 +432,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const date=(value:string)=>new Date(value).toLocaleDateString(fr?"fr-FR":"en-GB");
   const paymentLabel=(status:string)=>status==="paid"?(fr?"Payé":"Paid"):status==="failed"?(fr?"Échoué":"Failed"):(fr?"En attente":"Pending");
   if (authOnly) return <section className="section account-hub account-access" id="account-access">
-    <div className="section-heading"><div><span className="eyebrow">AQUI NET HUB · ESPACE MEMBRE</span><h2>{fr?"Créer un compte ou se connecter":"Create an account or sign in"}</h2><p>{fr?"Un compte est nécessaire pour utiliser les trois services protégés.":"An account is required to use the three protected services."}</p></div></div>
+    <div className="section-heading"><div><span className="eyebrow">AQUI NET HELP · ESPACE MEMBRE</span><h2>{fr?"Créer un compte ou se connecter":"Create an account or sign in"}</h2><p>{fr?"Un compte est nécessaire pour utiliser les trois services protégés.":"An account is required to use the three protected services."}</p></div></div>
     {!session ? <div className="account-card">
       <div className="account-tabs"><button type="button" className={mode==="login"?"active":""} onClick={()=>setMode("login")}>{fr?"Connexion":"Sign in"}</button><button type="button" className={mode==="signup"?"active":""} onClick={()=>setMode("signup")}>{fr?"Créer un compte":"Create account"}</button></div>
       {mode==="signup" && <>{input(fullName,setFullName,fr?"Nom complet":"Full name")}{input(phone,setPhone,fr?"Téléphone (facultatif)":"Phone (optional)","tel",false)}</>}
@@ -444,7 +444,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   </section>;
 
   return <section className="section account-hub" id="compte">
-    <div className="section-heading"><div><span className="eyebrow">AQUI NET HUB · {service==="video"?"AQUI VIDEO AI":service==="social"?"SOCIAL AUDIT":"PARTENARIATS"}</span><h2>{service==="video"?(fr?"Génération vidéo IA":"AI video generation"):service==="social"?(fr?"Analyse de compte social":"Social account analysis"):(fr?"Partenariats et abonnements":"Partnerships and subscriptions")}</h2><p>{fr?"Connecte-toi pour accéder à ce service.":"Sign in to access this service."}</p></div></div>
+    <div className="section-heading"><div><span className="eyebrow">AQUI NET HELP · {service==="video"?"AQUI VIDEO AI":service==="social"?"SOCIAL AUDIT":"PARTENARIATS"}</span><h2>{service==="video"?(fr?"Génération vidéo IA":"AI video generation"):service==="social"?(fr?"Analyse de compte social":"Social account analysis"):(fr?"Partenariats et abonnements":"Partnerships and subscriptions")}</h2><p>{fr?"Connecte-toi pour accéder à ce service.":"Sign in to access this service."}</p></div></div>
     {!session ? <div className="account-card">
       <div className="account-tabs"><button type="button" className={mode==="login"?"active":""} onClick={()=>setMode("login")}>{fr?"Connexion":"Sign in"}</button><button type="button" className={mode==="signup"?"active":""} onClick={()=>setMode("signup")}>{fr?"Créer un compte":"Create account"}</button></div>
       {mode==="signup" && <>{input(fullName,setFullName,fr?"Nom complet":"Full name")}{input(phone,setPhone,fr?"Téléphone (facultatif)":"Phone (optional)","tel",false)}</>}
@@ -453,7 +453,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       {mode==="login" && <button type="button" className="text-button account-reset-link" disabled={busy} onClick={()=>void sendPasswordReset()}>{fr?"Mot de passe oublié ?":"Forgot password?"}</button>}
     </div> : <div className="account-card"><p>{fr?"Connecté avec":"Signed in as"} <strong>{session.user.email}</strong></p><p className="sync-status">{fr?"Favoris et progression synchronisés sur ce compte.":"Favorites and progress synced to this account."}</p><button className="filter-button" onClick={()=>void db.auth.signOut()}>{fr?"Se déconnecter":"Sign out"}</button></div>}
     {notice && <p className="account-message" role="status">{notice}</p>}
-    {session && !hasActiveSubscription && service==="partners" && <div className="account-card subscription-required"><span className="eyebrow">AQUI NET HUB · ABONNEMENT</span><h3>{fr?"Abonnement requis":"Subscription required"}</h3><p>{fr?"Pour prolonger la diffusion après l’essai publicitaire gratuit de 3 jours ou débloquer les fonctions payantes, choisis une formule ci-dessous.":"Choose a plan to continue campaigns after the 3-day free ad trial or unlock paid features."}</p>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement bientôt disponible":"Payment coming soon"):paymentBusy?"…":fr?"S’abonner et payer":"Subscribe and pay"}</button></article>):<p>{fr?"Les formules d’abonnement seront affichées ici dès leur activation.":"Subscription plans will appear here when activated."}</p>}</div>}
+    {session && !hasActiveSubscription && service==="partners" && <div className="account-card subscription-required"><span className="eyebrow">AQUI NET HELP · ABONNEMENT</span><h3>{fr?"Abonnement requis":"Subscription required"}</h3><p>{fr?"Pour prolonger la diffusion après l’essai publicitaire gratuit de 3 jours ou débloquer les fonctions payantes, choisis une formule ci-dessous.":"Choose a plan to continue campaigns after the 3-day free ad trial or unlock paid features."}</p>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement bientôt disponible":"Payment coming soon"):paymentBusy?"…":fr?"S’abonner et payer":"Subscribe and pay"}</button></article>):<p>{fr?"Les formules d’abonnement seront affichées ici dès leur activation.":"Subscription plans will appear here when activated."}</p>}</div>}
 
     {session && recoveryMode && <div className="account-card password-recovery-card"><h3>{fr?"Définir un nouveau mot de passe":"Set a new password"}</h3>{input(newPassword,setNewPassword,fr?"Nouveau mot de passe (8 caractères minimum)":"New password (at least 8 characters)","password")}<button type="button" className="primary-button" disabled={busy||newPassword.length<8} onClick={()=>void updatePassword()}>{busy?"…":fr?"Mettre à jour le mot de passe":"Update password"}</button></div>}
 
@@ -472,30 +472,28 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
 
 
     {session && service==="social" && <div className="account-card social-audit">
-      <span className="eyebrow">AQUI SOCIAL AUDIT · {socialCount}/3 {fr?"analyses gratuites":"free reviews"}</span>
+      <span className="eyebrow">AQUI NET HELP · SOCIAL AUDIT · {socialCount}/3 {fr?"analyses gratuites":"free reviews"}</span>
       <h3>{fr?"Diagnostic de ton compte":"Your account review"}</h3>
-      <p>{fr?"Analyse Facebook sans autorisation Meta : relève les chiffres dans Meta Business Suite, puis AQUI NET HUB calcule les indicateurs et conseils. Pour les autres réseaux, saisis les statistiques disponibles.":"Analyze Facebook without Meta permissions: get the figures from Meta Business Suite, then AQUI NET HUB calculates indicators and recommendations. Enter available metrics for other networks."}</p>
-      <div className="follow-gate">
-      <div className="follow-gate">
-        <h4>{fr?"Connexion directe à TikTok":"Connect directly to TikTok"}</h4>
-        <p>{fr?"Autorise AQUI NET HUB à lire les informations de profil, les statistiques disponibles et tes vidéos publiques.":"Authorize AQUI NET HUB to read your profile, available statistics and public videos."}</p>
-        <button type="button" className="primary-button" disabled={tiktokBusy||!backendReady} onClick={()=>void connectTikTok()}>{tiktokBusy?"…":tiktokData?(fr?"Reconnecter TikTok":"Reconnect TikTok"):(fr?"Connecter mon TikTok":"Connect my TikTok")}</button>
-        {tiktokData&&<button type="button" className="filter-button" disabled={tiktokBusy} onClick={()=>void loadTikTok()}>{fr?"Actualiser les statistiques":"Refresh statistics"}</button>}
-        {tiktokNotice&&<p className="account-message" role="status">{tiktokNotice}</p>}
-        {tiktokData?.profile&&<div className="social-report"><strong>{tiktokData.profile.display_name||"TikTok"}</strong>
-          <p>{fr?"Abonnés :":"Followers: "} {Number(tiktokData.profile.follower_count||0).toLocaleString()}</p>
-          <p>{fr?"Abonnements :":"Following: "} {Number(tiktokData.profile.following_count||0).toLocaleString()}</p>
-          <p>{fr?"J'aime :":"Likes: "} {Number(tiktokData.profile.likes_count||0).toLocaleString()}</p>
-          <p>{fr?"Vidéos publiées :":"Videos: "} {Number(tiktokData.profile.video_count||0).toLocaleString()}</p>
-          <small>{fr?"Données de l'API officielle TikTok, selon les autorisations accordées.":"Official TikTok API data, subject to granted permissions."}</small>
-          <button type="button" className="filter-button" disabled={tiktokBusy} onClick={applyTikTokStats}>{fr?"Préremplir l'analyse avec TikTok":"Fill audit from TikTok"}</button>
-          {tiktokData.videos?.length>0&&<div><strong>{fr?"Vidéos récentes":"Recent videos"}</strong>{tiktokData.videos.slice(0,5).map((v:any)=><p key={v.id}>{v.title||v.video_description||"TikTok video"} · {Number(v.view_count||0).toLocaleString()} {fr?"vues":"views"}</p>)}</div>}
-          <button type="button" className="filter-button" disabled={tiktokBusy} onClick={()=>void disconnectTikTok()}>{fr?"Déconnecter TikTok":"Disconnect TikTok"}</button>
-        </div>}
-      </div>
-        <div className="follow-gate">
-          <h4>{fr?"Connexion directe à Facebook":"Connect Facebook directly"}</h4>
-          <p>{fr?"Connecte la Page que tu administres pour récupérer automatiquement ses abonnés, publications et statistiques disponibles via Meta.":"Connect a Page you manage to retrieve its followers, posts and available Meta insights automatically."}</p>
+      <p>{fr?"Analyse Facebook sans autorisation Meta : relève les chiffres dans Meta Business Suite, puis AQUI NET HELP calcule les indicateurs et conseils. Pour les autres réseaux, saisis les statistiques disponibles.":"Analyze Facebook without Meta permissions: get the figures from Meta Business Suite, then AQUI NET HELP calculates indicators and recommendations. Enter available metrics for other networks."}</p>
+      <div className="social-connect-grid">
+        <article className="follow-gate">
+          <h4>{fr?"Connexion officielle TikTok":"Official TikTok connection"}</h4>
+          <p>{fr?"Autorise l'accès aux statistiques et vidéos que l'API TikTok permet de consulter.":"Authorize access to the profile statistics and videos made available by TikTok's API."}</p>
+          <button type="button" className="primary-button" disabled={tiktokBusy||!backendReady} onClick={()=>void connectTikTok()}>{tiktokBusy?"…":tiktokData?(fr?"Reconnecter TikTok":"Reconnect TikTok"):(fr?"Connecter TikTok":"Connect TikTok")}</button>
+          {tiktokData&&<button type="button" className="filter-button" disabled={tiktokBusy} onClick={()=>void loadTikTok()}>{fr?"Actualiser les statistiques":"Refresh statistics"}</button>}
+          {tiktokNotice&&<p className="account-message" role="status">{tiktokNotice}</p>}
+          {tiktokData?.profile&&<div className="social-report">
+            <strong>{tiktokData.profile.display_name||"TikTok"}</strong>
+            <p>{fr?"Abonnés :":"Followers: "} {Number(tiktokData.profile.follower_count||0).toLocaleString()}</p>
+            <p>{fr?"J'aime :":"Likes: "} {Number(tiktokData.profile.likes_count||0).toLocaleString()} · {fr?"Vidéos :":"Videos: "} {Number(tiktokData.profile.video_count||0).toLocaleString()}</p>
+            <small>{fr?"Données renvoyées par l'API officielle, selon les autorisations accordées.":"Official API data, subject to granted permissions."}</small>
+            <button type="button" className="filter-button" disabled={tiktokBusy} onClick={applyTikTokStats}>{fr?"Utiliser ces statistiques":"Use these statistics"}</button>
+            <button type="button" className="filter-button" disabled={tiktokBusy} onClick={()=>void disconnectTikTok()}>{fr?"Déconnecter TikTok":"Disconnect TikTok"}</button>
+          </div>}
+        </article>
+        <article className="follow-gate">
+          <h4>{fr?"Connexion officielle Facebook":"Official Facebook connection"}</h4>
+          <p>{fr?"Connecte une Page que tu administres pour récupérer les statistiques autorisées par Meta.":"Connect a Page you manage to retrieve the statistics authorized by Meta."}</p>
           <button type="button" className="primary-button" disabled={facebookBusy||!backendReady} onClick={()=>void connectFacebook()}>{facebookBusy?"…":facebookPages.length?(fr?"Reconnecter Facebook":"Reconnect Facebook"):(fr?"Connecter Facebook":"Connect Facebook")}</button>
           {facebookPages.length>0&&<>
             <label>{fr?"Page Facebook":"Facebook Page"}
@@ -503,7 +501,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
                 {facebookPages.map(page=><option key={page.page_id} value={page.page_id}>{page.page_name}</option>)}
               </select>
             </label>
-            <button type="button" className="filter-button" disabled={facebookBusy||!facebookPageId} onClick={()=>void syncFacebookStats()}>{fr?"Récupérer les statistiques":"Load statistics"}</button>
+            <button type="button" className="filter-button" disabled={facebookBusy||!facebookPageId} onClick={()=>void syncFacebookStats()}>{fr?"Charger les statistiques":"Load statistics"}</button>
             <button type="button" className="filter-button" disabled={facebookBusy} onClick={()=>void disconnectFacebook()}>{fr?"Déconnecter Facebook":"Disconnect Facebook"}</button>
           </>}
           {facebookNotice&&<p className="account-message" role="status">{facebookNotice}</p>}
@@ -511,38 +509,40 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
             <strong>{facebookAudit.page_name}</strong>
             <p>{fr?"Abonnés :":"Followers: "} {Number(facebookAudit.followers||0).toLocaleString()}</p>
             <p>{fr?"Publications analysées :":"Posts analyzed: "} {facebookAudit.posts_analyzed}</p>
-            <p>{fr?"J'aime moyens :":"Average likes: "} {facebookAudit.average_likes} · {fr?"Commentaires moyens :":"Average comments: "} {facebookAudit.average_comments}</p>
+            <p>{fr?"Interactions moyennes :":"Average interactions: "} {facebookAudit.average_likes} · {facebookAudit.average_comments}</p>
             <p>{fr?"Impressions sur 28 jours :":"28-day impressions: "} {facebookAudit.impressions_28d??(fr?"indisponibles":"unavailable")}</p>
-            <p>{fr?"Interactions sur 28 jours :":"28-day engagements: "} {facebookAudit.engagements_28d??(fr?"indisponibles":"unavailable")}</p>
             <small>{facebookAudit.disclaimer}</small>
           </div>}
-        </div>
-        <h4>{fr?"Analyse Facebook sans connexion Meta":"Facebook analysis without Meta login"}</h4>
-        <p>{fr?"Pour éviter les autorisations Meta bloquées, ouvre Meta Business Suite → Statistiques/Insights. Relève tes abonnés, la moyenne des vues, des J’aime et des commentaires, puis renseigne les champs ci-dessous. AQUI NET HUB calcule automatiquement les indicateurs et les recommandations.":"To avoid blocked Meta permissions, open Meta Business Suite → Insights. Note your followers and average views, likes and comments, then enter the figures below. AQUI NET HUB automatically calculates indicators and recommendations."}</p>
+        </article>
+      </div>
+
+      <div className="manual-audit-panel">
+        <h4>{fr?"Analyse assistée Instagram, YouTube et autres comptes":"Assisted audit for Instagram, YouTube and other accounts"}</h4>
+        <p>{fr?"Pour Instagram et YouTube, saisis les chiffres visibles dans les statistiques natives de la plateforme. Pour Facebook, tu peux aussi utiliser Meta Business Suite. AQUI NET HELP calcule les ratios et construit les recommandations à partir de ces données.":"For Instagram and YouTube, enter the figures shown in the platform's native analytics. For Facebook, you can also use Meta Business Suite. AQUI NET HELP calculates ratios and builds recommendations from those metrics."}</p>
         <a className="filter-button" href="https://business.facebook.com/latest/insights" target="_blank" rel="noreferrer">{fr?"Ouvrir Meta Business Suite":"Open Meta Business Suite"} ↗</a>
       </div>
-      {(socialCount<3 || (followStatus==="approved"&&socialSubscribed)) ? <>
-        <input type="url" value={socialUrl} onChange={e=>setSocialUrl(e.target.value)} placeholder="Lien public du profil (HTTPS)" required/>
-        <input value={socialName} onChange={e=>setSocialName(e.target.value)} placeholder={fr?"Nom exact du compte":"Exact account name"} required/>
+
+      {(socialCount<3 || socialSubscribed) ? <>
         <div className="social-metrics-grid">
+          <label>{fr?"Lien du profil":"Profile URL"}<input type="url" value={socialUrl} onChange={e=>setSocialUrl(e.target.value)} placeholder="https://…" required/></label>
+          <label>{fr?"Réseau / nom du compte":"Network / account name"}<input value={socialName} onChange={e=>setSocialName(e.target.value)} placeholder={fr?"Nom exact du compte":"Exact account name"} required/></label>
           <label>{fr?"Abonnés":"Followers"}<input type="number" min="0" value={socialFollowers} onChange={e=>setSocialFollowers(e.target.value)}/></label>
-          <label>{fr?"Vues moyennes / vidéo":"Average views / video"}<input type="number" min="0" value={socialViews} onChange={e=>setSocialViews(e.target.value)}/></label>
+          <label>{fr?"Vues moyennes / contenu":"Average views / post"}<input type="number" min="0" value={socialViews} onChange={e=>setSocialViews(e.target.value)}/></label>
           <label>{fr?"J'aime moyens":"Average likes"}<input type="number" min="0" value={socialLikes} onChange={e=>setSocialLikes(e.target.value)}/></label>
           <label>{fr?"Commentaires moyens":"Average comments"}<input type="number" min="0" value={socialComments} onChange={e=>setSocialComments(e.target.value)}/></label>
           <label>{fr?"Publications / semaine":"Posts / week"}<input type="number" min="0" step="0.5" value={socialFrequency} onChange={e=>setSocialFrequency(e.target.value)}/></label>
         </div>
-        <input type="text" value={socialGoal} onChange={e=>setSocialGoal(e.target.value)} placeholder={fr?"Objectif : vues, abonnés, ventes…":"Goal: views, followers, sales…"}/>
+        <input type="text" value={socialGoal} onChange={e=>setSocialGoal(e.target.value)} placeholder={fr?"Objectif : vues, abonnés, ventes…":"Goal: views, followers, sales…"} />
         <button type="button" className="primary-button" disabled={busy||!backendReady||!socialUrl.trim()||!socialName.trim()} onClick={()=>void startSocialAudit()}>{busy?"…":fr?"Lancer l'analyse":"Run analysis"}</button>
-      </>:<p className="account-message">{fr?"Tu as utilisé tes 3 analyses gratuites. Pour continuer, abonne-toi aux deux comptes ci-dessous et envoie les preuves.":"Your 3 free reviews are used. Follow both accounts below and submit proof to continue."}</p>}
-      {socialCount>=3&&<div className="follow-gate">
-        <h4>{fr?"Étape 1 — Abonne-toi aux deux comptes":"Step 1 — Follow both accounts"}</h4>
-        <div className="follow-links"><a href="https://tiktok.com/@el.maestro907" target="_blank" rel="noreferrer">TikTok · @el.maestro907 ↗</a><a href="https://www.facebook.com/profile.php?id=61582777979597" target="_blank" rel="noreferrer">Facebook · S'abonner ↗</a></div>
-        {followStatus!=="approved"?<><p>{followStatus==="pending"?(fr?"Preuves en attente de validation manuelle.":"Proof is awaiting manual review."):fr?"Indique ton nom de compte et colle deux liens HTTPS vers des captures montrant tes abonnements.":"Enter your account name and two HTTPS links to screenshots showing both follows."}</p>
-          <input value={socialName} onChange={e=>setSocialName(e.target.value)} placeholder={fr?"Ton nom d'utilisateur sur les réseaux":"Your social username"}/>
-          <input type="url" value={tiktokProof} onChange={e=>setTiktokProof(e.target.value)} placeholder={fr?"Lien de preuve TikTok (capture)":"TikTok follow proof URL"}/>
-          <input type="url" value={facebookProof} onChange={e=>setFacebookProof(e.target.value)} placeholder={fr?"Lien de preuve Facebook (capture)":"Facebook follow proof URL"}/>
-          <button className="primary-button" disabled={busy||!socialName.trim()||!tiktokProof.trim()||!facebookProof.trim()||followStatus==="pending"} onClick={()=>void submitFollowProof()}>{fr?"Envoyer pour vérification":"Submit for review"}</button>
-        </>:<><p>{fr?"Abonnements validés. Étape 2 : active ton abonnement pour poursuivre les analyses.":"Follows verified. Step 2: activate a subscription to continue."}</p>{!socialSubscribed&&plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement indisponible":"Payment unavailable"):paymentBusy?"…":fr?"S'abonner et payer":"Subscribe and pay"}</button></article>)}{socialSubscribed&&<p className="account-message">{fr?"Abonnement actif : les analyses supplémentaires sont débloquées.":"Active subscription: additional reviews are unlocked."}</p>}</>}
+      </> : <div className="account-card subscription-required">
+        <span className="eyebrow">{fr?"ESSAI TERMINÉ · ACCÈS PRO":"TRIAL COMPLETED · PRO ACCESS"}</span>
+        <h3>{fr?"Tes 3 analyses gratuites sont utilisées":"Your 3 free analyses have been used"}</h3>
+        <p>{fr?"Choisis un abonnement pour continuer les diagnostics sans limite pendant sa durée. Aucun abonnement n'est créé avant confirmation du paiement par le serveur.":"Choose a subscription to continue running audits during its validity period. No subscription is activated until the server confirms payment."}</p>
+        {plans.length ? plans.map(p=><article className="plan-row" key={p.id}>
+          <div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div>
+          <button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement à configurer":"Payment setup required"):paymentBusy?"…":fr?"Choisir cette formule":"Choose this plan"}</button>
+        </article>) : <p>{fr?"Les formules seront affichées dès leur activation.":"Plans will appear when activated."}</p>}
+        <small>{fr?"Le paiement actuellement configuré est en FCFA via CinetPay. Les paiements directs en USD/EUR et les cartes internationales nécessitent l'activation d'un prestataire compatible.":"The currently configured checkout is in XOF through CinetPay. Direct USD/EUR and international card payments require an enabled compatible provider."}</small>
       </div>}
       {socialResult&&<pre className="account-message social-report" role="status">{socialResult}</pre>}
       <small className="account-footnote">{fr?"Les captures sont contrôlées manuellement. Les statistiques saisies manuellement ne sont pas authentifiées automatiquement. Facebook connecté utilise les données autorisées par Meta.":"Screenshots are reviewed manually. TikTok or Meta do not automatically authenticate these metrics here."}</small>
