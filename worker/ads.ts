@@ -105,9 +105,37 @@ async function listCampaigns(env: Env, userId: string): Promise<Response> {
     { headers: dbHeaders(env) },
   );
   if (!response.ok) return json({ error: "Impossible de charger tes campagnes." }, 502);
-  const campaigns = await response.json();
-  const [trial, subscription] = await Promise.all([getTrial(env, userId), activeSubscription(env, userId)]);
-  return json({ campaigns, trial, subscription_active: !!subscription });
+  const campaigns = await response.json() as Array<Record<string, any> & { id: string }>;
+  const [trial, subscription, eventsResponse] = await Promise.all([
+    getTrial(env, userId),
+    activeSubscription(env, userId),
+    fetch(
+      env.SUPABASE_URL + "/rest/v1/hub_ad_events?owner_user_id=eq." + encodeURIComponent(userId) +
+      "&select=campaign_id,event_type&limit=10000",
+      { headers: dbHeaders(env) },
+    ),
+  ]);
+  const events = eventsResponse.ok
+    ? await eventsResponse.json() as Array<{ campaign_id: string; event_type: string }>
+    : [];
+  const stats = new Map<string, { impressions_count: number; clicks_count: number }>();
+  for (const event of events) {
+    const current = stats.get(event.campaign_id) || { impressions_count: 0, clicks_count: 0 };
+    if (event.event_type === "impression") current.impressions_count++;
+    if (event.event_type === "click") current.clicks_count++;
+    stats.set(event.campaign_id, current);
+  }
+  const enriched = campaigns.map(campaign => {
+    const counts = stats.get(campaign.id) || { impressions_count: 0, clicks_count: 0 };
+    return {
+      ...campaign,
+      ...counts,
+      ctr_percent: counts.impressions_count
+        ? Number((counts.clicks_count / counts.impressions_count * 100).toFixed(2))
+        : 0,
+    };
+  });
+  return json({ campaigns: enriched, trial, subscription_active: !!subscription });
 }
 
 async function createCampaign(request: Request, env: Env, user: User): Promise<Response> {
