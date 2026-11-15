@@ -1,46 +1,60 @@
-# AQUI NET HELP
+# AQUI NET HUB
 
-Plateforme SaaS internationale d'analyse et d'optimisation des comptes TikTok, Facebook, Instagram et YouTube.
+Plateforme numérique pour découvrir des outils, apprendre, structurer des projets et accéder à un espace membre.
 
-## Objectif produit
-Aider les créateurs, indépendants et entreprises à comprendre leurs performances sociales, identifier les freins à leur croissance et appliquer un plan d'amélioration concret.
-
-## Stack
-- React + TypeScript + Vite
+## Technologies
+- React 19 + TypeScript
+- Vite 6
 - Cloudflare Workers
-- Supabase Auth + PostgreSQL + RLS
-- Intégrations officielles TikTok et Meta, sous réserve des autorisations et validations de chaque plateforme
-- Paiement actuellement préparé en XOF via CinetPay
+- Supabase Auth et PostgreSQL
+- CinetPay JS SDK pour les paiements côté serveur
 
-## Accès et quota
-- Un compte par adresse e-mail (unicité gérée par Supabase Auth).
-- Trois analyses gratuites par compte.
-- Au-delà, un abonnement actif est requis.
-- L'accès payant est accordé uniquement après confirmation du paiement côté serveur.
+## Fonctionnalités présentes
+- Catalogue d'outils avec recherche, catégories et favoris
+- NET ASSIST et parcours AQUI NET ACADEMY
+- Espace membre avec création de compte et connexion Supabase
+- Synchronisation des favoris et de la progression entre appareils
+- AQUI NET ADS en libre-service : création, pause, réactivation, suppression et statistiques d’impressions, de clics et de CTR
+- Essai publicitaire gratuit de 3 jours, une seule fois par compte, sans prélèvement automatique
+- Prolongation des campagnes après confirmation d'un abonnement CinetPay
+- Formulaires complémentaires de demandes AQUI NET ADS et AQUI NET PARTNERS
+- Affichage public des campagnes actives et non expirées
+- AQUI VIDEO AI : téléversement direct d’une image ou prompt texte, clips de 2/5/10/15 secondes, Magic Hour en priorité et fal.ai facultatif
+- AQUI SOCIAL AUDIT : 3 diagnostics gratuits, préremplissage depuis les statistiques TikTok et connexion Facebook officielle pour analyser les Pages autorisées par Meta
+- Initialisation de paiement côté serveur et réception de notifications CinetPay
+- Création d'un abonnement uniquement après confirmation serveur du paiement
+- Surveillance de disponibilité et de déploiement via GitHub Actions
+- Maintenance horaire : expiration des abonnements et nettoyage des états OAuth Facebook/TikTok
+- Espace d’administration disponible via `/?admin=1`, protégé par la liste des administrateurs Supabase
 
-## Réseaux et fiabilité des données
-- TikTok : statistiques importées selon les autorisations de l'API officielle.
-- Facebook : Pages administrées et statistiques autorisées par Meta.
-- Instagram et YouTube : saisie assistée des métriques visibles par le propriétaire, tant que les accès API dédiés ne sont pas activés.
-- Les métriques déclarées manuellement sont signalées comme non vérifiées par la plateforme.
+## Démarrage local
+1. Installer Node.js (version LTS).
+2. Exécuter `npm install`.
+3. Exécuter `npm run dev`.
 
-## Monétisation
-- Abonnements.
-- Emplacements publicitaires gérés par l'administrateur.
-- Campagnes publicitaires en libre-service.
-- Affiliation et partenariats, sous réserve de liens et contrats valides.
-- AdSense uniquement après validation du site par Google.
-- Contributions volontaires au projet.
+## Compilation et déploiement
+- Vérification : `npm run build`
+- Déploiement : `npm run deploy`
 
-## Développement
-- `npm install`
-- `npm run build`
-- `npm run deploy`
+## Configuration de production
+Consulter [docs/CONFIGURATION_PRODUCTION.md](docs/CONFIGURATION_PRODUCTION.md) pour l'ordre des migrations Supabase, les variables Cloudflare et les étapes de vérification.
+
+## Automatisation navigateur
+- Automatisation navigateur en lecture seule dans l'espace administrateur, exécutée par GitHub Actions + Playwright et stockée dans Supabase.
+- Détails : [docs/BROWSER_AUTOMATION.md](docs/BROWSER_AUTOMATION.md).
 
 ## Sécurité
-- Les clés privées restent dans les secrets Cloudflare.
-- La clé Supabase service role n'est jamais exposée au navigateur.
-- Les abonnements ne sont activés qu'après vérification serveur des transactions.
-- Les quotas sont appliqués atomiquement en base de données.
+- Les clés privées et identifiants de paiement restent exclusivement dans les secrets Cloudflare.
+- La clé Supabase `service_role` ne doit jamais être exposée au navigateur.
+- Les paiements ne sont considérés comme réussis qu'après vérification côté serveur auprès de CinetPay.
+- Les prix proviennent des formules actives en base de données, jamais du montant envoyé par le navigateur.
+- Les paiements réels nécessitent un compte marchand vérifié et administré par son titulaire adulte.
 
-Les revenus et les performances de croissance ne sont pas garantis. Les accès aux données dépendent des API, des autorisations et des règles des plateformes.
+Aucun revenu ni résultat commercial n'est garanti.
+
+## Catalogue et veille AQUI NET HUB
+- Catalogue complémentaire : `src/data/weekly-veille.ts`.
+- La section publique « Veille » présente les conditions de gratuité, les limites, les concurrents africains et les solutions de paiement à étudier.
+- Chaque outil doit conserver URL officielle, modèle de gratuité, limites, inscription, accès géographique et date de vérification.
+- Ne jamais présenter un essai temporaire comme gratuit permanent ; revalider quotas, conditions et accès au Togo avant publication.
+- Les prestataires de paiement restent à étudier : aucune activation sans compte marchand validé et secrets configurés côté serveur.
