@@ -228,7 +228,7 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
     if (mode === "image") input.image_url = imageUrl;
     const submitted = await fetch(`https://queue.fal.run/${endpoint}`, {
       method: "POST",
-      headers: { Authorization: `Key ${env.FAL_KEY.trim()}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Key ${env.FAL_KEY?.trim() || ""}`, "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
     const queue = await submitted.json() as {
@@ -268,7 +268,6 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
   }
   if (!job.fal_status_url || !job.fal_response_url) return reply({ ...job, status: "queued" });
 
-  const auth = { Authorization: `Key ${env.FAL_KEY.trim()}` };
   if (job.fal_status_url === "magichour") {
     const response = await fetch(job.fal_response_url, { headers: { Authorization: `Bearer ${env.MAGIC_HOUR_API_KEY?.trim() || ""}` } });
     if (!response.ok) return reply({ error: "Impossible de lire le statut Magic Hour." }, 502);
@@ -292,6 +291,7 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
       return reply({ ...job, status: "failed", error_message: message, provider: "Magic Hour" });
     }
   }
+  const auth = { Authorization: `Key ${env.FAL_KEY?.trim() || ""}` };
   const statusResponse = await fetch(job.fal_status_url, { headers: auth });
   if (!statusResponse.ok) return reply({ error: "Impossible de lire le statut du moteur vidéo." }, 502);
   const status = await statusResponse.json() as { status?: string; error?: string };
