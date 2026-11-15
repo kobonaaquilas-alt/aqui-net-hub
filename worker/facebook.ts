@@ -101,10 +101,11 @@ export async function handleFacebook(request:Request,env:Env){
    if(!r.ok)return json({error:"Lecture de la connexion Facebook impossible."},502);
    const rows=await r.json() as Array<{page_id:string;page_name:string;page_access_token:string}>;
    const page=rows[0];if(!page)return json({error:"Cette Page n'est pas connectée à ton compte. Reconnecte Facebook."},404);
-   const [details,posts]=await Promise.all([
+   const [details,postsResult]=await Promise.all([
     graphGet(env,page.page_id,{fields:"id,name,followers_count,fan_count",access_token:page.page_access_token}),
-    graphGet(env,page.page_id+"/posts",{fields:"id,message,created_time,permalink_url,shares,likes.summary(true),comments.summary(true)",limit:"20",access_token:page.page_access_token})
+    graphGet(env,page.page_id+"/posts",{fields:"id,message,created_time,permalink_url,shares,likes.summary(true),comments.summary(true)",limit:"20",access_token:page.page_access_token}).then(data=>({data,available:true})).catch(()=>({data:{data:[]},available:false}))
    ]);
+   const posts=postsResult.data;
    const items=(posts.data||[]) as Array<{id?:string;message?:string;permalink_url?:string;likes?:{summary?:{total_count?:number}};comments?:{summary?:{total_count?:number}};created_time?:string;shares?:{count?:number}}>;
    const average=(values:number[])=>values.length?values.reduce((a,b)=>a+b,0)/values.length:0;
    const likes=items.map(p=>Number(p.likes?.summary?.total_count||0));
@@ -120,7 +121,7 @@ export async function handleFacebook(request:Request,env:Env){
    const followers=Number(details.followers_count||details.fan_count||0);
    const report={
     platform:"Facebook",page_id:page.page_id,page_name:details.name||page.page_name,followers,
-    posts_analyzed:items.length,average_likes:Number(average(likes).toFixed(1)),
+    posts_analyzed:items.length,posts_data_available:postsResult.available,average_likes:Number(average(likes).toFixed(1)),
     average_comments:Number(average(comments).toFixed(1)),average_shares:Number(average(shares).toFixed(1)),
     impressions_28d:insightMap.page_impressions??null,engagements_28d:insightMap.page_post_engagements??null,
     follows_28d:insightMap.page_follows??null,
