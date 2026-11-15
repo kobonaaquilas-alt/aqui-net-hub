@@ -31,7 +31,7 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
    const planId=String(b.plan_id||"").trim();
    const method=String(b.payment_method||"").trim();
    const reference=String(b.manual_reference||"").trim();
-   if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return json({error:"Adresse e-mail invalide."},400);
+   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json({error:"Adresse e-mail invalide."},400);
    if(!/^[0-9a-f-]{36}$/i.test(planId))return json({error:"Formule invalide."},400);
    if(!["TMoney","Flooz","Virement bancaire","Carte/Autre","Espèces"].includes(method))return json({error:"Moyen de paiement invalide."},400);
    if(reference.length<3||reference.length>120)return json({error:"Référence de paiement obligatoire (3 à 120 caractères)."},400);
