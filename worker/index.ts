@@ -372,7 +372,7 @@ export default {
       if (request.method === "GET" && url.pathname === "/api/health")
         return json({
           ok: true,
-          health_schema: "2026-11-15-multi-video-provider-v1",
+          health_schema: "2026-11-15-platform-automation-v2",
           video_engine: "Multi-provider (Magic Hour first, fal.ai optional paid fallback)",
           video_engine_configured: !!env.MAGIC_HOUR_API_KEY?.trim() || (!!env.FAL_KEY?.trim() && env.VIDEO_ALLOW_PAID_FALLBACK === "true"),
           video_provider_available: !!env.MAGIC_HOUR_API_KEY?.trim() || (!!env.FAL_KEY?.trim() && env.VIDEO_ALLOW_PAID_FALLBACK === "true"),
@@ -385,7 +385,8 @@ export default {
           cinetpay: !!env.CINETPAY_API_KEY && !!env.CINETPAY_API_PASSWORD,
           cinetpay_api_key: !!env.CINETPAY_API_KEY,
           cinetpay_api_password: !!env.CINETPAY_API_PASSWORD,
-          video_github_token: !!env.GITHUB_TOKEN,
+          browser_automation_available: !!env.GITHUB_TOKEN,
+          github_actions_token_configured: !!env.GITHUB_TOKEN,
           fal_api_key: !!env.FAL_KEY?.trim(),
           facebook_oauth: !!env.FACEBOOK_APP_ID && !!env.FACEBOOK_APP_SECRET,
           facebook_app_id: !!env.FACEBOOK_APP_ID,
