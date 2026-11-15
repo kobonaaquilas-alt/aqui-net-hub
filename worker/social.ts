@@ -81,6 +81,7 @@ export async function handleSocial(request:Request,env:Env){
   if(request.method==="POST"&&url.pathname==="/api/social/audits"){
    const b=await request.json() as any;
    const platform=String(b.platform||"").slice(0,40),account=String(b.account_name||"").trim();
+    if(!["TikTok","Facebook","Instagram","YouTube"].includes(platform))return json({error:"Seuls TikTok, Facebook, Instagram et YouTube sont pris en charge."},400);
    let profile:URL;try{profile=new URL(String(b.social_url||""));}catch{return json({error:"Lien de profil invalide."},400);}
    if(profile.protocol!=="https:"||account.length<2)return json({error:"Renseigne un profil HTTPS et le nom du compte."},400);
    const fields=["followers","average_views","average_likes","average_comments","posts_per_week"];
@@ -99,9 +100,7 @@ export async function handleSocial(request:Request,env:Env){
    const result=await saved.json() as {ok:boolean;code?:string;count:number};
    if(!result.ok){
     const messages:Record<string,string>={
-     FOLLOW_REQUIRED:"Les 3 analyses gratuites sont utilisées. Abonne-toi aux comptes TikTok et Facebook puis envoie les preuves pour validation.",
-     FOLLOW_PENDING:"Ta preuve d'abonnement est en cours de vérification.",
-     SUBSCRIPTION_REQUIRED:"Abonnement AQUI NET HUB requis après validation des abonnements TikTok et Facebook."
+     SUBSCRIPTION_REQUIRED:"Les trois analyses gratuites sont utilisées. Un abonnement AQUI NET HELP est nécessaire pour continuer."
     };
     return json({error:messages[result.code||""]||"Accès refusé.",code:result.code,count:result.count},result.code==="SUBSCRIPTION_REQUIRED"?402:403);
    }
