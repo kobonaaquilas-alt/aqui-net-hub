@@ -6,14 +6,14 @@ import AdvertiserHub from "./AdvertiserHub";
 
 const db = createClient("https://xbobkysbtvtmepqgtnbt.supabase.co", "sb_publishable_AGtfBQyqyKbH5C_4f5cQgw_bm0MmusA");
 type Service = "video" | "social" | "partners";
-type Props = { service: Service; favorites: string[]; progress: string[]; lang: "fr" | "en"; onRemoteSync: (favorites: string[], progress: string[]) => void; authOnly?: boolean };
+type Props = { service: Service; lang: "fr" | "en"; authOnly?: boolean };
 type Plan = { id: string; name: string; description: string; amount_xof: number; duration_days: number };
 type Campaign = { id: string; title: string; description: string; destination_url: string | null };
 type Subscription = { id: string; plan_id: string; plan_name: string; starts_at: string; ends_at: string; status: string };
 type Payment = { id: string; merchant_transaction_id: string; amount_xof: number; currency: string; status: string; created_at: string; paid_at: string | null };
 type AccountSummary = { subscriptions: Subscription[]; payments: Payment[] };
 
-export default function AccountHub({ service, favorites, progress, lang, onRemoteSync, authOnly = false }: Props) {
+export default function AccountHub({ service, lang, authOnly = false }: Props) {
   const fr = lang === "fr";
   const [session, setSession] = useState<Session | null>(null);
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -27,7 +27,6 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const [profilePhone, setProfilePhone] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
-  const [syncReady, setSyncReady] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [summary, setSummary] = useState<AccountSummary | null>(null);
@@ -91,7 +90,6 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     const {data:{subscription}} = db.auth.onAuthStateChange((event,next) => {
       if (event === "PASSWORD_RECOVERY") setRecoveryMode(true);
       setSession(next);
-      setSyncReady(false);
       setSummary(null);
     });
     db.from("hub_plans").select("id,name,description,amount_xof,duration_days").eq("is_active",true).then(({data}) => setPlans((data ?? []) as Plan[]));
@@ -110,28 +108,6 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     });
     return () => { active = false; };
   }, [session?.user.id, fr]);
-
-  useEffect(() => {
-    if (!session?.user.id) { setSyncReady(false); return; }
-    let active = true;
-    db.from("hub_user_data").select("payload").eq("user_id",session.user.id).maybeSingle().then(({data}) => {
-      if (!active) return;
-      const saved = data?.payload as {favorites?:unknown;progress?:unknown} | undefined;
-      if (Array.isArray(saved?.favorites) && Array.isArray(saved?.progress)) {
-        localStorage.setItem("aqui-favorites",JSON.stringify(saved.favorites));
-        localStorage.setItem("aqui-progress",JSON.stringify(saved.progress));
-        onRemoteSync(saved.favorites as string[],saved.progress as string[]);
-      }
-      setSyncReady(true);
-    });
-    return () => { active = false; };
-  }, [session?.user.id, onRemoteSync]);
-
-  useEffect(() => {
-    if (!session?.user.id || !syncReady) return;
-    db.from("hub_user_data").upsert({user_id:session.user.id,payload:{favorites,progress},updated_at:new Date().toISOString()},{onConflict:"user_id"})
-      .then(({error}) => { if (error) setNotice(fr ? "Synchronisation impossible : vérifie la migration Supabase." : "Sync failed: check the Supabase migration."); });
-  }, [session?.user.id,syncReady,favorites,progress,fr]);
 
   useEffect(() => {
     if (!session) { setSummary(null); return; }
@@ -468,7 +444,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       {input(email,setEmail,"E-mail","email")}{input(password,setPassword,fr?"Mot de passe (8 caractères minimum)":"Password (8 characters minimum)","password")}
       <button className="primary-button" disabled={busy||!email||password.length<8} onClick={()=>void authenticate()}>{busy?"…":mode==="login"?(fr?"Se connecter":"Sign in"):(fr?"Créer mon compte":"Create account")}</button>
       {mode==="login" && <button type="button" className="text-button account-reset-link" disabled={busy} onClick={()=>void sendPasswordReset()}>{fr?"Mot de passe oublié ?":"Forgot password?"}</button>}
-    </div> : <>{profileCard}<div className="account-card"><p className="sync-status">{fr?"Favoris et progression synchronisés sur ce compte.":"Favorites and progress synced to this account."}</p></div></>}
+    </div> : <>{profileCard}<div className="account-card"><p className="sync-status">{fr?"Ton profil est enregistré sur ton compte.":"Your profile is saved to your account."}</p></div></>}
     {notice && <p className="account-message" role="status">{notice}</p>}
     {session && !hasActiveSubscription && service==="partners" && <div className="account-card subscription-required"><span className="eyebrow">AQUI NET HUB · ABONNEMENT</span><h3>{fr?"Abonnement requis":"Subscription required"}</h3><p>{fr?"Pour prolonger la diffusion après l’essai publicitaire gratuit de 3 jours ou débloquer les fonctions payantes, choisis une formule ci-dessous.":"Choose a plan to continue campaigns after the 3-day free ad trial or unlock paid features."}</p>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement bientôt disponible":"Payment coming soon"):paymentBusy?"…":fr?"S’abonner et payer":"Subscribe and pay"}</button></article>):<p>{fr?"Les formules d’abonnement seront affichées ici dès leur activation.":"Subscription plans will appear here when activated."}</p>}</div>}
 
