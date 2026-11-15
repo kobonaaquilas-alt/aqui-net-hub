@@ -434,7 +434,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       <small className="account-footnote">{fr?"Les captures sont contrôlées manuellement. Les statistiques saisies manuellement ne sont pas authentifiées automatiquement. Facebook connecté utilise les données autorisées par Meta.":"Screenshots are reviewed manually. TikTok or Meta do not automatically authenticate these metrics here."}</small>
     </div>}
     {session && service==="video" && <div className="account-card video-studio">
-      <span className="eyebrow">AQUI VIDEO AI · MINIMAX H3 MAX</span>
+      <span className="eyebrow">AQUI VIDEO AI · MULTI-MOTEUR</span>
       <h3>{fr ? "Crée une vidéo avec l’IA" : "Create an AI video"}</h3>
       <p>{fr ? "Téléverse une image depuis ton téléphone ou génère directement à partir d’un texte. Aucun lien d’image externe n’est nécessaire." : "Upload an image from your phone or generate directly from a text prompt. No external image link is needed."}</p>
       <div className="account-tabs">
@@ -461,7 +461,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       {videoNotice && <p className="account-message" role="status">{videoNotice}</p>}
       {videoPaywall && <div className="follow-gate"><h4>{fr?"Choisis ton abonnement pour débloquer les vidéos longues":"Choose a subscription to unlock longer videos"}</h4>{plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement bientôt disponible":"Payment coming soon"):paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay"}</button></article>)}</div>}
       {videoUrl && <div className="video-result"><video controls playsInline src={videoUrl} /><a href={videoUrl} target="_blank" rel="noreferrer">{fr ? "Ouvrir / enregistrer le MP4" : "Open / save MP4"} ↗</a></div>}
-      <small className="account-footnote">{fr?"Moteur : MiniMax H3 Max via fal.ai. Image source privée et résultat MP4 conservé dans le stockage sécurisé du compte.":"Engine: MiniMax H3 Max via fal.ai. Source image is private and the MP4 result is stored securely in the account."}</small>
+      <small className="account-footnote">{fr?"Moteur : Magic Hour en priorité ; moteur de secours fal.ai uniquement s’il est activé. Image source privée et résultat MP4 conservé dans le stockage sécurisé du compte.":"Engine: Magic Hour first; fal.ai fallback only when explicitly enabled. Source image is private and the MP4 result is stored securely in the account."}</small>
     </div>}
 
     {session && service==="partners" && <div className="account-grid">
