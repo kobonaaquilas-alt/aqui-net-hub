@@ -531,7 +531,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
           <div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div>
           {cinetpayReady
             ? <button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>void startPayment(p)}>{paymentBusy?"…":fr?"Payer en FCFA":"Pay in XOF"}</button>
-            : <a className="filter-button" href={`https://wa.me/22892244653?text=${encodeURIComponent((fr?"Je souhaite m'abonner à ":"I want to subscribe to ")+p.name+" ("+p.amount_xof+" FCFA).")}`} target="_blank" rel="noreferrer">{fr?"Demander le paiement par WhatsApp":"Request payment via WhatsApp"}</a>}
+            : <a className="filter-button" href={`https://wa.me/22892244653?text=${encodeURIComponent((fr?"Je souhaite m'abonner à ":"I want to subscribe to ")+p.name+" ("+p.amount_xof+" FCFA).")}`} target="_blank" rel="noreferrer">{fr?"Payer par TMoney, Flooz ou virement via WhatsApp":"Pay by TMoney, Flooz or bank transfer via WhatsApp"}</a>}
         </article>) : <p>{fr?"Les formules seront affichées dès leur activation.":"Plans will appear when activated."}</p>}
         <small>{fr?"Le paiement actuellement configuré est en FCFA via CinetPay. Les paiements directs en USD/EUR et les cartes internationales nécessitent l'activation d'un prestataire compatible.":"The currently configured checkout is in XOF through CinetPay. Direct USD/EUR and international card payments require an enabled compatible provider."}</small>
       </div>}
