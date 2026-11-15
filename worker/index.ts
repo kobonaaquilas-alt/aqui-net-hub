@@ -370,7 +370,10 @@ export default {
       if (request.method === "GET" && url.pathname === "/api/health")
         return json({
           ok: true,
-          health_schema: "2026-11-15-platform-automation-v2",
+          health_schema: "2026-11-15-aqui-net-help-v3",
+          product_name: "AQUI NET HELP",
+          social_analysis_available: true,
+          supported_social_platforms: ["TikTok", "Facebook", "Instagram", "YouTube"],
           video_engine: "Multi-provider (Magic Hour first, fal.ai optional paid fallback)",
           video_engine_configured: !!env.MAGIC_HOUR_API_KEY?.trim() || (!!env.FAL_KEY?.trim() && env.VIDEO_ALLOW_PAID_FALLBACK === "true"),
           video_provider_available: !!env.MAGIC_HOUR_API_KEY?.trim() || (!!env.FAL_KEY?.trim() && env.VIDEO_ALLOW_PAID_FALLBACK === "true"),
