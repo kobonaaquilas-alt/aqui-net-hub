@@ -75,7 +75,13 @@ export async function handleSocial(request:Request,env:Env){
    const platform=String(b.platform||"").slice(0,40),account=String(b.account_name||"").trim();
     if(!["TikTok","Facebook","Instagram","YouTube"].includes(platform))return json({error:"Seuls TikTok, Facebook, Instagram et YouTube sont pris en charge."},400);
    let profile:URL;try{profile=new URL(String(b.social_url||""));}catch{return json({error:"Lien de profil invalide."},400);}
-   if(profile.protocol!=="https:"||account.length<2)return json({error:"Renseigne un profil HTTPS et le nom du compte."},400);
+   const allowedHosts:Record<string,string[]>={
+    TikTok:["tiktok.com"],Facebook:["facebook.com","fb.com"],Instagram:["instagram.com"],YouTube:["youtube.com","youtu.be"]
+   };
+   const host=profile.hostname.toLowerCase();
+   const hostAllowed=(allowedHosts[platform]||[]).some(domain=>host===domain||host.endsWith("."+domain));
+   if(profile.protocol!=="https:"||profile.username||profile.password||!hostAllowed||account.length<2||account.length>120)
+    return json({error:"Renseigne un lien HTTPS valide du réseau sélectionné et un nom de compte (2 à 120 caractères)."},400);
    const fields=["followers","average_views","average_likes","average_comments","posts_per_week"];
    for(const k of fields){const n=Number(b[k]);if(!Number.isFinite(n)||n<0||n>100000000000)return json({error:`Valeur invalide : ${k}`},400);}
    const report=analyze(b,platform);
