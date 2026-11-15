@@ -20,6 +20,36 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
    const [ads,partners,follows,audits]=await Promise.all(rs.map(r=>r.json()));
    return json({ads,partners,follows,audits});
   }
+  if(request.method==="GET"&&url.pathname==="/api/admin/plans"){
+   const r=await fetch(`${env.SUPABASE_URL}/rest/v1/hub_plans?select=id,name,amount_xof,duration_days&is_active=eq.true&order=amount_xof.asc`,{headers:headers(env)});
+   if(!r.ok)return json({error:"Lecture des formules impossible."},502);
+   return json({plans:await r.json()});
+  }
+  if(request.method==="POST"&&url.pathname==="/api/admin/subscriptions/manual"){
+   const b=await request.json() as {email?:string;plan_id?:string;payment_method?:string;manual_reference?:string};
+   const email=String(b.email||"").trim().toLowerCase();
+   const planId=String(b.plan_id||"").trim();
+   const method=String(b.payment_method||"").trim();
+   const reference=String(b.manual_reference||"").trim();
+   if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return json({error:"Adresse e-mail invalide."},400);
+   if(!/^[0-9a-f-]{36}$/i.test(planId))return json({error:"Formule invalide."},400);
+   if(!["TMoney","Flooz","Virement bancaire","Carte/Autre","Espèces"].includes(method))return json({error:"Moyen de paiement invalide."},400);
+   if(reference.length<3||reference.length>120)return json({error:"Référence de paiement obligatoire (3 à 120 caractères)."},400);
+   const r=await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/grant_hub_manual_subscription`,{
+    method:"POST",headers:headers(env),
+    body:JSON.stringify({p_admin_user_id:user.id,p_email:email,p_plan_id:planId,p_payment_method:method,p_manual_reference:reference})
+   });
+   const raw=await r.text();
+   if(!r.ok){
+    const message=raw.includes("USER_NOT_FOUND")?"Aucun compte ne correspond à cette adresse e-mail."
+     :raw.includes("REFERENCE_ALREADY_USED")?"Cette référence de paiement a déjà été utilisée."
+     :raw.includes("PLAN_NOT_FOUND")?"Cette formule n'est plus disponible."
+     :raw.includes("INVALID_PAYMENT")?"Informations de paiement invalides."
+     :"Activation manuelle impossible. Vérifie le paiement et les informations.";
+    return json({error:message},400);
+   }
+   return json(JSON.parse(raw));
+  }
   if(request.method==="GET"&&url.pathname==="/api/admin/campaigns"){
    const [campaignResponse,eventResponse]=await Promise.all([
     fetch(`${env.SUPABASE_URL}/rest/v1/hub_campaigns?select=*&order=created_at.desc&limit=200`,{headers:headers(env)}),
