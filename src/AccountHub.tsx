@@ -166,8 +166,8 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     setBusy(true); setNotice("");
     try {
       const result = mode === "signup"
-        ? await db.auth.signUp({email,password,options:{data:{full_name:fullName,phone}}})
-        : await db.auth.signInWithPassword({email,password});
+        ? await db.auth.signUp({email:email.trim().toLowerCase(),password,options:{data:{full_name:fullName.trim(),phone:phone.trim()}}})
+        : await db.auth.signInWithPassword({email:email.trim().toLowerCase(),password});
       if (result.error) setNotice(result.error.message);
       else if (mode === "signup" && !result.data.session) setNotice(fr ? "Compte créé : confirme ton adresse e-mail." : "Account created: confirm your email.");
       else setNotice(fr ? "Connexion réussie." : "Signed in.");
