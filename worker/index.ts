@@ -101,7 +101,7 @@ async function createPayment(request: Request, env: Env) {
       merchantTransactionId: merchantId,
       amount: plan.amount_xof,
       lang: "fr",
-      designation: `AQUI NET HELP - ${plan.name}`,
+      designation: `AQUI NET HUB - ${plan.name}`,
       clientEmail: user.email,
       clientFirstName: firstName,
       clientLastName: lastName,
@@ -169,7 +169,7 @@ async function accountSummary(request: Request, env: Env) {
     }
   }
   return json({
-    subscriptions: subscriptions.map(item => ({ ...item, plan_name: planNames[item.plan_id] || "Formule AQUI NET HELP" })),
+    subscriptions: subscriptions.map(item => ({ ...item, plan_name: planNames[item.plan_id] || "Formule AQUI NET HUB" })),
     payments,
   });
 }
@@ -234,22 +234,22 @@ async function webhook(request: Request, env: Env) {
   return json({ received: true });
 }
 
-const legalPage = (title: string, body: string) => new Response(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="index,follow"><title>${title} | AQUI NET HELP</title><style>body{font:16px/1.65 system-ui,sans-serif;max-width:850px;margin:40px auto;padding:0 20px;color:#172033}h1,h2{line-height:1.2}a{color:#1769aa}.brand{font-weight:800}</style></head><body><p class="brand"><a href="/">AQUI NET HELP</a></p><h1>${title}</h1><p><small>Dernière mise à jour : 15 novembre 2026</small></p>${body}<p><a href="/">Retour à AQUI NET HELP</a></p></body></html>`, {headers:{"Content-Type":"text/html; charset=utf-8","Cache-Control":"public, max-age=3600"}});
+const legalPage = (title: string, body: string) => new Response(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="index,follow"><title>${title} | AQUI NET HUB</title><style>body{font:16px/1.65 system-ui,sans-serif;max-width:850px;margin:40px auto;padding:0 20px;color:#172033}h1,h2{line-height:1.2}a{color:#1769aa}.brand{font-weight:800}</style></head><body><p class="brand"><a href="/">AQUI NET HUB</a></p><h1>${title}</h1><p><small>Dernière mise à jour : 15 novembre 2026</small></p>${body}<p><a href="/">Retour à AQUI NET HUB</a></p></body></html>`, {headers:{"Content-Type":"text/html; charset=utf-8","Cache-Control":"public, max-age=3600"}});
 const termsBody = `
-<h2>1. Objet du service</h2><p>AQUI NET HELP est un outil d'analyse et d'optimisation des comptes TikTok, Facebook, Instagram et YouTube. Il fournit des indicateurs, des diagnostics et des recommandations à partir des données accessibles ou communiquées par l'utilisateur.</p>
-<h2>2. Compte personnel</h2><p>Une adresse e-mail ne peut être associée qu'à un seul compte. L'utilisateur doit fournir des informations exactes, protéger ses identifiants et ne jamais communiquer son mot de passe de réseau social à AQUI NET HELP.</p>
+<h2>1. Objet du service</h2><p>AQUI NET HUB est un outil d'analyse et d'optimisation des comptes TikTok, Facebook, Instagram et YouTube. Il fournit des indicateurs, des diagnostics et des recommandations à partir des données accessibles ou communiquées par l'utilisateur.</p>
+<h2>2. Compte personnel</h2><p>Une adresse e-mail ne peut être associée qu'à un seul compte. L'utilisateur doit fournir des informations exactes, protéger ses identifiants et ne jamais communiquer son mot de passe de réseau social à AQUI NET HUB.</p>
 <h2>3. Données et connexions sociales</h2><p>Les connexions TikTok et Facebook utilisent les API officielles et uniquement les autorisations accordées. Instagram et YouTube peuvent nécessiter une saisie manuelle de statistiques lorsque l'accès API correspondant n'est pas activé. Les données saisies manuellement ne sont pas certifiées par la plateforme sociale.</p>
-<h2>4. Analyses et résultats</h2><p>Les scores et recommandations sont indicatifs et dépendent de la qualité, de la période et de l'exhaustivité des données. AQUI NET HELP ne garantit ni viralité, ni hausse d'abonnés, ni revenus, ni acceptation à un programme de monétisation.</p>
+<h2>4. Analyses et résultats</h2><p>Les scores et recommandations sont indicatifs et dépendent de la qualité, de la période et de l'exhaustivité des données. AQUI NET HUB ne garantit ni viralité, ni hausse d'abonnés, ni revenus, ni acceptation à un programme de monétisation.</p>
 <h2>5. Essai gratuit et abonnements</h2><p>Chaque compte bénéficie de trois analyses gratuites. Après ces trois analyses, un abonnement actif est requis. Le prix, la durée, la devise et les moyens de paiement disponibles sont affichés avant la commande. L'accès payant est activé uniquement après confirmation du paiement par le prestataire et le serveur.</p>
 <h2>6. Publicités, affiliation et services</h2><p>Les annonceurs garantissent disposer des droits sur leurs annonces et liens. Les campagnes peuvent être refusées ou suspendues si elles sont trompeuses, illégales ou contraires aux règles applicables. Les liens d'affiliation éventuels sont signalés. L'accompagnement à la monétisation ne garantit pas l'éligibilité ni l'approbation d'un compte.</p>
 <h2>7. Utilisation acceptable</h2><p>La fraude, l'usurpation d'identité, la collecte non autorisée de données et toute tentative de compromettre le service sont interdites.</p>
 <h2>8. Disponibilité et responsabilité</h2><p>Les fonctionnalités peuvent évoluer ou être temporairement indisponibles. Les API tierces restent soumises à leurs propres conditions et limites.</p>
 <h2>9. Contact</h2><p>Assistance : +228 92 24 46 53, <a href="https://wa.me/22892244653">WhatsApp</a> ou <a href="mailto:kobonaquilas@gmail.com">kobonaquilas@gmail.com</a>.</p>`;
 const privacyBody = `
-<h2>1. Responsable et contact</h2><p>AQUI NET HELP est exploité depuis le Togo. Contact : <a href="mailto:kobonaquilas@gmail.com">kobonaquilas@gmail.com</a> · +228 92 24 46 53 · <a href="https://wa.me/22892244653">WhatsApp</a>.</p>
+<h2>1. Responsable et contact</h2><p>AQUI NET HUB est exploité depuis le Togo. Contact : <a href="mailto:kobonaquilas@gmail.com">kobonaquilas@gmail.com</a> · +228 92 24 46 53 · <a href="https://wa.me/22892244653">WhatsApp</a>.</p>
 <h2>2. Données traitées</h2><p>Selon les fonctions utilisées, le service traite l'adresse e-mail, l'identifiant de compte, les informations de profil, les statistiques sociales autorisées ou saisies, les rapports d'analyse, les informations d'abonnement et les données nécessaires à la sécurité et à l'assistance.</p>
 <h2>3. Finalités</h2><p>Les données sont utilisées pour authentifier les utilisateurs, exécuter les analyses demandées, gérer les quotas gratuits et abonnements, confirmer les paiements, assurer l'assistance, protéger la plateforme et mesurer les campagnes publicitaires.</p>
-<h2>4. Connexions aux réseaux sociaux</h2><p>TikTok et Facebook sont connectés par leurs mécanismes officiels d'autorisation. Les jetons d'accès sont conservés côté serveur et peuvent être révoqués depuis l'espace AQUI NET HELP ou les paramètres du réseau concerné. Instagram et YouTube peuvent être analysés à partir de statistiques saisies manuellement lorsque leur connexion API n'est pas activée. Ne transmettez jamais vos mots de passe sociaux.</p>
+<h2>4. Connexions aux réseaux sociaux</h2><p>TikTok et Facebook sont connectés par leurs mécanismes officiels d'autorisation. Les jetons d'accès sont conservés côté serveur et peuvent être révoqués depuis l'espace AQUI NET HUB ou les paramètres du réseau concerné. Instagram et YouTube peuvent être analysés à partir de statistiques saisies manuellement lorsque leur connexion API n'est pas activée. Ne transmettez jamais vos mots de passe sociaux.</p>
 <h2>5. Prestataires</h2><p>Le service s'appuie notamment sur Cloudflare pour l'hébergement, Supabase pour l'authentification et les données, ainsi que sur les prestataires sociaux et de paiement activés. Les données ne sont pas vendues aux annonceurs.</p>
 <h2>6. Conservation et sécurité</h2><p>Les données sont conservées pendant la durée nécessaire aux finalités du service et aux obligations légales. Des mesures de sécurité techniques et organisationnelles sont mises en place ; aucun système ne peut toutefois garantir une sécurité absolue.</p>
 <h2>7. Droits des utilisateurs</h2><p>Pour demander l'accès, la rectification ou la suppression des données associées à votre compte, contactez <a href="mailto:kobonaquilas@gmail.com">kobonaquilas@gmail.com</a> ou le +228 92 24 46 53. Certaines données peuvent être conservées lorsque la loi l'exige.</p>
@@ -370,8 +370,8 @@ export default {
       if (request.method === "GET" && url.pathname === "/api/health")
         return json({
           ok: true,
-          health_schema: "2026-11-15-aqui-net-help-v3",
-          product_name: "AQUI NET HELP",
+          health_schema: "2026-11-15-aqui-net-hub-v1",
+          product_name: "AQUI NET HUB",
           social_analysis_available: true,
           supported_social_platforms: ["TikTok", "Facebook", "Instagram", "YouTube"],
           video_engine: "Multi-provider (Magic Hour first, fal.ai optional paid fallback)",
