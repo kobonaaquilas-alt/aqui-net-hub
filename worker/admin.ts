@@ -21,8 +21,24 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
    return json({ads,partners,follows,audits});
   }
   if(request.method==="GET"&&url.pathname==="/api/admin/campaigns"){
-   const r=await fetch(`${env.SUPABASE_URL}/rest/v1/hub_campaigns?select=*&order=created_at.desc&limit=200`,{headers:headers(env)});
-   return r.ok?json({campaigns:await r.json()}):json({error:"Lecture des campagnes impossible."},502);
+   const [campaignResponse,eventResponse]=await Promise.all([
+    fetch(`${env.SUPABASE_URL}/rest/v1/hub_campaigns?select=*&order=created_at.desc&limit=200`,{headers:headers(env)}),
+    fetch(`${env.SUPABASE_URL}/rest/v1/hub_ad_events?select=campaign_id,event_type&limit=20000`,{headers:headers(env)})
+   ]);
+   if(!campaignResponse.ok)return json({error:"Lecture des campagnes impossible."},502);
+   const campaigns=await campaignResponse.json() as Array<Record<string,any>&{id:string}>;
+   const events=eventResponse.ok?await eventResponse.json() as Array<{campaign_id:string;event_type:string}>:[];
+   const stats=new Map<string,{impressions_count:number;clicks_count:number}>();
+   for(const event of events){
+    const current=stats.get(event.campaign_id)||{impressions_count:0,clicks_count:0};
+    if(event.event_type==="impression")current.impressions_count++;
+    if(event.event_type==="click")current.clicks_count++;
+    stats.set(event.campaign_id,current);
+   }
+   return json({campaigns:campaigns.map(campaign=>{
+    const counts=stats.get(campaign.id)||{impressions_count:0,clicks_count:0};
+    return {...campaign,...counts,ctr_percent:counts.impressions_count?Number((counts.clicks_count/counts.impressions_count*100).toFixed(2)):0};
+   })});
   }
   if(request.method==="POST"&&url.pathname==="/api/admin/campaigns"){
    const b=await request.json() as any;const title=String(b.title||"").trim(),description=String(b.description||"").trim();
