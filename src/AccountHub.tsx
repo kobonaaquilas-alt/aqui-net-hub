@@ -83,7 +83,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
 
   useEffect(() => {
     db.auth.getSession().then(({data}) => setSession(data.session));
-    fetch("/api/health").then(r=>r.ok?r.json():Promise.reject()).then(d=>{setBackendReady(!!d.supabase);setVideoReady(!!d.supabase&&!!d.fal_api_key);setCinetpayReady(!!d.cinetpay);}).catch(()=>{setBackendReady(false);setVideoReady(false);setCinetpayReady(false);});
+    fetch("/api/health").then(r=>r.ok?r.json():Promise.reject()).then(d=>{setBackendReady(!!d.supabase);setVideoReady(!!d.supabase&&!!d.video_provider_available);setCinetpayReady(!!d.cinetpay);}).catch(()=>{setBackendReady(false);setVideoReady(false);setCinetpayReady(false);});
     const {data:{subscription}} = db.auth.onAuthStateChange((event,next) => {
       if (event === "PASSWORD_RECOVERY") setRecoveryMode(true);
       setSession(next);
@@ -262,7 +262,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       setVideoNotice(fr ? "Connecte-toi pour utiliser le générateur." : "Sign in to use the generator.");
       return;
     }
-    if(!videoReady){setVideoNotice("Générateur indisponible : la clé FAL_KEY doit être configurée dans les secrets Cloudflare.");return;}
+    if(!videoReady){setVideoNotice("Générateur indisponible : aucun moteur vidéo disponible : configure MAGIC_HOUR_API_KEY dans Cloudflare.");return;}
     if(videoMode==="image"&&!videoImageFile){setVideoNotice(fr?"Téléverse d’abord une image.":"Upload an image first.");return;}
     setVideoBusy(true); setVideoNotice(""); setVideoUrl(""); setVideoStatus("");
     try {
