@@ -262,7 +262,7 @@ async function runScheduledMaintenance(env: Env): Promise<void> {
   }
   const base = env.SUPABASE_URL + "/rest/v1/";
   const now = encodeURIComponent(new Date().toISOString());
-  const [subscriptions, oauthStates] = await Promise.all([
+  const [subscriptions, facebookOauthStates, tiktokOauthStates] = await Promise.all([
     fetch(`${base}hub_subscriptions?status=eq.active&ends_at=lte.${now}`, {
       method: "PATCH",
       headers: headers(env),
@@ -272,17 +272,23 @@ async function runScheduledMaintenance(env: Env): Promise<void> {
       method: "DELETE",
       headers: headers(env),
     }),
+    fetch(`${base}hub_tiktok_oauth_states?expires_at=lt.${now}`, {
+      method: "DELETE",
+      headers: headers(env),
+    }),
   ]);
-  if (!subscriptions.ok || !oauthStates.ok) {
+  if (!subscriptions.ok || !facebookOauthStates.ok || !tiktokOauthStates.ok) {
     console.error("Scheduled maintenance failed.", {
       subscriptions_status: subscriptions.status,
-      oauth_cleanup_status: oauthStates.status,
+      facebook_oauth_cleanup_status: facebookOauthStates.status,
+      tiktok_oauth_cleanup_status: tiktokOauthStates.status,
     });
     throw new Error("Scheduled maintenance request failed.");
   }
   console.log("Scheduled maintenance completed.", {
     subscriptions_expired: subscriptions.headers.get("content-range") || "updated",
-    oauth_states_cleanup: oauthStates.status,
+    facebook_oauth_cleanup_status: facebookOauthStates.status,
+    tiktok_oauth_cleanup_status: tiktokOauthStates.status,
     executed_at: new Date().toISOString(),
   });
 }
