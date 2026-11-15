@@ -141,7 +141,7 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
     }
     if (mode !== "text" && mode !== "image") return reply({ error: "Mode de génération invalide." }, 400);
     if (prompt.length < 3 || prompt.length > 1200)
-      return reply({ error: "La description doit contenir entre 3 et 1 800 caractères." }, 400);
+      return reply({ error: "La description doit contenir entre 3 et 1 200 caractères." }, 400);
     if (mode === "image" && !image) return reply({ error: "Téléverse une image pour lancer le mode image vers vidéo." }, 400);
     if (mode === "text" && image) return reply({ error: "Retire l'image ou choisis le mode image vers vidéo." }, 400);
     if (image && (!["image/jpeg", "image/png", "image/webp"].includes(image.type) || image.size > MAX_IMAGE_BYTES))
