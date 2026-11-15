@@ -92,7 +92,7 @@ export async function handleSocial(request:Request,env:Env){
    const result=await saved.json() as {ok:boolean;code?:string;count:number};
    if(!result.ok){
     const messages:Record<string,string>={
-     SUBSCRIPTION_REQUIRED:"Les trois analyses gratuites sont utilisées. Un abonnement AQUI NET HELP est nécessaire pour continuer."
+     SUBSCRIPTION_REQUIRED:"Les trois analyses gratuites sont utilisées. Un abonnement AQUI NET HUB est nécessaire pour continuer."
     };
     return json({error:messages[result.code||""]||"Accès refusé.",code:result.code,count:result.count},result.code==="SUBSCRIPTION_REQUIRED"?402:403);
    }
