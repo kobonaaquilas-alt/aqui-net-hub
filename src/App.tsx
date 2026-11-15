@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AccountHub from "./AccountHub";
 import AdminPanel from "./AdminPanel";
 import { weeklyTools, competitorWatch, paymentOptions } from "./data/weekly-veille";
@@ -89,7 +89,6 @@ export default function App() {
   useEffect(()=>{if(!adsenseClient||!/^ca-pub-[0-9]{16}$/.test(adsenseClient)||document.querySelector("script[data-aqui-adsense]"))return;const s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";s.dataset.aquiAdsense="true";s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client="+adsenseClient;document.head.appendChild(s);},[adsenseClient]);
   useEffect(()=>{if(!activeService)return;const frame=requestAnimationFrame(()=>document.getElementById(activeService==="tools"?"demande-outils":"compte")?.scrollIntoView({behavior:"smooth",block:"start"}));return()=>cancelAnimationFrame(frame);},[activeService]);
   useEffect(()=>{if(!selectedTool)return;const frame=requestAnimationFrame(()=>document.getElementById("outil-detail-selectionne")?.scrollIntoView({behavior:"smooth",block:"start"}));return()=>cancelAnimationFrame(frame);},[selectedTool]);
-  const syncRemote=useCallback((_favorites:string[],_progress:string[])=>{},[]);
 
   return <div className="site-shell">
     <header className="topbar">
@@ -146,7 +145,7 @@ export default function App() {
           <article className="recommended-tool"><span>Afrique · Créativité</span><strong>{fr?"Une idée locale, une solution numérique":"A local idea, a digital solution"}</strong><small>{fr?"Présente un besoin concret en Afrique et un outil accessible pour y répondre.":"Present a real need in Africa and an accessible tool that can help."}</small></article>
         </div>
       </section>
-      <AccountHub service="video" favorites={[]} progress={[]} lang={lang} onRemoteSync={syncRemote} authOnly />
+      <AccountHub service="video" lang={lang} authOnly />
       
       {activeService==="tools"&&<section className="section request-section" id="demande-outils">
         <div className="section-heading"><span className="eyebrow">01 · SMART TOOL FINDER</span><h2>{fr?"Décris ce que tu veux accomplir":"Describe what you want to achieve"}</h2><p>{fr?"Exemple : je veux créer un logo, monter une vidéo TikTok, apprendre l'anglais ou construire un site web.":"Example: I want to create a logo, edit a TikTok video, learn English or build a website."}</p></div>
@@ -169,7 +168,7 @@ export default function App() {
       </div>}
       </section>}
 
-      {activeService && activeService!=="tools" && <AccountHub service={activeService} favorites={[]} progress={[]} lang={lang} onRemoteSync={syncRemote}/>}
+      {activeService && activeService!=="tools" && <AccountHub service={activeService} lang={lang}/>}
       {showAdmin&&<AdminPanel lang={lang}/>}
     </main>
     <footer className="site-footer"><a className="brand footer-brand" href="#accueil"><span className="brand-mark">A</span><span>AQUI NET <strong>HUB</strong></span></a><p>{fr?"Des outils et des opportunités pour avancer dans le numérique.":"Tools and opportunities to move forward digitally."}</p><div className="footer-links"><a href="https://tiktok.com/@el.maestro907" target="_blank" rel="noreferrer">TikTok · S’abonner</a><a href="https://www.facebook.com/profile.php?id=61582777979597" target="_blank" rel="noreferrer">Facebook · S’abonner</a></div><div className="footer-contact"><strong>{fr?"Contact, assistance et dons":"Contact, support and donations"}</strong><a href="tel:+22892244653">+228 92 24 46 53</a><a href="tel:+22898393862">+228 98 39 38 62</a><a href="https://wa.me/22892244653" target="_blank" rel="noreferrer">WhatsApp</a></div><small>© {new Date().getFullYear()} AQUI NET HUB</small></footer>
