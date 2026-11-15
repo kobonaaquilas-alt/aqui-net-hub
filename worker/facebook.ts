@@ -88,6 +88,11 @@ export async function handleFacebook(request:Request,env:Env){
    const pages=await r.json() as Array<{page_id:string;page_name:string;updated_at:string}>;
    return json({connected:pages.length>0,pages});
   }
+  if(request.method==="DELETE"&&url.pathname==="/api/facebook/disconnect"){
+   const removed=await fetch(env.SUPABASE_URL+"/rest/v1/hub_facebook_connections?user_id=eq."+encodeURIComponent(user.id),{method:"DELETE",headers:dbHeaders(env)});
+   if(!removed.ok)return json({error:"Déconnexion Facebook impossible."},502);
+   return json({ok:true});
+  }
   if(request.method==="POST"&&url.pathname==="/api/facebook/audit"){
    const body=await request.json() as {page_id?:string};
    const pageId=String(body.page_id||"");
