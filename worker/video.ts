@@ -4,6 +4,8 @@ type VideoEnv = {
   SUPABASE_SERVICE_ROLE_KEY?: string;
   SUPABASE_SECRET_KEY?: string;
   FAL_KEY?: string;
+  MAGIC_HOUR_API_KEY?: string;
+  VIDEO_ALLOW_PAID_FALLBACK?: string;
 };
 
 const INPUT_BUCKET = "aqui-video-inputs";
@@ -74,11 +76,51 @@ async function storeOutput(env: VideoEnv, userId: string, requestId: string, vid
   return signedStorageUrl(env, OUTPUT_BUCKET, path);
 }
 
+
+async function submitMagicHour(env: VideoEnv, mode: "text" | "image", prompt: string, duration: number, image: File | null) {
+  const key = env.MAGIC_HOUR_API_KEY?.trim();
+  if (!key) throw new Error("Magic Hour non configuré.");
+  let imagePath = "";
+  if (mode === "image" && image) {
+    const extension = image.type === "image/png" ? "png" : image.type === "image/webp" ? "webp" : "jpg";
+    const uploadResponse = await fetch("https://api.magichour.ai/v1/files/upload-urls", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ items: [{ type: "image", extension }] }),
+    });
+    const uploadData = await uploadResponse.json() as { items?: Array<{ upload_url?: string; file_path?: string }>; message?: string };
+    const target = uploadData.items?.[0];
+    if (!uploadResponse.ok || !target?.upload_url || !target.file_path)
+      throw new Error(uploadData.message || "Magic Hour : préparation du téléversement impossible.");
+    const put = await fetch(target.upload_url, { method: "PUT", headers: { "Content-Type": image.type }, body: await image.arrayBuffer() });
+    if (!put.ok) throw new Error("Magic Hour : téléversement de l'image refusé.");
+    imagePath = target.file_path;
+  }
+  const body: Record<string, unknown> = {
+    end_seconds: duration,
+    model: "ltx-2.5",
+    resolution: "480p",
+    audio: true,
+    style: { prompt },
+    ...(mode === "text" ? { aspect_ratio: "9:16" } : { assets: { image_file_path: imagePath } }),
+  };
+  const response = await fetch(`https://api.magichour.ai/v1/${mode}-to-video`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await response.json() as { id?: string; message?: string; code?: string };
+  if (!response.ok || !data.id) throw new Error(data.message || data.code || "Magic Hour n'a pas accepté la génération.");
+  return data.id;
+}
+
 export async function handleVideo(request: Request, env: VideoEnv): Promise<Response> {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !secret(env))
     return reply({ error: "Backend Supabase non configuré." }, 503);
-  if (!env.FAL_KEY?.trim())
-    return reply({ error: "Moteur vidéo non configuré : la clé FAL_KEY doit être ajoutée aux secrets Cloudflare." }, 503);
+  const magicHourReady = !!env.MAGIC_HOUR_API_KEY?.trim();
+  const falReady = !!env.FAL_KEY?.trim() && env.VIDEO_ALLOW_PAID_FALLBACK === "true";
+  if (!magicHourReady && !falReady)
+    return reply({ error: "Aucun moteur vidéo utilisable : ajoute MAGIC_HOUR_API_KEY (crédits d'essai) ou active explicitement le moteur payant fal.ai." }, 503);
   const user = await currentUser(request, env);
   if (!user) return reply({ error: "Connexion requise." }, 401);
 
@@ -157,6 +199,26 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
     });
     if (!saved.ok) return reply({ error: "Impossible d'enregistrer la demande vidéo. Applique la migration vidéo AQUI NET HUB." }, 500);
 
+    if (magicHourReady) {
+      try {
+        const providerRequestId = await submitMagicHour(env, mode as "text" | "image", prompt, duration, image);
+        const statusUrl = `https://api.magichour.ai/v1/video-projects/${providerRequestId}`;
+        await updateJob(env, requestId, {
+          fal_request_id: providerRequestId, fal_status_url: "magichour", fal_response_url: statusUrl, status: "running",
+        });
+        return reply({ request_id: requestId, status: "running", duration_seconds: duration, mode, provider: "Magic Hour" }, 202);
+      } catch (error) {
+        if (!falReady) {
+          const message = error instanceof Error ? error.message : "Magic Hour indisponible.";
+          await updateJob(env, requestId, { status: "failed", error_message: message });
+          return reply({ error: message, provider: "Magic Hour" }, 502);
+        }
+      }
+    }
+    if (!falReady) {
+      await updateJob(env, requestId, { status: "failed", error_message: "Aucun moteur de secours autorisé." });
+      return reply({ error: "Aucun moteur de secours disponible." }, 503);
+    }
     const endpoint = mode === "image" ? "minimax/h3-max/image-to-video" : "minimax/h3-max/text-to-video";
     const input: Record<string, unknown> = {
       prompt, prompt_expansion_mode: "balanced", duration,
@@ -207,6 +269,29 @@ export async function handleVideo(request: Request, env: VideoEnv): Promise<Resp
   if (!job.fal_status_url || !job.fal_response_url) return reply({ ...job, status: "queued" });
 
   const auth = { Authorization: `Key ${env.FAL_KEY.trim()}` };
+  if (job.fal_status_url === "magichour") {
+    const response = await fetch(job.fal_response_url, { headers: { Authorization: `Bearer ${env.MAGIC_HOUR_API_KEY?.trim() || ""}` } });
+    if (!response.ok) return reply({ error: "Impossible de lire le statut Magic Hour." }, 502);
+    const project = await response.json() as { status?: string; error?: string; downloads?: Array<{ url?: string }> };
+    if (project.status === "queued" || project.status === "rendering" || project.status === "draft")
+      return reply({ ...job, status: "running", provider: "Magic Hour" });
+    if (project.status === "error" || project.status === "canceled") {
+      const message = project.error || "Magic Hour n'a pas pu terminer la génération.";
+      await updateJob(env, requestId, { status: "failed", error_message: message });
+      return reply({ ...job, status: "failed", error_message: message, provider: "Magic Hour" });
+    }
+    const output = project.downloads?.find(item => item.url)?.url;
+    if (project.status !== "complete" || !output)
+      return reply({ ...job, status: "running", provider: "Magic Hour" });
+    try {
+      const videoUrl = await storeOutput(env, user.id, requestId, output);
+      return reply({ ...job, status: "completed", video_url: videoUrl, provider: "Magic Hour" });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Enregistrement vidéo impossible.";
+      await updateJob(env, requestId, { status: "failed", error_message: message });
+      return reply({ ...job, status: "failed", error_message: message, provider: "Magic Hour" });
+    }
+  }
   const statusResponse = await fetch(job.fal_status_url, { headers: auth });
   if (!statusResponse.ok) return reply({ error: "Impossible de lire le statut du moteur vidéo." }, 502);
   const status = await statusResponse.json() as { status?: string; error?: string };
