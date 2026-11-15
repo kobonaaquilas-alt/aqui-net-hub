@@ -6,12 +6,14 @@ type RequestItem={id:string;user_id:string;contact_name:string;email:string;phon
 type Campaign={id:string;title:string;description:string;destination_url:string|null;image_url:string|null;starts_at:string|null;ends_at:string|null;is_active:boolean;impressions_count?:number;clicks_count?:number;ctr_percent?:number};
 type Follow={id:string;user_id:string;account_name:string;tiktok_proof_url:string;facebook_proof_url:string;status:string;created_at:string;admin_note:string|null};
 type Audit={id:string;user_id:string;platform:string;account_name:string;social_url:string;followers:number;average_views:number;average_likes:number;average_comments:number;posts_per_week:number;goal:string;created_at:string};
+type AdminPlan={id:string;name:string;amount_xof:number;duration_days:number};
 type BrowserJob={request_id:string;status:string;error_message?:string|null;result?:{title?:string;final_url?:string;body_text?:string;steps?:unknown[]}|null};
 type Data={ads:RequestItem[];partners:RequestItem[];follows:Follow[];audits:Audit[]};
 export default function AdminPanel({lang}:{lang:"fr"|"en"}){
  const tr=(frText:string,enText:string)=>lang==="fr"?frText:enText;
  const [session,setSession]=useState<Session|null>(null),[authorized,setAuthorized]=useState(false),[checked,setChecked]=useState(false);
- const [data,setData]=useState<Data>({ads:[],partners:[],follows:[],audits:[]}),[campaigns,setCampaigns]=useState<Campaign[]>([]);
+ const [data,setData]=useState<Data>({ads:[],partners:[],follows:[],audits:[]}),[campaigns,setCampaigns]=useState<Campaign[]>([]),[adminPlans,setAdminPlans]=useState<AdminPlan[]>([]);
+ const [manualEmail,setManualEmail]=useState(""),[manualPlan,setManualPlan]=useState(""),[manualMethod,setManualMethod]=useState("TMoney"),[manualReference,setManualReference]=useState("");
  const [notice,setNotice]=useState(""),[busy,setBusy]=useState(false),[adsense,setAdsense]=useState("");
  const [browserUrl,setBrowserUrl]=useState("https://");
  const [browserSelector,setBrowserSelector]=useState("body");
@@ -33,7 +35,7 @@ export default function AdminPanel({lang}:{lang:"fr"|"en"}){
  },[session]);
  const load=useCallback(async()=>{
   if(!session||!authorized)return;setBusy(true);setNotice("");
-  try{const [d,c,s]=await Promise.all([request("/api/admin/requests"),request("/api/admin/campaigns"),request("/api/admin/settings")]);setData(d);setCampaigns(c.campaigns||[]);setAdsense(s.adsense_client||"");}
+  try{const [d,c,s,p]=await Promise.all([request("/api/admin/requests"),request("/api/admin/campaigns"),request("/api/admin/settings"),request("/api/admin/plans")]);setData(d);setCampaigns(c.campaigns||[]);setAdsense(s.adsense_client||"");setAdminPlans(p.plans||[]);setManualPlan(current=>current||(p.plans?.[0]?.id||""));}
   catch(e){setNotice(e instanceof Error?e.message:"Erreur de chargement.");}finally{setBusy(false);}
  },[session,authorized,request]);
  useEffect(()=>{if(authorized)void load();},[authorized,load]);
@@ -46,6 +48,16 @@ export default function AdminPanel({lang}:{lang:"fr"|"en"}){
   e.preventDefault();setBusy(true);setNotice("");
   try{await request("/api/admin/campaigns",{method:"POST",body:JSON.stringify({...draft,starts_at:draft.starts_at?new Date(draft.starts_at).toISOString():null,ends_at:draft.ends_at?new Date(draft.ends_at).toISOString():null})});setDraft({title:"",description:"",destination_url:"",image_url:"",starts_at:"",ends_at:"",is_active:true});await load();setNotice(tr("Publicité créée et enregistrée.","Ad campaign created and saved."));}
   catch(e){setNotice(e instanceof Error?e.message:"Création impossible.");}finally{setBusy(false);}
+ }
+ async function grantManualSubscription(e:FormEvent){
+  e.preventDefault();setBusy(true);setNotice("");
+  try{
+   const result=await request("/api/admin/subscriptions/manual",{method:"POST",body:JSON.stringify({email:manualEmail,plan_id:manualPlan,payment_method:manualMethod,manual_reference:manualReference})});
+   setManualEmail("");setManualReference("");
+   await load();
+   setNotice(tr("Abonnement activé après validation manuelle du paiement : ","Subscription activated after manual payment verification: ")+result.plan_name+" · "+Number(result.amount_xof).toLocaleString("fr-FR")+" FCFA");
+  }catch(error){setNotice(error instanceof Error?error.message:"Activation impossible.");}
+  finally{setBusy(false);}
  }
  async function saveAdsense(){await action("/api/admin/settings","PATCH",{adsense_client:adsense});}
  async function startBrowserTask(e:FormEvent){
@@ -91,6 +103,21 @@ export default function AdminPanel({lang}:{lang:"fr"|"en"}){
     {browserJob.error_message&&<p className="account-message">{browserJob.error_message}</p>}
     {browserJob.result&&<><strong>{browserJob.result.title||tr("Résultat","Result")}</strong>{browserJob.result.final_url&&<p><a href={browserJob.result.final_url} target="_blank" rel="noreferrer">{browserJob.result.final_url}</a></p>}<pre>{browserJob.result.body_text||JSON.stringify(browserJob.result.steps||[],null,2)}</pre></>}
    </div>}
+  </div>
+  <div className="account-card">
+   <h3>{tr("Activation manuelle d'un abonnement","Manual subscription activation")}</h3>
+   <p>{tr("À utiliser uniquement après avoir réellement vérifié le paiement reçu par TMoney, Flooz, virement bancaire ou autre moyen accepté. La référence est unique et ne peut servir qu'une fois.","Use only after you have independently confirmed receipt through TMoney, Flooz, bank transfer or another accepted method. Each payment reference can only be used once.")}</p>
+   <form className="admin-campaign-form" onSubmit={e=>void grantManualSubscription(e)}>
+    <input type="email" value={manualEmail} onChange={e=>setManualEmail(e.target.value)} placeholder={tr("E-mail du compte client","Customer account email")} required/>
+    <select value={manualPlan} onChange={e=>setManualPlan(e.target.value)} required>
+     {adminPlans.map(p=><option key={p.id} value={p.id}>{p.name} · {p.amount_xof.toLocaleString("fr-FR")} FCFA · {p.duration_days} j</option>)}
+    </select>
+    <select value={manualMethod} onChange={e=>setManualMethod(e.target.value)}>
+     <option value="TMoney">TMoney</option><option value="Flooz">Flooz</option><option value="Virement bancaire">{tr("Virement bancaire","Bank transfer")}</option><option value="Carte/Autre">{tr("Carte / autre","Card / other")}</option><option value="Espèces">{tr("Espèces","Cash")}</option>
+    </select>
+    <input value={manualReference} onChange={e=>setManualReference(e.target.value)} placeholder={tr("Référence unique de transaction / reçu","Unique transaction / receipt reference")} minLength={3} maxLength={120} required/>
+    <button className="primary-button" disabled={busy||!adminPlans.length||!manualPlan}>{tr("Confirmer le paiement et activer","Confirm payment and activate")}</button>
+   </form>
   </div>
   {group("ads",data.ads)}{group("partners",data.partners)}
   <div className="account-card"><h3>{tr("Vérification des abonnements TikTok et Facebook","TikTok and Facebook follow verification")} · {data.follows.length}</h3>{data.follows.length===0&&<p>{tr("Aucune preuve reçue.","No proof submitted.")}</p>}{data.follows.map(f=><article className="admin-request-row" key={f.id}><div><strong>{f.account_name} · {f.status}</strong><p>{tr("Utilisateur :","User:")} {f.user_id}</p><p><a href={f.tiktok_proof_url} target="_blank" rel="noreferrer">{tr("Preuve TikTok","TikTok proof")}</a> · <a href={f.facebook_proof_url} target="_blank" rel="noreferrer">{tr("Preuve Facebook","Facebook proof")}</a></p><small>{new Date(f.created_at).toLocaleString(lang==="fr"?"fr-FR":"en-GB")}</small></div><div className="admin-actions"><button disabled={busy} onClick={()=>void action(`/api/admin/follows/${f.id}`,"PATCH",{status:"approved"})}>{tr("Valider","Approve")}</button><button disabled={busy} onClick={()=>void action(`/api/admin/follows/${f.id}`,"PATCH",{status:"rejected"})}>{tr("Refuser","Decline")}</button></div></article>)}</div>
