@@ -81,6 +81,22 @@ jobs:
           node scripts/patch-android-manifest.mjs
           node scripts/generate-app-icons.mjs
 
+      - name: Configure release signing when keystore secrets are available
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            echo "Release signing secrets are not configured; the release bundle will be unsigned."
+            exit 0
+          fi
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/aqui-release.keystore
+          export ANDROID_KEYSTORE_PATH="$GITHUB_WORKSPACE/android/app/aqui-release.keystore"
+          echo "ANDROID_KEYSTORE_PATH=$ANDROID_KEYSTORE_PATH" >> "$GITHUB_ENV"
+          python3 scripts/configure-android-signing.py
+
       - name: Build Android APK and App Bundle
         working-directory: android
         run: |
