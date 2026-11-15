@@ -11,6 +11,9 @@ type Campaign = {
   ends_at: string | null;
   trial_started_at: string | null;
   created_at: string;
+  impressions_count?: number;
+  clicks_count?: number;
+  ctr_percent?: number;
 };
 type Trial = { started_at: string; ends_at: string };
 type Props = { accessToken: string; lang: "fr" | "en" };
