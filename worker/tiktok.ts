@@ -77,13 +77,13 @@ export async function handleTikTok(r:Request,e:Env){
    if(!sr.ok)return json({error:"Lecture de la connexion impossible."},502);
    const rows=await sr.json() as any[];let row=rows[0];if(!row)return json({connected:false});
    if(new Date(row.expires_at).getTime()<Date.now()+60000)row=await refresh(e,row);
-   const fields="open_id,union_id,avatar_url,display_name,follower_count,following_count,likes_count,video_count";
+   const fields="open_id,union_id,avatar_url,display_name,profile_deep_link,username,follower_count,following_count,likes_count,video_count";
    const data=await api(e,row.access_token,"/v2/user/info/?fields="+fields);
    const profile=data.user||{};
    await fetch(e.SUPABASE_URL+"/rest/v1/hub_tiktok_connections?user_id=eq."+q,{method:"PATCH",headers:dbh(e),body:JSON.stringify({display_name:profile.display_name||"",updated_at:new Date().toISOString()})});
    let videos:any[]=[];
    if(String(row.granted_scopes||"").split(",").includes("video.list")){
-    try{const vd=await api(e,row.access_token,"/v2/video/list/?fields=id,title,video_description,duration,cover_image_url,share_url,view_count,like_count,comment_count,share_count","POST",{max_count:20});videos=vd.videos||[];}catch{/* video permission may not be approved */}
+    try{const vd=await api(e,row.access_token,"/v2/video/list/?fields=id,title,video_description,duration,cover_image_url,share_url,create_time,view_count,like_count,comment_count,share_count","POST",{max_count:20});videos=vd.videos||[];}catch{/* video permission may not be approved */}
    }
    return json({connected:true,profile,videos,source:"TikTok Display API",granted_scopes:row.granted_scopes});
   }
