@@ -58,6 +58,11 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const [tiktokNotice,setTiktokNotice]=useState("");
   const [tiktokData,setTiktokData]=useState<any>(null);
   const [tiktokProof,setTiktokProof]=useState("");
+  const [facebookBusy,setFacebookBusy]=useState(false);
+  const [facebookNotice,setFacebookNotice]=useState("");
+  const [facebookPages,setFacebookPages]=useState<Array<{page_id:string;page_name:string}>>([]);
+  const [facebookPageId,setFacebookPageId]=useState("");
+  const [facebookAudit,setFacebookAudit]=useState<any>(null);
   const [facebookProof,setFacebookProof]=useState("");
   const [paymentBusy,setPaymentBusy]=useState(false);
   const [backendReady,setBackendReady]=useState(false);
@@ -131,6 +136,23 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     const state=new URLSearchParams(window.location.search).get("tiktok");
     if(state){const messages:Record<string,string>={connected:fr?"TikTok connecté. Chargement des statistiques…":"TikTok connected. Loading statistics…",denied:fr?"Autorisation TikTok refusée.":"TikTok authorization denied.",expired:fr?"Session TikTok expirée. Recommence la connexion.":"TikTok session expired. Reconnect.",save_error:fr?"Impossible d'enregistrer la connexion TikTok.":"Could not save TikTok connection.",invalid:fr?"Réponse TikTok invalide.":"Invalid TikTok response."};setTiktokNotice(messages[state]||"");const clean=new URL(window.location.href);clean.searchParams.delete("tiktok");window.history.replaceState({}, "", clean.toString());}
     void loadTikTok();
+  },[session?.access_token,service,fr]);
+  useEffect(() => {
+    if(!session?.access_token||service!=="social")return;
+    const state=new URLSearchParams(window.location.search).get("facebook");
+    if(state){
+      const messages:Record<string,string>={
+        connected:fr?"Facebook connecté. Chargement des Pages…":"Facebook connected. Loading Pages…",
+        denied:fr?"Autorisation Facebook refusée.":"Facebook authorization denied.",
+        expired:fr?"Session Facebook expirée. Recommence la connexion.":"Facebook session expired. Reconnect.",
+        no_pages:fr?"Aucune Page Facebook administrée n'a été trouvée.":"No managed Facebook Page was found.",
+        save_error:fr?"Impossible d'enregistrer la connexion Facebook.":"Could not save Facebook connection.",
+        invalid:fr?"Réponse Facebook invalide.":"Invalid Facebook response."
+      };
+      setFacebookNotice(messages[state]||"");
+      const clean=new URL(window.location.href);clean.searchParams.delete("facebook");window.history.replaceState({}, "", clean.toString());
+    }
+    void loadFacebookPages();
   },[session?.access_token,service,fr]);
   useEffect(() => {
     const paymentState = new URLSearchParams(window.location.search).get("payment");
@@ -237,6 +259,58 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     try{const r=await fetch("/api/tiktok/disconnect",{method:"DELETE",headers:{Authorization:"Bearer "+session.access_token}});const d=await r.json();if(!r.ok)throw new Error(d.error||"Déconnexion impossible.");setTiktokData(null);setTiktokNotice(fr?"Compte TikTok déconnecté.":"TikTok account disconnected.");}
     catch(e){setTiktokNotice(e instanceof Error?e.message:"Erreur.");}finally{setTiktokBusy(false);}
   }
+  async function loadFacebookPages(){
+    if(!session?.access_token)return;
+    setFacebookBusy(true);
+    try{
+      const r=await fetch("/api/facebook/pages",{headers:{Authorization:"Bearer "+session.access_token}});
+      const d=await r.json();
+      if(!r.ok)throw new Error(d.error||"Lecture des Pages Facebook impossible.");
+      const pages=d.pages||[];
+      setFacebookPages(pages);
+      setFacebookPageId(current=>pages.some((p:{page_id:string})=>p.page_id===current)?current:pages[0]?.page_id||"");
+    }catch(e){setFacebookNotice(e instanceof Error?e.message:"Erreur Facebook.");}
+    finally{setFacebookBusy(false);}
+  }
+  async function connectFacebook(){
+    if(!session?.access_token){setFacebookNotice(fr?"Connecte-toi d'abord à AQUI NET HUB.":"Sign in to AQUI NET HUB first.");return;}
+    setFacebookBusy(true);setFacebookNotice("");
+    try{
+      const r=await fetch("/api/facebook/connect",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({native:Capacitor.isNativePlatform()})});
+      const d=await r.json();
+      if(!r.ok||!d.authorization_url)throw new Error(d.error||"Connexion Facebook indisponible.");
+      if(Capacitor.isNativePlatform())await Browser.open({url:d.authorization_url,toolbarColor:"#101C32"});
+      else window.location.assign(d.authorization_url);
+    }catch(e){setFacebookNotice(e instanceof Error?e.message:"Connexion Facebook impossible.");setFacebookBusy(false);}
+  }
+  async function disconnectFacebook(){
+    if(!session?.access_token)return;
+    setFacebookBusy(true);
+    try{
+      const r=await fetch("/api/facebook/disconnect",{method:"DELETE",headers:{Authorization:"Bearer "+session.access_token}});
+      const d=await r.json();if(!r.ok)throw new Error(d.error||"Déconnexion impossible.");
+      setFacebookPages([]);setFacebookPageId("");setFacebookAudit(null);
+      setFacebookNotice(fr?"Compte Facebook déconnecté.":"Facebook account disconnected.");
+    }catch(e){setFacebookNotice(e instanceof Error?e.message:"Erreur Facebook.");}
+    finally{setFacebookBusy(false);}
+  }
+  async function syncFacebookStats(){
+    if(!session?.access_token||!facebookPageId)return;
+    setFacebookBusy(true);setFacebookNotice("");
+    try{
+      const r=await fetch("/api/facebook/audit",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({page_id:facebookPageId})});
+      const d=await r.json();if(!r.ok||!d.report)throw new Error(d.error||"Analyse Facebook impossible.");
+      const report=d.report;setFacebookAudit(report);
+      setSocialName(report.page_name||"Facebook");
+      setSocialUrl("https://www.facebook.com/"+report.page_id);
+      setSocialFollowers(String(report.followers||0));
+      setSocialLikes(String(report.average_likes||0));
+      setSocialComments(String(report.average_comments||0));
+      setFacebookNotice(fr?"Statistiques récupérées depuis Meta. Tu peux maintenant lancer l'analyse AQUI SOCIAL AUDIT.":"Statistics retrieved from Meta. You can now run the AQUI SOCIAL AUDIT analysis.");
+    }catch(e){setFacebookNotice(e instanceof Error?e.message:"Erreur pendant la lecture des statistiques Facebook.");}
+    finally{setFacebookBusy(false);}
+  }
+
   async function submitFollowProof(){
     if(!session)return;setBusy(true);setSocialResult("");
     try{
@@ -403,6 +477,30 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
           <button type="button" className="filter-button" disabled={tiktokBusy} onClick={()=>void disconnectTikTok()}>{fr?"Déconnecter TikTok":"Disconnect TikTok"}</button>
         </div>}
       </div>
+        <div className="follow-gate">
+          <h4>{fr?"Connexion directe à Facebook":"Connect Facebook directly"}</h4>
+          <p>{fr?"Connecte la Page que tu administres pour récupérer automatiquement ses abonnés, publications et statistiques disponibles via Meta.":"Connect a Page you manage to retrieve its followers, posts and available Meta insights automatically."}</p>
+          <button type="button" className="primary-button" disabled={facebookBusy||!backendReady} onClick={()=>void connectFacebook()}>{facebookBusy?"…":facebookPages.length?(fr?"Reconnecter Facebook":"Reconnect Facebook"):(fr?"Connecter Facebook":"Connect Facebook")}</button>
+          {facebookPages.length>0&&<>
+            <label>{fr?"Page Facebook":"Facebook Page"}
+              <select value={facebookPageId} onChange={e=>setFacebookPageId(e.target.value)}>
+                {facebookPages.map(page=><option key={page.page_id} value={page.page_id}>{page.page_name}</option>)}
+              </select>
+            </label>
+            <button type="button" className="filter-button" disabled={facebookBusy||!facebookPageId} onClick={()=>void syncFacebookStats()}>{fr?"Récupérer les statistiques":"Load statistics"}</button>
+            <button type="button" className="filter-button" disabled={facebookBusy} onClick={()=>void disconnectFacebook()}>{fr?"Déconnecter Facebook":"Disconnect Facebook"}</button>
+          </>}
+          {facebookNotice&&<p className="account-message" role="status">{facebookNotice}</p>}
+          {facebookAudit&&<div className="social-report">
+            <strong>{facebookAudit.page_name}</strong>
+            <p>{fr?"Abonnés :":"Followers: "} {Number(facebookAudit.followers||0).toLocaleString()}</p>
+            <p>{fr?"Publications analysées :":"Posts analyzed: "} {facebookAudit.posts_analyzed}</p>
+            <p>{fr?"J'aime moyens :":"Average likes: "} {facebookAudit.average_likes} · {fr?"Commentaires moyens :":"Average comments: "} {facebookAudit.average_comments}</p>
+            <p>{fr?"Impressions sur 28 jours :":"28-day impressions: "} {facebookAudit.impressions_28d??(fr?"indisponibles":"unavailable")}</p>
+            <p>{fr?"Interactions sur 28 jours :":"28-day engagements: "} {facebookAudit.engagements_28d??(fr?"indisponibles":"unavailable")}</p>
+            <small>{facebookAudit.disclaimer}</small>
+          </div>}
+        </div>
         <h4>{fr?"Analyse Facebook sans connexion Meta":"Facebook analysis without Meta login"}</h4>
         <p>{fr?"Pour éviter les autorisations Meta bloquées, ouvre Meta Business Suite → Statistiques/Insights. Relève tes abonnés, la moyenne des vues, des J’aime et des commentaires, puis renseigne les champs ci-dessous. AQUI NET HUB calcule automatiquement les indicateurs et les recommandations.":"To avoid blocked Meta permissions, open Meta Business Suite → Insights. Note your followers and average views, likes and comments, then enter the figures below. AQUI NET HUB automatically calculates indicators and recommendations."}</p>
         <a className="filter-button" href="https://business.facebook.com/latest/insights" target="_blank" rel="noreferrer">{fr?"Ouvrir Meta Business Suite":"Open Meta Business Suite"} ↗</a>
