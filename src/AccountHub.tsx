@@ -467,7 +467,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
     {session && service==="social" && <div className="account-card social-audit">
       <span className="eyebrow">AQUI NET HUB · SOCIAL AUDIT · {socialCount}/3 {fr?"analyses gratuites":"free reviews"}</span>
       <h3>{fr?"Diagnostic de ton compte":"Your account review"}</h3>
-      <p>{fr?"Analyse Facebook sans autorisation Meta : relève les chiffres dans Meta Business Suite, puis AQUI NET HUB calcule les indicateurs et conseils. Pour les autres réseaux, saisis les statistiques disponibles.":"Analyze Facebook without Meta permissions: get the figures from Meta Business Suite, then AQUI NET HUB calculates indicators and recommendations. Enter available metrics for other networks."}</p>
+      <p>{fr?"Connecte une Page Facebook que tu administres pour récupérer les données autorisées par Meta. Pour Instagram et YouTube, saisis les statistiques natives ; TikTok peut aussi être connecté officiellement lorsque les autorisations sont accordées.":"Analyze Facebook without Meta permissions: get the figures from Meta Business Suite, then AQUI NET HUB calculates indicators and recommendations. Enter available metrics for other networks."}</p>
       <div className="social-connect-grid">
         <article className="follow-gate">
           <h4>{fr?"Connexion officielle TikTok":"Official TikTok connection"}</h4>
@@ -546,6 +546,11 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       <span className="eyebrow">AQUI VIDEO AI · MULTI-MOTEUR</span>
       <h3>{fr ? "Crée une vidéo avec l’IA" : "Create an AI video"}</h3>
       <p>{fr ? "Téléverse une image depuis ton téléphone ou génère directement à partir d’un texte. Aucun lien d’image externe n’est nécessaire." : "Upload an image from your phone or generate directly from a text prompt. No external image link is needed."}</p>
+      {!videoReady ? <div className="follow-gate">
+        <h4>{fr?"Générateur intégré en attente d’activation":"Integrated generator awaiting activation"}</h4>
+        <p>{fr?"Le moteur vidéo intégré nécessite une clé API fournisseur. Aucun moteur payant n’est activé. En attendant, tu peux utiliser Kling AI depuis son site officiel ; sa formule gratuite comporte des quotas variables.":"The integrated video engine requires a provider API key. No paid engine is enabled. Meanwhile, you can use Kling AI on its official website; its free plan has variable quotas."}</p>
+        <a className="primary-button" href="https://kling.ai/" target="_blank" rel="noopener noreferrer">{fr?"Ouvrir Kling AI gratuitement":"Open Kling AI free tier"} ↗</a>
+      </div> : <>
       <div className="account-tabs">
         <button type="button" className={videoMode==="image"?"active":""} onClick={()=>{setVideoMode("image");setVideoPaywall(false);}}>{fr?"Image → Vidéo":"Image → Video"}</button>
         <button type="button" className={videoMode==="text"?"active":""} onClick={()=>{setVideoMode("text");setVideoPaywall(false);}}>{fr?"Texte → Vidéo":"Text → Video"}</button>
@@ -571,6 +576,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       {videoPaywall && <div className="follow-gate"><h4>{fr?"Choisis ton abonnement pour débloquer les vidéos longues":"Choose a subscription to unlock longer videos"}</h4>{plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement bientôt disponible":"Payment coming soon"):paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay"}</button></article>)}</div>}
       {videoUrl && <div className="video-result"><video controls playsInline src={videoUrl} /><a href={videoUrl} target="_blank" rel="noreferrer">{fr ? "Ouvrir / enregistrer le MP4" : "Open / save MP4"} ↗</a></div>}
       <small className="account-footnote">{fr?"Moteur : Magic Hour en priorité ; moteur de secours fal.ai uniquement s’il est activé. Image source privée et résultat MP4 conservé dans le stockage sécurisé du compte.":"Engine: Magic Hour first; fal.ai fallback only when explicitly enabled. Source image is private and the MP4 result is stored securely in the account."}</small>
+      </>}
     </div>}
 
     {session && service==="partners" && <div className="account-grid">
