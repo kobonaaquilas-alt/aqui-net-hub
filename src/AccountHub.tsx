@@ -266,7 +266,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   async function connectTikTok(){
     if(!session?.access_token){setTiktokNotice(fr?"Connecte-toi d'abord à AQUI NET HUB.":"Sign in to AQUI NET HUB first.");return;}
     setTiktokBusy(true);setTiktokNotice("");
-    try{const r=await fetch("/api/tiktok/connect",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({native:Capacitor.isNativePlatform()})});const d=await r.json();if(!r.ok||!d.authorization_url)throw new Error(d.error||"Connexion TikTok indisponible.");if(Capacitor.isNativePlatform()) await Browser.open({url:d.authorization_url,toolbarColor:"#101C32"}); else window.location.assign(d.authorization_url);}
+    try{const r=await fetch("/api/tiktok/connect",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({native:Capacitor.isNativePlatform()})});const d=await r.json();if(!r.ok||!d.authorization_url)throw new Error(d.error||"Connexion TikTok indisponible.");if(Capacitor.isNativePlatform()){await Browser.open({url:d.authorization_url,toolbarColor:"#101C32"});setTiktokBusy(false);}else window.location.assign(d.authorization_url);}
     catch(e){setTiktokNotice(e instanceof Error?e.message:"Connexion TikTok impossible.");setTiktokBusy(false);}
   }
   async function disconnectTikTok(){
@@ -294,7 +294,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       const r=await fetch("/api/facebook/connect",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({native:Capacitor.isNativePlatform()})});
       const d=await r.json();
       if(!r.ok||!d.authorization_url)throw new Error(d.error||"Connexion Facebook indisponible.");
-      if(Capacitor.isNativePlatform())await Browser.open({url:d.authorization_url,toolbarColor:"#101C32"});
+      if(Capacitor.isNativePlatform()){await Browser.open({url:d.authorization_url,toolbarColor:"#101C32"});setFacebookBusy(false);}
       else window.location.assign(d.authorization_url);
     }catch(e){setFacebookNotice(e instanceof Error?e.message:"Connexion Facebook impossible.");setFacebookBusy(false);}
   }
