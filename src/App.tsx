@@ -100,7 +100,7 @@ export default function App() {
           </div>
           <div className="help-feature-grid">
             <article className="help-feature"><span>01</span><h3>{fr ? "Diagnostic précis" : "Clear diagnosis"}</h3><p>{fr ? "Mesure l'engagement, la portée et la régularité à partir des données disponibles." : "Measure engagement, reach and consistency from available data."}</p></article>
-            <article className="help-feature"><span>02</span><h3>{fr ? "Plan d'action IA" : "AI action plan"}</h3><p>{fr ? "Identifie les priorités et propose des actions adaptées à ton objectif." : "Prioritize improvements and get actions aligned with your goal."}</p></article>
+            <article className="help-feature"><span>02</span><h3>{fr ? "Plan d'action ciblé" : "Targeted action plan"}</h3><p>{fr ? "Identifie les priorités et propose des actions adaptées à ton objectif." : "Prioritize improvements and get actions aligned with your goal."}</p></article>
             <article className="help-feature"><span>03</span><h3>{fr ? "Analyse multi-réseaux" : "Cross-platform analysis"}</h3><p>{fr ? "Centralise les diagnostics de tes comptes TikTok, Facebook, Instagram et YouTube." : "Bring TikTok, Facebook, Instagram and YouTube account audits together."}</p></article>
             <article className="help-feature"><span>04</span><h3>{fr ? "Monétisation" : "Monetization"}</h3><p>{fr ? "Repère les leviers de revenus, les pistes de partenariats et les points à améliorer." : "Identify revenue levers, partnership opportunities and areas to improve."}</p></article>
           </div>
