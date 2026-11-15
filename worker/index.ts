@@ -372,6 +372,8 @@ export default {
           supabase: !!env.SUPABASE_URL && !!env.SUPABASE_ANON_KEY && !!serviceKey(env),
           video_provider_available: !!env.MAGIC_HOUR_API_KEY?.trim() || (!!env.FAL_KEY?.trim() && env.VIDEO_ALLOW_PAID_FALLBACK === "true"),
           cinetpay: !!env.CINETPAY_API_KEY && !!env.CINETPAY_API_PASSWORD,
+          tiktok_oauth_configured: !!env.TIKTOK_CLIENT_KEY?.trim() && !!env.TIKTOK_CLIENT_SECRET?.trim(),
+          facebook_oauth_configured: !!env.FACEBOOK_APP_ID?.trim() && !!env.FACEBOOK_APP_SECRET?.trim(),
         });
       if (url.pathname === "/api/video/jobs" && request.method === "POST")
         return handleVideo(request, env);
