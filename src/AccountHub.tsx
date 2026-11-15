@@ -258,10 +258,10 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     setSocialViews(String(average("view_count")));
     setSocialLikes(String(average("like_count")));
     setSocialComments(String(average("comment_count")));
-    setTiktokNotice(fr?"Statistiques transférées dans le formulaire AQUI NET HELP · SOCIAL AUDIT. Vérifie le lien du profil puis lance l'analyse.":"Metrics copied into the AQUI NET HELP · SOCIAL AUDIT form. Check the profile link, then run the audit.");
+    setTiktokNotice(fr?"Statistiques transférées dans le formulaire AQUI NET HUB · SOCIAL AUDIT. Vérifie le lien du profil puis lance l'analyse.":"Metrics copied into the AQUI NET HUB · SOCIAL AUDIT form. Check the profile link, then run the audit.");
   }
   async function connectTikTok(){
-    if(!session?.access_token){setTiktokNotice(fr?"Connecte-toi d'abord à AQUI NET HELP.":"Sign in to AQUI NET HELP first.");return;}
+    if(!session?.access_token){setTiktokNotice(fr?"Connecte-toi d'abord à AQUI NET HUB.":"Sign in to AQUI NET HUB first.");return;}
     setTiktokBusy(true);setTiktokNotice("");
     try{const r=await fetch("/api/tiktok/connect",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({native:Capacitor.isNativePlatform()})});const d=await r.json();if(!r.ok||!d.authorization_url)throw new Error(d.error||"Connexion TikTok indisponible.");if(Capacitor.isNativePlatform()){await Browser.open({url:d.authorization_url,toolbarColor:"#101C32"});setTiktokBusy(false);}else window.location.assign(d.authorization_url);}
     catch(e){setTiktokNotice(e instanceof Error?e.message:"Connexion TikTok impossible.");setTiktokBusy(false);}
@@ -285,7 +285,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     finally{setFacebookBusy(false);}
   }
   async function connectFacebook(){
-    if(!session?.access_token){setFacebookNotice(fr?"Connecte-toi d'abord à AQUI NET HELP.":"Sign in to AQUI NET HELP first.");return;}
+    if(!session?.access_token){setFacebookNotice(fr?"Connecte-toi d'abord à AQUI NET HUB.":"Sign in to AQUI NET HUB first.");return;}
     setFacebookBusy(true);setFacebookNotice("");
     try{
       const r=await fetch("/api/facebook/connect",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({native:Capacitor.isNativePlatform()})});
@@ -318,7 +318,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       setSocialFollowers(String(report.followers||0));
       setSocialLikes(String(report.average_likes||0));
       setSocialComments(String(report.average_comments||0));
-      setFacebookNotice(fr?"Statistiques récupérées depuis Meta. Tu peux maintenant lancer l'analyse AQUI NET HELP · SOCIAL AUDIT.":"Statistics retrieved from Meta. You can now run the AQUI NET HELP · SOCIAL AUDIT analysis.");
+      setFacebookNotice(fr?"Statistiques récupérées depuis Meta. Tu peux maintenant lancer l'analyse AQUI NET HUB · SOCIAL AUDIT.":"Statistics retrieved from Meta. You can now run the AQUI NET HUB · SOCIAL AUDIT analysis.");
     }catch(e){setFacebookNotice(e instanceof Error?e.message:"Erreur pendant la lecture des statistiques Facebook.");}
     finally{setFacebookBusy(false);}
   }
@@ -357,7 +357,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       const data = await response.json() as { request_id?: string; status?: string; error?: string; code?: string };
       if (response.status === 402 || data.code === "PAYMENT_REQUIRED") {
         setVideoPaywall(true);
-        setVideoNotice(data.error || (fr ? "Un abonnement AQUI NET HELP actif est requis pour utiliser le générateur." : "An active AQUI NET HELP subscription is required to use the generator."));
+        setVideoNotice(data.error || (fr ? "Un abonnement AQUI NET HUB actif est requis pour utiliser le générateur." : "An active AQUI NET HUB subscription is required to use the generator."));
         return;
       }
       if (!response.ok || !data.request_id) throw new Error(data.error || "Video request failed.");
@@ -405,7 +405,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       const {error} = await db.from(table).insert({...values,user_id:session.user.id});
       if (error) setNotice(error.message);
       else {
-        setNotice(fr ? "Demande envoyée à l'équipe AQUI NET HELP." : "Request sent to the AQUI NET HELP team.");
+        setNotice(fr ? "Demande envoyée à l'équipe AQUI NET HUB." : "Request sent to the AQUI NET HUB team.");
         if (kind === "ads") setAd({company_name:"",contact_name:"",email:"",phone:"",website:"",budget:"",message:""});
         else setPartner({organization:"",contact_name:"",email:"",phone:"",website:"",proposal:""});
       }
@@ -421,7 +421,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   const date=(value:string)=>new Date(value).toLocaleDateString(fr?"fr-FR":"en-GB");
   const paymentLabel=(status:string)=>status==="paid"?(fr?"Payé":"Paid"):status==="failed"?(fr?"Échoué":"Failed"):(fr?"En attente":"Pending");
   if (authOnly) return <section className="section account-hub account-access" id="account-access">
-    <div className="section-heading"><div><span className="eyebrow">AQUI NET HELP · ESPACE MEMBRE</span><h2>{fr?"Créer un compte ou se connecter":"Create an account or sign in"}</h2><p>{fr?"Un compte est nécessaire pour utiliser les trois services protégés.":"An account is required to use the three protected services."}</p></div></div>
+    <div className="section-heading"><div><span className="eyebrow">AQUI NET HUB · ESPACE MEMBRE</span><h2>{fr?"Créer un compte ou se connecter":"Create an account or sign in"}</h2><p>{fr?"Un compte est nécessaire pour utiliser les trois services protégés.":"An account is required to use the three protected services."}</p></div></div>
     {!session ? <div className="account-card">
       <div className="account-tabs"><button type="button" className={mode==="login"?"active":""} onClick={()=>setMode("login")}>{fr?"Connexion":"Sign in"}</button><button type="button" className={mode==="signup"?"active":""} onClick={()=>setMode("signup")}>{fr?"Créer un compte":"Create account"}</button></div>
       {mode==="signup" && <>{input(fullName,setFullName,fr?"Nom complet":"Full name")}{input(phone,setPhone,fr?"Téléphone (facultatif)":"Phone (optional)","tel",false)}</>}
@@ -433,7 +433,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
   </section>;
 
   return <section className="section account-hub" id="diagnostic">
-    <div className="section-heading"><div><span className="eyebrow">AQUI NET HELP · {service==="video"?"AQUI VIDEO AI":service==="social"?"SOCIAL AUDIT":"PARTENARIATS"}</span><h2>{service==="video"?(fr?"Génération vidéo IA":"AI video generation"):service==="social"?(fr?"Analyse de compte social":"Social account analysis"):(fr?"Partenariats et abonnements":"Partnerships and subscriptions")}</h2><p>{fr?"Connecte-toi pour accéder à ce service.":"Sign in to access this service."}</p></div></div>
+    <div className="section-heading"><div><span className="eyebrow">AQUI NET HUB · {service==="video"?"AQUI VIDEO AI":service==="social"?"SOCIAL AUDIT":"PARTENARIATS"}</span><h2>{service==="video"?(fr?"Génération vidéo IA":"AI video generation"):service==="social"?(fr?"Analyse de compte social":"Social account analysis"):(fr?"Partenariats et abonnements":"Partnerships and subscriptions")}</h2><p>{fr?"Connecte-toi pour accéder à ce service.":"Sign in to access this service."}</p></div></div>
     {!session ? <div className="account-card">
       <div className="account-tabs"><button type="button" className={mode==="login"?"active":""} onClick={()=>setMode("login")}>{fr?"Connexion":"Sign in"}</button><button type="button" className={mode==="signup"?"active":""} onClick={()=>setMode("signup")}>{fr?"Créer un compte":"Create account"}</button></div>
       {mode==="signup" && <>{input(fullName,setFullName,fr?"Nom complet":"Full name")}{input(phone,setPhone,fr?"Téléphone (facultatif)":"Phone (optional)","tel",false)}</>}
@@ -442,7 +442,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
       {mode==="login" && <button type="button" className="text-button account-reset-link" disabled={busy} onClick={()=>void sendPasswordReset()}>{fr?"Mot de passe oublié ?":"Forgot password?"}</button>}
     </div> : <div className="account-card"><p>{fr?"Connecté avec":"Signed in as"} <strong>{session.user.email}</strong></p><p className="sync-status">{fr?"Favoris et progression synchronisés sur ce compte.":"Favorites and progress synced to this account."}</p><button className="filter-button" onClick={()=>void db.auth.signOut()}>{fr?"Se déconnecter":"Sign out"}</button></div>}
     {notice && <p className="account-message" role="status">{notice}</p>}
-    {session && !hasActiveSubscription && service==="partners" && <div className="account-card subscription-required"><span className="eyebrow">AQUI NET HELP · ABONNEMENT</span><h3>{fr?"Abonnement requis":"Subscription required"}</h3><p>{fr?"Pour prolonger la diffusion après l’essai publicitaire gratuit de 3 jours ou débloquer les fonctions payantes, choisis une formule ci-dessous.":"Choose a plan to continue campaigns after the 3-day free ad trial or unlock paid features."}</p>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement bientôt disponible":"Payment coming soon"):paymentBusy?"…":fr?"S’abonner et payer":"Subscribe and pay"}</button></article>):<p>{fr?"Les formules d’abonnement seront affichées ici dès leur activation.":"Subscription plans will appear here when activated."}</p>}</div>}
+    {session && !hasActiveSubscription && service==="partners" && <div className="account-card subscription-required"><span className="eyebrow">AQUI NET HUB · ABONNEMENT</span><h3>{fr?"Abonnement requis":"Subscription required"}</h3><p>{fr?"Pour prolonger la diffusion après l’essai publicitaire gratuit de 3 jours ou débloquer les fonctions payantes, choisis une formule ci-dessous.":"Choose a plan to continue campaigns after the 3-day free ad trial or unlock paid features."}</p>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement bientôt disponible":"Payment coming soon"):paymentBusy?"…":fr?"S’abonner et payer":"Subscribe and pay"}</button></article>):<p>{fr?"Les formules d’abonnement seront affichées ici dès leur activation.":"Subscription plans will appear here when activated."}</p>}</div>}
 
     {session && recoveryMode && <div className="account-card password-recovery-card"><h3>{fr?"Définir un nouveau mot de passe":"Set a new password"}</h3>{input(newPassword,setNewPassword,fr?"Nouveau mot de passe (8 caractères minimum)":"New password (at least 8 characters)","password")}<button type="button" className="primary-button" disabled={busy||newPassword.length<8} onClick={()=>void updatePassword()}>{busy?"…":fr?"Mettre à jour le mot de passe":"Update password"}</button></div>}
 
@@ -461,9 +461,9 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
 
 
     {session && service==="social" && <div className="account-card social-audit">
-      <span className="eyebrow">AQUI NET HELP · SOCIAL AUDIT · {socialCount}/3 {fr?"analyses gratuites":"free reviews"}</span>
+      <span className="eyebrow">AQUI NET HUB · SOCIAL AUDIT · {socialCount}/3 {fr?"analyses gratuites":"free reviews"}</span>
       <h3>{fr?"Diagnostic de ton compte":"Your account review"}</h3>
-      <p>{fr?"Analyse Facebook sans autorisation Meta : relève les chiffres dans Meta Business Suite, puis AQUI NET HELP calcule les indicateurs et conseils. Pour les autres réseaux, saisis les statistiques disponibles.":"Analyze Facebook without Meta permissions: get the figures from Meta Business Suite, then AQUI NET HELP calculates indicators and recommendations. Enter available metrics for other networks."}</p>
+      <p>{fr?"Analyse Facebook sans autorisation Meta : relève les chiffres dans Meta Business Suite, puis AQUI NET HUB calcule les indicateurs et conseils. Pour les autres réseaux, saisis les statistiques disponibles.":"Analyze Facebook without Meta permissions: get the figures from Meta Business Suite, then AQUI NET HUB calculates indicators and recommendations. Enter available metrics for other networks."}</p>
       <div className="social-connect-grid">
         <article className="follow-gate">
           <h4>{fr?"Connexion officielle TikTok":"Official TikTok connection"}</h4>
@@ -507,7 +507,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
 
       <div className="manual-audit-panel">
         <h4>{fr?"Analyse assistée Instagram, YouTube et autres comptes":"Assisted audit for Instagram, YouTube and other accounts"}</h4>
-        <p>{fr?"Pour Instagram et YouTube, saisis les chiffres visibles dans les statistiques natives de la plateforme. Pour Facebook, tu peux aussi utiliser Meta Business Suite. AQUI NET HELP calcule les ratios et construit les recommandations à partir de ces données.":"For Instagram and YouTube, enter the figures shown in the platform's native analytics. For Facebook, you can also use Meta Business Suite. AQUI NET HELP calculates ratios and builds recommendations from those metrics."}</p>
+        <p>{fr?"Pour Instagram et YouTube, saisis les chiffres visibles dans les statistiques natives de la plateforme. Pour Facebook, tu peux aussi utiliser Meta Business Suite. AQUI NET HUB calcule les ratios et construit les recommandations à partir de ces données.":"For Instagram and YouTube, enter the figures shown in the platform's native analytics. For Facebook, you can also use Meta Business Suite. AQUI NET HUB calculates ratios and builds recommendations from those metrics."}</p>
         <a className="filter-button" href="https://business.facebook.com/latest/insights" target="_blank" rel="noreferrer">{fr?"Ouvrir Meta Business Suite":"Open Meta Business Suite"} ↗</a>
       </div>
 
