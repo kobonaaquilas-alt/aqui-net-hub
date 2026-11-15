@@ -248,6 +248,21 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
     try{const r=await fetch("/api/tiktok/me",{headers:{Authorization:"Bearer "+session.access_token}});const d=await r.json();if(!r.ok)throw new Error(d.error||"Lecture TikTok impossible.");setTiktokData(d.connected?d:null);}
     catch(e){setTiktokNotice(e instanceof Error?e.message:"Erreur TikTok.");}finally{setTiktokBusy(false);}
   }
+  function applyTikTokStats(){
+    if(!tiktokData?.profile)return;
+    const videos=Array.isArray(tiktokData.videos)?tiktokData.videos:[];
+    const average=(field:string)=>videos.length
+      ?Math.round(videos.reduce((sum:number,item:any)=>sum+Number(item[field]||0),0)/videos.length)
+      :0;
+    const profile=tiktokData.profile;
+    setSocialName(profile.display_name||profile.username||"TikTok");
+    if(profile.profile_deep_link)setSocialUrl(profile.profile_deep_link);
+    setSocialFollowers(String(profile.follower_count||0));
+    setSocialViews(String(average("view_count")));
+    setSocialLikes(String(average("like_count")));
+    setSocialComments(String(average("comment_count")));
+    setTiktokNotice(fr?"Statistiques transférées dans le formulaire AQUI SOCIAL AUDIT. Vérifie le lien du profil puis lance l'analyse.":"Metrics copied into the AQUI SOCIAL AUDIT form. Check the profile link, then run the audit.");
+  }
   async function connectTikTok(){
     if(!session?.access_token){setTiktokNotice(fr?"Connecte-toi d'abord à AQUI NET HUB.":"Sign in to AQUI NET HUB first.");return;}
     setTiktokBusy(true);setTiktokNotice("");
@@ -473,6 +488,7 @@ export default function AccountHub({ service, favorites, progress, lang, onRemot
           <p>{fr?"J'aime :":"Likes: "} {Number(tiktokData.profile.likes_count||0).toLocaleString()}</p>
           <p>{fr?"Vidéos publiées :":"Videos: "} {Number(tiktokData.profile.video_count||0).toLocaleString()}</p>
           <small>{fr?"Données de l'API officielle TikTok, selon les autorisations accordées.":"Official TikTok API data, subject to granted permissions."}</small>
+          <button type="button" className="filter-button" disabled={tiktokBusy} onClick={applyTikTokStats}>{fr?"Préremplir l'analyse avec TikTok":"Fill audit from TikTok"}</button>
           {tiktokData.videos?.length>0&&<div><strong>{fr?"Vidéos récentes":"Recent videos"}</strong>{tiktokData.videos.slice(0,5).map((v:any)=><p key={v.id}>{v.title||v.video_description||"TikTok video"} · {Number(v.view_count||0).toLocaleString()} {fr?"vues":"views"}</p>)}</div>}
           <button type="button" className="filter-button" disabled={tiktokBusy} onClick={()=>void disconnectTikTok()}>{fr?"Déconnecter TikTok":"Disconnect TikTok"}</button>
         </div>}
