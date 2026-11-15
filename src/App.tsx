@@ -170,7 +170,7 @@ export default function App() {
       </section>}
 
       {activeService && activeService!=="tools" && <AccountHub service={activeService} favorites={[]} progress={[]} lang={lang} onRemoteSync={syncRemote}/>}
-      {showAdmin&&<AdminPanel/>}
+      {showAdmin&&<AdminPanel lang={lang}/>}
     </main>
     <footer className="site-footer"><a className="brand footer-brand" href="#accueil"><span className="brand-mark">A</span><span>AQUI NET <strong>HUB</strong></span></a><p>{fr?"Des outils et des opportunités pour avancer dans le numérique.":"Tools and opportunities to move forward digitally."}</p><div className="footer-links"><a href="https://tiktok.com/@el.maestro907" target="_blank" rel="noreferrer">TikTok · S’abonner</a><a href="https://www.facebook.com/profile.php?id=61582777979597" target="_blank" rel="noreferrer">Facebook · S’abonner</a></div><div className="footer-contact"><strong>{fr?"Contact, assistance et dons":"Contact, support and donations"}</strong><a href="tel:+22892244653">+228 92 24 46 53</a><a href="tel:+22898393862">+228 98 39 38 62</a><a href="https://wa.me/22892244653" target="_blank" rel="noreferrer">WhatsApp</a></div><small>© {new Date().getFullYear()} AQUI NET HUB</small></footer>
   </div>;
