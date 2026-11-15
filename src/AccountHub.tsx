@@ -432,8 +432,8 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       {input(email,setEmail,"E-mail","email")}{input(password,setPassword,fr?"Mot de passe (8 caractères minimum)":"Password (8 characters minimum)","password")}
       <button className="primary-button" disabled={busy||!email||password.length<8} onClick={()=>void authenticate()}>{busy?"…":mode==="login"?(fr?"Se connecter":"Sign in"):(fr?"Créer mon compte":"Create account")}</button>
       {mode==="login" && <button type="button" className="text-button account-reset-link" disabled={busy} onClick={()=>void sendPasswordReset()}>{fr?"Mot de passe oublié ?":"Forgot password?"}</button>}
-      {notice && <p className="account-message" role="status">{notice}</p>}
     </div> : profileCard}
+    {notice && <p className="account-message" role="status">{notice}</p>}
   </section>;
 
   return <section className="section account-hub" id="diagnostic">
