@@ -369,30 +369,9 @@ export default {
       if (request.method === "GET" && url.pathname === "/api/health")
         return json({
           ok: true,
-          health_schema: "2026-11-15-aqui-net-hub-v1",
-          product_name: "AQUI NET HUB",
-          social_analysis_available: true,
-          supported_social_platforms: ["TikTok", "Facebook", "Instagram", "YouTube"],
-          video_engine: "Multi-provider (Magic Hour first, fal.ai optional paid fallback)",
-          video_engine_configured: !!env.MAGIC_HOUR_API_KEY?.trim() || (!!env.FAL_KEY?.trim() && env.VIDEO_ALLOW_PAID_FALLBACK === "true"),
-          video_provider_available: !!env.MAGIC_HOUR_API_KEY?.trim() || (!!env.FAL_KEY?.trim() && env.VIDEO_ALLOW_PAID_FALLBACK === "true"),
-          magic_hour_api_key: !!env.MAGIC_HOUR_API_KEY?.trim(),
-          fal_paid_fallback: !!env.FAL_KEY?.trim() && env.VIDEO_ALLOW_PAID_FALLBACK === "true",
           supabase: !!env.SUPABASE_URL && !!env.SUPABASE_ANON_KEY && !!serviceKey(env),
-          supabase_url: !!env.SUPABASE_URL,
-          supabase_anon_key: !!env.SUPABASE_ANON_KEY,
-          supabase_service_key: !!serviceKey(env),
+          video_provider_available: !!env.MAGIC_HOUR_API_KEY?.trim() || (!!env.FAL_KEY?.trim() && env.VIDEO_ALLOW_PAID_FALLBACK === "true"),
           cinetpay: !!env.CINETPAY_API_KEY && !!env.CINETPAY_API_PASSWORD,
-          cinetpay_api_key: !!env.CINETPAY_API_KEY,
-          cinetpay_api_password: !!env.CINETPAY_API_PASSWORD,
-          browser_automation_available: !!env.GITHUB_TOKEN,
-          github_actions_token_configured: !!env.GITHUB_TOKEN,
-          fal_api_key: !!env.FAL_KEY?.trim(),
-          facebook_oauth: !!env.FACEBOOK_APP_ID && !!env.FACEBOOK_APP_SECRET,
-          facebook_app_id: !!env.FACEBOOK_APP_ID,
-          tiktok_client_key_configured: !!env.TIKTOK_CLIENT_KEY?.trim(),
-          tiktok_client_key_length: env.TIKTOK_CLIENT_KEY?.trim().length || 0,
-          tiktok_client_secret_configured: !!env.TIKTOK_CLIENT_SECRET?.trim(),
         });
       if (url.pathname === "/api/video/jobs" && request.method === "POST")
         return handleVideo(request, env);
