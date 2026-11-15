@@ -434,3 +434,43 @@ button.service-card{
   background: rgba(10, 16, 30, .72);
   color: inherit;
 }
+
+
+/* AQUI NET HELP — focused social intelligence experience */
+.help-shell .topbar{background:rgba(7,16,31,.96)}
+.help-shell .brand{letter-spacing:.04em}
+.help-shell .brand strong{color:#9fc4ff}
+.help-hero{min-height:510px;padding:94px 7% 72px!important;display:flex!important;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.help-hero h1{max-width:900px;margin:14px auto 18px;font:800 clamp(38px,6vw,72px)/1.05 Manrope,sans-serif;letter-spacing:-.055em;color:#f5f8ff}
+.help-hero h1 span{background:linear-gradient(90deg,#a9caff,#c3a8ff,#76deed);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.help-hero>p{max-width:720px;margin:0 auto 26px;color:#d0dced;font-size:clamp(14px,1.5vw,17px);line-height:1.8}
+.help-hero>.primary-button{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 24px}
+.help-platforms{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:28px}
+.help-platforms span{padding:8px 14px;border:1px solid rgba(170,198,244,.22);border-radius:999px;background:rgba(255,255,255,.055);color:#dce8fa;font-size:12px;font-weight:700}
+.help-value{padding-top:52px}
+.help-feature-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}
+.help-feature{min-height:180px;padding:23px;border:1px solid rgba(160,190,239,.2);border-radius:17px;background:linear-gradient(145deg,rgba(31,50,81,.95),rgba(17,30,51,.97));box-shadow:0 10px 28px rgba(0,0,0,.14)}
+.help-feature>span{color:#8db8ff;font-size:11px;font-weight:800;letter-spacing:.15em}
+.help-feature h3{margin:17px 0 9px;color:#f2f6ff;font-size:17px}
+.help-feature p{margin:0;color:#c3d1e6;font-size:13px;line-height:1.7}
+.help-contact{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center;margin:0 7% 54px;padding:34px;border:1px solid rgba(153,185,238,.24);border-radius:22px;background:linear-gradient(130deg,rgba(32,55,91,.96),rgba(19,32,55,.96))}
+.help-contact h2{margin:0 0 12px;color:#f1f5ff;font:800 clamp(24px,3vw,34px)/1.15 Manrope,sans-serif}
+.help-contact p{max-width:650px;color:#c9d6e9;line-height:1.7}
+.help-contact-actions{display:grid;gap:11px}
+.help-contact-actions a{display:flex;align-items:center;justify-content:center;min-height:44px;text-align:center}
+.social-connect-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}
+.social-connect-grid .follow-gate{margin:0}
+.manual-audit-panel{margin:18px 0;padding:18px;border:1px solid rgba(150,182,232,.2);border-radius:14px;background:rgba(10,23,42,.48)}
+.manual-audit-panel h4{margin:0 0 8px;color:#f2f6ff}
+.manual-audit-panel p{color:#c5d3e7;line-height:1.65}
+@media(max-width:900px){.help-feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){
+ .help-shell .main-nav{gap:10px}
+ .help-shell .main-nav a{font-size:10px}
+ .help-hero{min-height:420px;padding:68px 5% 52px!important}
+ .help-feature-grid,.social-connect-grid,.help-contact{grid-template-columns:1fr}
+ .help-feature{min-height:0;padding:18px}
+ .help-contact{margin:0 5% 36px;padding:22px}
+ .help-platforms{gap:7px}
+ .help-platforms span{padding:7px 10px;font-size:10px}
+}
