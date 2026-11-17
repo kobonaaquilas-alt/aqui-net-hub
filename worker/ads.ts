@@ -115,9 +115,8 @@ async function listCampaigns(env: Env, userId: string): Promise<Response> {
       { headers: dbHeaders(env) },
     ),
   ]);
-  const events = eventsResponse.ok
-    ? await eventsResponse.json() as Array<{ campaign_id: string; event_type: string }>
-    : [];
+  if (!eventsResponse.ok) return json({ error: "Impossible de charger les statistiques publicitaires." }, 502);
+  const events = await eventsResponse.json() as Array<{ campaign_id: string; event_type: string }>;
   const stats = new Map<string, { impressions_count: number; clicks_count: number }>();
   for (const event of events) {
     const current = stats.get(event.campaign_id) || { impressions_count: 0, clicks_count: 0 };
@@ -219,7 +218,8 @@ async function deleteCampaign(env: Env, user: User, campaignId: string): Promise
     { method: "DELETE", headers: dbHeaders(env) },
   );
   if (!response.ok) return json({ error: "Suppression de la campagne impossible." }, 502);
-  return json({ ok: true });
+  const rows = await response.json() as unknown[];
+  return rows.length ? json({ ok: true }) : json({ error: "Campagne introuvable." }, 404);
 }
 
 export async function handleAds(request: Request, env: Env): Promise<Response> {
