@@ -55,9 +55,9 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
     fetch(`${env.SUPABASE_URL}/rest/v1/hub_campaigns?select=*&order=created_at.desc&limit=200`,{headers:headers(env)}),
     fetch(`${env.SUPABASE_URL}/rest/v1/hub_ad_events?select=campaign_id,event_type&limit=20000`,{headers:headers(env)})
    ]);
-   if(!campaignResponse.ok)return json({error:"Lecture des campagnes impossible."},502);
+   if(!campaignResponse.ok||!eventResponse.ok)return json({error:"Lecture des campagnes ou des statistiques impossible."},502);
    const campaigns=await campaignResponse.json() as Array<Record<string,any>&{id:string}>;
-   const events=eventResponse.ok?await eventResponse.json() as Array<{campaign_id:string;event_type:string}>:[];
+   const events=await eventResponse.json() as Array<{campaign_id:string;event_type:string}>;
    const stats=new Map<string,{impressions_count:number;clicks_count:number}>();
    for(const event of events){
     const current=stats.get(event.campaign_id)||{impressions_count:0,clicks_count:0};
@@ -89,7 +89,9 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
   }
   if(campaign&&request.method==="DELETE"){
    const r=await fetch(`${env.SUPABASE_URL}/rest/v1/hub_campaigns?id=eq.${encodeURIComponent(campaign[1])}`,{method:"DELETE",headers:headers(env)});
-   return r.ok?json({ok:true}):json({error:"Suppression impossible."},502);
+   if(!r.ok)return json({error:"Suppression impossible."},502);
+   const rows=await r.json() as unknown[];
+   return rows.length?json({ok:true}):json({error:"Campagne introuvable."},404);
   }
   if(request.method==="GET"&&url.pathname==="/api/admin/settings"){
    const r=await fetch(`${env.SUPABASE_URL}/rest/v1/hub_site_settings?select=setting_key,setting_value`,{headers:headers(env)});
