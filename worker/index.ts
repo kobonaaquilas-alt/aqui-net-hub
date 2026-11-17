@@ -303,9 +303,10 @@ export default {
     const url = new URL(request.url);
     try {
       const campaignEvent = url.pathname.match(/^\/api\/public\/campaigns\/([0-9a-f-]{36})\/(impression|click)$/i);
+      const eventType = campaignEvent?.[2].toLowerCase();
       if (campaignEvent && (
-        (campaignEvent[2] === "impression" && request.method === "POST") ||
-        (campaignEvent[2] === "click" && request.method === "GET")
+        (eventType === "impression" && request.method === "POST") ||
+        (eventType === "click" && request.method === "GET")
       )) {
         const campaignResponse = await fetch(
           `${env.SUPABASE_URL}/rest/v1/hub_campaigns?id=eq.${encodeURIComponent(campaignEvent[1])}&is_active=eq.true&select=id,owner_user_id,destination_url,starts_at,ends_at&limit=1`,
@@ -322,16 +323,24 @@ export default {
             (campaign.starts_at && new Date(campaign.starts_at).getTime() > now) ||
             (campaign.ends_at && new Date(campaign.ends_at).getTime() < now))
           return json({ error: "Campagne inactive ou expirée." }, 404);
-        await fetch(`${env.SUPABASE_URL}/rest/v1/hub_ad_events`, {
+        const eventResponse = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_ad_events`, {
           method: "POST",
           headers: headers(env),
           body: JSON.stringify({
             campaign_id: campaign.id,
             owner_user_id: campaign.owner_user_id,
-            event_type: campaignEvent[2],
+            event_type: eventType,
           }),
         });
-        if (campaignEvent[2] === "click") {
+        if (!eventResponse.ok) {
+          console.error("AQUI NET ADS event tracking failed.", {
+            campaign_id: campaign.id,
+            event_type: eventType,
+            status: eventResponse.status,
+          });
+          if (eventType === "impression") return json({ error: "Enregistrement de l'impression impossible." }, 502);
+        }
+        if (eventType === "click") {
           if (!campaign.destination_url || !campaign.destination_url.startsWith("https://"))
             return Response.redirect(new URL("/", request.url).toString(), 302);
           return Response.redirect(campaign.destination_url, 302);
