@@ -329,13 +329,20 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
   async function startPayment(plan:Plan){
     if(!session?.access_token){setNotice("Connecte-toi pour payer.");return;}
     if(!cinetpayReady){setNotice("Paiement indisponible : les clés API CinetPay ne sont pas encore configurées.");return;}
-    const parts=fullName.trim().split(/\s+/);const first_name=parts[0]||"Client";const last_name=parts.slice(1).join(" ")||"AQUI";
+    const savedName=profileName.trim()||fullName.trim()||String(session.user.user_metadata?.full_name||"");
+    const parts=savedName.split(/\s+/).filter(Boolean);const first_name=parts[0]||"Client";const last_name=parts.slice(1).join(" ")||"AQUI";
+    const savedPhone=profilePhone.trim()||phone.trim()||String(session.user.user_metadata?.phone||"");
     setPaymentBusy(true);setNotice("");
     try{
-      const r=await fetch("/api/payments/create",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({plan_id:plan.id,first_name,last_name,phone,native:Capacitor.isNativePlatform()})});
+      const r=await fetch("/api/payments/create",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({plan_id:plan.id,first_name,last_name,phone:savedPhone,native:Capacitor.isNativePlatform()})});
       const d=await r.json();if(!r.ok||!d.payment_url)throw new Error(d.error||"Initialisation du paiement impossible.");
       if(Capacitor.isNativePlatform()) await Browser.open({url:d.payment_url,toolbarColor:"#101C32"}); else window.location.assign(d.payment_url);
     }catch(e){setNotice(e instanceof Error?e.message:"Paiement indisponible.");}finally{setPaymentBusy(false);}
+  }
+
+  function manualPaymentUrl(plan:Plan){
+    const message=(fr?"Bonjour, je souhaite souscrire à ":"Hello, I would like to subscribe to ")+plan.name+" ("+plan.amount_xof+" FCFA / "+plan.duration_days+" jours). Merci de m'indiquer la procédure TMoney/Flooz. Mon compte AQUI NET HUB : "+(session?.user.email||"");
+    return "https://wa.me/22892244653?text="+encodeURIComponent(message);
   }
 
   async function startVideo() {
@@ -446,13 +453,15 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       {mode==="login" && <button type="button" className="text-button account-reset-link" disabled={busy} onClick={()=>void sendPasswordReset()}>{fr?"Mot de passe oublié ?":"Forgot password?"}</button>}
     </div> : <>{profileCard}<div className="account-card"><p className="sync-status">{fr?"Ton profil est enregistré sur ton compte.":"Your profile is saved to your account."}</p></div></>}
     {notice && <p className="account-message" role="status">{notice}</p>}
-    {session && !hasActiveSubscription && service==="partners" && <div className="account-card subscription-required"><span className="eyebrow">AQUI NET HUB · ABONNEMENT</span><h3>{fr?"Abonnement requis":"Subscription required"}</h3><p>{fr?"Pour prolonger la diffusion après l’essai publicitaire gratuit de 3 jours ou débloquer les fonctions payantes, choisis une formule ci-dessous.":"Choose a plan to continue campaigns after the 3-day free ad trial or unlock paid features."}</p>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement bientôt disponible":"Payment coming soon"):paymentBusy?"…":fr?"S’abonner et payer":"Subscribe and pay"}</button></article>):<p>{fr?"Les formules d’abonnement seront affichées ici dès leur activation.":"Subscription plans will appear here when activated."}</p>}</div>}
+    {session && !hasActiveSubscription && service==="partners" && <div className="account-card subscription-required"><span className="eyebrow">AQUI NET HUB · ABONNEMENT</span><h3>{fr?"Abonnement requis":"Subscription required"}</h3><p>{fr?"Pour prolonger la diffusion après l’essai publicitaire gratuit de 3 jours ou débloquer les fonctions payantes, choisis une formule ci-dessous.":"Choose a plan to continue campaigns after the 3-day free ad trial or unlock paid features."}</p>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div>{cinetpayReady
+        ? <button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>void startPayment(p)}>{paymentBusy?"…":fr?"S’abonner et payer":"Subscribe and pay"}</button>
+        : <a className="filter-button" href={manualPaymentUrl(p)} target="_blank" rel="noreferrer">{fr?"Payer par TMoney / Flooz":"Pay by TMoney / Flooz"}</a>}</article>):<p>{fr?"Les formules d’abonnement seront affichées ici dès leur activation.":"Subscription plans will appear here when activated."}</p>}</div>}
 
     {session && recoveryMode && <div className="account-card password-recovery-card"><h3>{fr?"Définir un nouveau mot de passe":"Set a new password"}</h3>{input(newPassword,setNewPassword,fr?"Nouveau mot de passe (8 caractères minimum)":"New password (at least 8 characters)","password")}<button type="button" className="primary-button" disabled={busy||newPassword.length<8} onClick={()=>void updatePassword()}>{busy?"…":fr?"Mettre à jour le mot de passe":"Update password"}</button></div>}
 
     {session && service==="partners" && <AdvertiserHub accessToken={session.access_token} lang={lang} />}
 
-    {session && hasActiveSubscription && service==="partners" && <div className="account-card account-summary">
+    {session && service==="partners" && <div className="account-card account-summary">
       <div className="account-summary-heading"><div><h3>{fr?"Mes abonnements et paiements":"My subscriptions and payments"}</h3><p>{fr?"Statuts confirmés par le serveur.":"Statuses confirmed by the server."}</p></div><button type="button" className="filter-button" disabled={summaryBusy} onClick={()=>void refreshSummary()}>{summaryBusy?"…":fr?"Actualiser":"Refresh"}</button></div>
       <h4>{fr?"Abonnements":"Subscriptions"}</h4>
       {summary?.subscriptions.length ? summary.subscriptions.map(item=>{
@@ -577,7 +586,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       <button type="button" className="primary-button" disabled={videoBusy || !videoReady || (videoMode==="image"&&!videoImageFile) || videoPrompt.trim().length<3} onClick={()=>void startVideo()}>{videoBusy ? "…" : (fr ? "Générer ma vidéo" : "Generate my video")}</button>
       {videoRequestId && <p className="video-status">{fr ? "État :" : "Status:"} {videoStatus || "queued"} · {videoRequestId}</p>}
       {videoNotice && <p className="account-message" role="status">{videoNotice}</p>}
-      {videoPaywall && <div className="follow-gate"><h4>{fr?"Choisis ton abonnement pour débloquer les vidéos longues":"Choose a subscription to unlock longer videos"}</h4>{plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!cinetpayReady?(fr?"Paiement bientôt disponible":"Payment coming soon"):paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay"}</button></article>)}</div>}
+      {videoPaywall && <div className="follow-gate"><h4>{fr?"Choisis ton abonnement pour débloquer les vidéos longues":"Choose a subscription to unlock longer videos"}</h4>{plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div>{cinetpayReady?<button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>void startPayment(p)}>{paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay"}</button>:<a className="filter-button" href={manualPaymentUrl(p)} target="_blank" rel="noreferrer">{fr?"Payer par TMoney / Flooz":"Pay by TMoney / Flooz"}</a>}</article>)}</div>}
       {videoUrl && <div className="video-result"><video controls playsInline src={videoUrl} /><a href={videoUrl} target="_blank" rel="noreferrer">{fr ? "Ouvrir / enregistrer le MP4" : "Open / save MP4"} ↗</a></div>}
       <small className="account-footnote">{fr?"Moteur : Magic Hour en priorité ; moteur de secours fal.ai uniquement s’il est activé. Image source privée et résultat MP4 conservé dans le stockage sécurisé du compte.":"Engine: Magic Hour first; fal.ai fallback only when explicitly enabled. Source image is private and the MP4 result is stored securely in the account."}</small>
       </>}
