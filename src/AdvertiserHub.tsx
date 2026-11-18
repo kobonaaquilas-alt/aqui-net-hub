@@ -26,6 +26,7 @@ export default function AdvertiserHub({ accessToken, lang }: Props) {
   const [subscriptionActive, setSubscriptionActive] = useState(false);
   const [summary,setSummary]=useState<Summary>({campaign_count:0,active_count:0,impressions_count:0,clicks_count:0,ctr_percent:0});
   const [draft, setDraft] = useState({ title: "", description: "", destination_url: "", image_url: "" });
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [acceptedRules, setAcceptedRules] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -61,14 +62,28 @@ export default function AdvertiserHub({ accessToken, lang }: Props) {
     setBusy(true);
     setNotice("");
     try {
+      let imageUrl = "";
+      if (imageFile) {
+        const uploadForm = new FormData();
+        uploadForm.append("image", imageFile);
+        const uploadResponse = await fetch("/api/ads/upload-image", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + accessToken },
+          body: uploadForm,
+        });
+        const uploadData = await uploadResponse.json() as { image_url?: string; error?: string };
+        if (!uploadResponse.ok || !uploadData.image_url) throw new Error(uploadData.error || "Image upload failed.");
+        imageUrl = uploadData.image_url;
+      }
       const response = await fetch("/api/ads/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + accessToken },
-        body: JSON.stringify(draft),
+        body: JSON.stringify({ ...draft, image_url: imageUrl || draft.image_url }),
       });
       const data = await response.json() as { error?: string; code?: string };
       if (!response.ok) throw new Error(data.error || "Campaign creation failed.");
       setDraft({ title: "", description: "", destination_url: "", image_url: "" });
+      setImageFile(null);
       setAcceptedRules(false);
       setNotice(fr ? "Campagne publiée. La période de diffusion est affichée ci-dessous." : "Campaign published. Its display period is shown below.");
       await refresh();
@@ -149,7 +164,10 @@ export default function AdvertiserHub({ accessToken, lang }: Props) {
       <input value={draft.title} onChange={e => setDraft(s => ({ ...s, title: e.target.value }))} minLength={4} maxLength={80} placeholder={fr ? "Titre de la publicité" : "Advertisement title"} required />
       <textarea value={draft.description} onChange={e => setDraft(s => ({ ...s, description: e.target.value }))} minLength={10} maxLength={500} placeholder={fr ? "Description (10 à 500 caractères)" : "Description (10–500 characters)"} required />
       <input type="url" value={draft.destination_url} onChange={e => setDraft(s => ({ ...s, destination_url: e.target.value }))} placeholder={fr ? "Lien HTTPS de destination" : "HTTPS destination link"} required />
-      <input type="url" value={draft.image_url} onChange={e => setDraft(s => ({ ...s, image_url: e.target.value }))} placeholder={fr ? "Lien HTTPS de l'image (facultatif)" : "HTTPS image URL (optional)"} />
+      <label>{fr ? "Importer l'image publicitaire (JPG, PNG ou WEBP · 5 Mo max.)" : "Upload ad image (JPG, PNG or WEBP · max 5 MB)"}
+        <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => { const file = e.target.files?.[0] || null; if (file && (file.size > 5 * 1024 * 1024 || !["image/jpeg","image/png","image/webp"].includes(file.type))) { setImageFile(null); setNotice(fr ? "Image invalide : JPG, PNG ou WEBP, 5 Mo maximum." : "Invalid image: JPG, PNG or WEBP, maximum 5 MB."); } else { setImageFile(file); setNotice(""); } }} />
+      </label>
+      {imageFile && <p className="account-footnote">{fr ? "Image sélectionnée : " : "Selected image: "}{imageFile.name} · {(imageFile.size / 1024 / 1024).toFixed(2)} Mo</p>}
       <label className="account-footnote"><input type="checkbox" checked={acceptedRules} onChange={e => setAcceptedRules(e.target.checked)} required /> {fr
         ? "Je possède les droits sur ce contenu et confirme qu'il respecte la loi et les règles de la plateforme."
         : "I own the rights to this content and confirm it complies with the law and platform rules."}</label>
