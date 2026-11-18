@@ -85,10 +85,13 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
     if(event.event_type==="click")current.clicks_count++;
     stats.set(event.campaign_id,current);
    }
-   return json({campaigns:campaigns.map(campaign=>{
+   const enriched=campaigns.map(campaign=>{
     const counts=stats.get(campaign.id)||{impressions_count:0,clicks_count:0};
     return {...campaign,...counts,ctr_percent:counts.impressions_count?Number((counts.clicks_count/counts.impressions_count*100).toFixed(2)):0};
-   })});
+   });
+   const impressions=enriched.reduce((sum,item)=>sum+item.impressions_count,0);
+   const clicks=enriched.reduce((sum,item)=>sum+item.clicks_count,0);
+   return json({campaigns:enriched,summary:{campaign_count:enriched.length,active_count:enriched.filter(item=>item.is_active&&(!item.ends_at||new Date(item.ends_at).getTime()>Date.now())).length,impressions_count:impressions,clicks_count:clicks,ctr_percent:impressions?Number((clicks/impressions*100).toFixed(2)):0}});
   }
   if(request.method==="POST"&&url.pathname==="/api/admin/campaigns"){
    const b=await request.json() as any;const title=String(b.title||"").trim(),description=String(b.description||"").trim();
