@@ -66,6 +66,10 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
   const [backendReady,setBackendReady]=useState(false);
   const [videoReady,setVideoReady]=useState(false);
   const [cinetpayReady,setCinetpayReady]=useState(false);
+  const [paymentNumber,setPaymentNumber]=useState("");
+  const [selectedPaymentPlan,setSelectedPaymentPlan]=useState<Plan|null>(null);
+  const [paymentProof,setPaymentProof]=useState<File|null>(null);
+  const [paymentReference,setPaymentReference]=useState("");
 
   const refreshSummary = useCallback(async () => {
     if (!session?.access_token) return;
@@ -83,6 +87,10 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       setSummaryBusy(false);
     }
   }, [session?.access_token]);
+
+  useEffect(() => {
+    fetch("/api/payments/config").then(r=>r.ok?r.json():Promise.reject()).then(d=>setPaymentNumber(String(d.payment_number||""))).catch(()=>setPaymentNumber(""));
+  }, []);
 
   useEffect(() => {
     db.auth.getSession().then(({data}) => setSession(data.session));
@@ -341,9 +349,31 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
   }
 
   function manualPaymentUrl(plan:Plan){
-    const message=(fr?"Bonjour, je souhaite souscrire à ":"Hello, I would like to subscribe to ")+plan.name+" ("+plan.amount_xof+" FCFA / "+plan.duration_days+" jours). Merci de m'indiquer la procédure TMoney/Flooz. Mon compte AQUI NET HUB : "+(session?.user.email||"");
+    const message=(fr?"Bonjour, je souhaite souscrire à ":"Hello, I would like to subscribe to ")+plan.name+" ("+plan.amount_xof+" FCFA / "+plan.duration_days+" jours).";
     return "https://wa.me/22892244653?text="+encodeURIComponent(message);
   }
+  function chooseManualPayment(plan:Plan){setSelectedPaymentPlan(plan);setPaymentProof(null);setPaymentReference("");}
+  async function submitManualPayment(){
+    if(!session?.access_token||!selectedPaymentPlan)return;
+    if(!paymentNumber){setNotice(fr?"Le numéro de réception doit d'abord être configuré par l'administrateur.":"The receiving number must first be configured by the administrator.");return;}
+    if(!paymentProof){setNotice(fr?"Ajoute la capture ou le reçu du paiement.":"Attach the payment screenshot or receipt.");return;}
+    if(paymentProof.size>5*1024*1024||!["image/jpeg","image/png","image/webp","application/pdf"].includes(paymentProof.type)){setNotice(fr?"Fichier invalide : JPG, PNG, WEBP ou PDF, 5 Mo maximum.":"Invalid file: JPG, PNG, WEBP or PDF, maximum 5 MB.");return;}
+    setPaymentBusy(true);setNotice("");
+    try{
+      const extension=paymentProof.type==="application/pdf"?"pdf":paymentProof.type==="image/png"?"png":paymentProof.type==="image/webp"?"webp":"jpg";
+      const path=session.user.id+"/"+crypto.randomUUID()+"."+extension;
+      const uploaded=await db.storage.from("hub-payment-proofs").upload(path,paymentProof,{upsert:false,contentType:paymentProof.type});
+      if(uploaded.error)throw uploaded.error;
+      const response=await fetch("/api/payments/manual-order",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({plan_id:selectedPaymentPlan.id,proof_path:path,reference:paymentReference.trim()})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||"Envoi de la preuve impossible.");
+      setSelectedPaymentPlan(null);setPaymentProof(null);setPaymentReference("");
+      setNotice(fr?"Preuve envoyée. Ton abonnement sera activé après vérification du paiement.":"Proof submitted. Your subscription will be activated after payment verification.");
+      await refreshSummary();
+    }catch(error){setNotice(error instanceof Error?error.message:"Impossible d'envoyer la preuve.");}
+    finally{setPaymentBusy(false);}
+  }
+  const paymentAction=(plan:Plan)=><button type="button" className="filter-button" disabled={paymentBusy||!paymentNumber} onClick={()=>chooseManualPayment(plan)}>{fr?"Payer par numéro":"Pay by number"}</button>;
 
   async function startVideo() {
     if (!session?.access_token) {
@@ -441,6 +471,18 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       {mode==="login" && <button type="button" className="text-button account-reset-link" disabled={busy} onClick={()=>void sendPasswordReset()}>{fr?"Mot de passe oublié ?":"Forgot password?"}</button>}
     </div> : profileCard}
     {notice && <p className="account-message" role="status">{notice}</p>}
+    {selectedPaymentPlan&&session&&<div className="account-card payment-proof-panel">
+      <h3>{fr?"Paiement par numéro":"Pay by number"}</h3>
+      <p><strong>{selectedPaymentPlan.name}</strong> · {selectedPaymentPlan.amount_xof.toLocaleString("fr-FR")} FCFA · {selectedPaymentPlan.duration_days} {fr?"jours":"days"}</p>
+      <p>{fr?"Effectue le transfert vers le numéro ci-dessous, puis joins la preuve. L'abonnement reste en attente jusqu'à validation par l'administrateur.":"Transfer to the number below, then attach your proof. The subscription remains pending until an administrator approves it."}</p>
+      <p className="payment-receiver-number"><strong>{paymentNumber|| (fr?"Numéro non configuré":"Number not configured")}</strong></p>
+      <label>{fr?"Référence de transaction (facultatif)":"Transaction reference (optional)"}<input value={paymentReference} onChange={e=>setPaymentReference(e.target.value)} maxLength={120}/></label>
+      <label>{fr?"Preuve de paiement (obligatoire)":"Payment proof (required)"}<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={e=>setPaymentProof(e.target.files?.[0]||null)} required/></label>
+      <small className="account-footnote">{fr?"JPG, PNG, WEBP ou PDF · 5 Mo maximum.":"JPG, PNG, WEBP or PDF · 5 MB maximum."}</small>
+      <button type="button" className="primary-button" disabled={paymentBusy||!paymentProof||!paymentNumber} onClick={()=>void submitManualPayment()}>{paymentBusy?"…":fr?"Envoyer la preuve":"Submit proof"}</button>
+      <button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>setSelectedPaymentPlan(null)}>{fr?"Annuler":"Cancel"}</button>
+    </div>}
+
   </section>;
 
   return <section className="section account-hub" id="diagnostic">
@@ -453,9 +495,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       {mode==="login" && <button type="button" className="text-button account-reset-link" disabled={busy} onClick={()=>void sendPasswordReset()}>{fr?"Mot de passe oublié ?":"Forgot password?"}</button>}
     </div> : <>{profileCard}<div className="account-card"><p className="sync-status">{fr?"Ton profil est enregistré sur ton compte.":"Your profile is saved to your account."}</p></div></>}
     {notice && <p className="account-message" role="status">{notice}</p>}
-    {session && !hasActiveSubscription && service==="partners" && <div className="account-card subscription-required"><span className="eyebrow">AQUI NET HUB · ABONNEMENT</span><h3>{fr?"Abonnement requis":"Subscription required"}</h3><p>{fr?"Pour prolonger la diffusion après l’essai publicitaire gratuit de 3 jours ou débloquer les fonctions payantes, choisis une formule ci-dessous.":"Choose a plan to continue campaigns after the 3-day free ad trial or unlock paid features."}</p>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div>{cinetpayReady
-        ? <button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>void startPayment(p)}>{paymentBusy?"…":fr?"S’abonner et payer":"Subscribe and pay"}</button>
-        : <a className="filter-button" href={manualPaymentUrl(p)} target="_blank" rel="noreferrer">{fr?"Payer par TMoney / Flooz":"Pay by TMoney / Flooz"}</a>}</article>):<p>{fr?"Les formules d’abonnement seront affichées ici dès leur activation.":"Subscription plans will appear here when activated."}</p>}</div>}
+    {session && !hasActiveSubscription && service==="partners" && <div className="account-card subscription-required"><span className="eyebrow">AQUI NET HUB · ABONNEMENT</span><h3>{fr?"Abonnement requis":"Subscription required"}</h3><p>{fr?"Pour prolonger la diffusion après l’essai publicitaire gratuit de 3 jours ou débloquer les fonctions payantes, choisis une formule ci-dessous.":"Choose a plan to continue campaigns after the 3-day free ad trial or unlock paid features."}</p>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div>{paymentAction(p)}</article>):<p>{fr?"Les formules d’abonnement seront affichées ici dès leur activation.":"Subscription plans will appear here when activated."}</p>}</div>}
 
     {session && recoveryMode && <div className="account-card password-recovery-card"><h3>{fr?"Définir un nouveau mot de passe":"Set a new password"}</h3>{input(newPassword,setNewPassword,fr?"Nouveau mot de passe (8 caractères minimum)":"New password (at least 8 characters)","password")}<button type="button" className="primary-button" disabled={busy||newPassword.length<8} onClick={()=>void updatePassword()}>{busy?"…":fr?"Mettre à jour le mot de passe":"Update password"}</button></div>}
 
@@ -542,9 +582,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
         <p>{fr?"Choisis un abonnement pour continuer les diagnostics sans limite pendant sa durée. Aucun abonnement n'est créé avant confirmation du paiement par le serveur.":"Choose a subscription to continue running audits during its validity period. No subscription is activated until the server confirms payment."}</p>
         {plans.length ? plans.map(p=><article className="plan-row" key={p.id}>
           <div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div>
-          {cinetpayReady
-            ? <button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>void startPayment(p)}>{paymentBusy?"…":fr?"Payer en FCFA":"Pay in XOF"}</button>
-            : <a className="filter-button" href={`https://wa.me/22892244653?text=${encodeURIComponent((fr?"Je souhaite m'abonner à ":"I want to subscribe to ")+p.name+" ("+p.amount_xof+" FCFA).")}`} target="_blank" rel="noreferrer">{fr?"Payer par TMoney, Flooz ou virement via WhatsApp":"Pay by TMoney, Flooz or bank transfer via WhatsApp"}</a>}
+          {paymentAction(p)}
         </article>) : <p>{fr?"Les formules seront affichées dès leur activation.":"Plans will appear when activated."}</p>}
         <small>{fr?"Le paiement actuellement configuré est en FCFA via CinetPay. Les paiements directs en USD/EUR et les cartes internationales nécessitent l'activation d'un prestataire compatible.":"The currently configured checkout is in XOF through CinetPay. Direct USD/EUR and international card payments require an enabled compatible provider."}</small>
       </div>}
@@ -586,7 +624,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       <button type="button" className="primary-button" disabled={videoBusy || !videoReady || (videoMode==="image"&&!videoImageFile) || videoPrompt.trim().length<3} onClick={()=>void startVideo()}>{videoBusy ? "…" : (fr ? "Générer ma vidéo" : "Generate my video")}</button>
       {videoRequestId && <p className="video-status">{fr ? "État :" : "Status:"} {videoStatus || "queued"} · {videoRequestId}</p>}
       {videoNotice && <p className="account-message" role="status">{videoNotice}</p>}
-      {videoPaywall && <div className="follow-gate"><h4>{fr?"Choisis ton abonnement pour débloquer les vidéos longues":"Choose a subscription to unlock longer videos"}</h4>{plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div>{cinetpayReady?<button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>void startPayment(p)}>{paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay"}</button>:<a className="filter-button" href={manualPaymentUrl(p)} target="_blank" rel="noreferrer">{fr?"Payer par TMoney / Flooz":"Pay by TMoney / Flooz"}</a>}</article>)}</div>}
+      {videoPaywall && <div className="follow-gate"><h4>{fr?"Choisis ton abonnement pour débloquer les vidéos longues":"Choose a subscription to unlock longer videos"}</h4>{plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div>{paymentAction(p)}</article>)}</div>}
       {videoUrl && <div className="video-result"><video controls playsInline src={videoUrl} /><a href={videoUrl} target="_blank" rel="noreferrer">{fr ? "Ouvrir / enregistrer le MP4" : "Open / save MP4"} ↗</a></div>}
       <small className="account-footnote">{fr?"Moteur : Magic Hour en priorité ; moteur de secours fal.ai uniquement s’il est activé. Image source privée et résultat MP4 conservé dans le stockage sécurisé du compte.":"Engine: Magic Hour first; fal.ai fallback only when explicitly enabled. Source image is private and the MP4 result is stored securely in the account."}</small>
       </>}
@@ -614,7 +652,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       </form>
     </div>}
     {session && hasActiveSubscription && service==="partners" && campaigns.length>0 && <div className="account-card"><h3>{fr?"Campagnes actives":"Active campaigns"}</h3>{campaigns.map(c=><article key={c.id}><strong>{c.title}</strong><p>{c.description}</p>{c.destination_url&&<a href={c.destination_url} target="_blank" rel="noreferrer">{fr?"Découvrir":"Learn more"} ↗</a>}</article>)}</div>}
-    {session && hasActiveSubscription && service==="partners" && <div className="account-card"><h3>{fr?"Abonnements publicité et partenariat":"Advertising and partnership plans"}</h3>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div><button type="button" className="filter-button" disabled={!session||!cinetpayReady||paymentBusy} onClick={()=>void startPayment(p)}>{!session?(fr?"Connecte-toi pour payer":"Sign in to pay"):(paymentBusy?"…":fr?"Payer avec CinetPay":"Pay with CinetPay")}</button></article>):<p>{fr?"Aucune formule n'est publiée pour le moment.":"No plans are published yet."}</p>}
+    {session && hasActiveSubscription && service==="partners" && <div className="account-card"><h3>{fr?"Abonnements publicité et partenariat":"Advertising and partnership plans"}</h3>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div>{paymentAction(p)}</article>):<p>{fr?"Aucune formule n'est publiée pour le moment.":"No plans are published yet."}</p>}
     <small className="account-footnote">{fr?"500 FCFA / mois · 5 000 FCFA / an. Le paiement dépend de la configuration active du compte marchand CinetPay.":"500 XOF / month · 5,000 XOF / year. Payment requires an active CinetPay merchant setup."}</small></div>}
     {!session && <p className="account-footnote">{fr?"Connecte-toi pour utiliser le service sélectionné.":"Sign in to use the selected service."}</p>}
   </section>;
