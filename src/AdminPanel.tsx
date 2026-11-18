@@ -4,6 +4,7 @@ import { createClient, type Session } from "@supabase/supabase-js";
 const db=createClient("https://xbobkysbtvtmepqgtnbt.supabase.co","sb_publishable_AGtfBQyqyKbH5C_4f5cQgw_bm0MmusA");
 type RequestItem={id:string;user_id:string;contact_name:string;email:string;phone:string|null;website:string|null;status:string;created_at:string;company_name?:string;organization?:string;message?:string;proposal?:string;budget?:string|null};
 type Campaign={id:string;title:string;description:string;destination_url:string|null;image_url:string|null;starts_at:string|null;ends_at:string|null;is_active:boolean;impressions_count?:number;clicks_count?:number;ctr_percent?:number};
+type AdSummary={campaign_count:number;active_count:number;impressions_count:number;clicks_count:number;ctr_percent:number};
 type Follow={id:string;user_id:string;account_name:string;tiktok_proof_url:string;facebook_proof_url:string;status:string;created_at:string;admin_note:string|null};
 type Audit={id:string;user_id:string;platform:string;account_name:string;social_url:string;followers:number;average_views:number;average_likes:number;average_comments:number;posts_per_week:number;goal:string;created_at:string};
 type AdminSubscription={id:string;user_id:string;plan_name:string;starts_at:string;ends_at:string;status:string};
@@ -14,7 +15,7 @@ type Data={ads:RequestItem[];partners:RequestItem[];follows:Follow[];audits:Audi
 export default function AdminPanel({lang}:{lang:"fr"|"en"}){
  const tr=(frText:string,enText:string)=>lang==="fr"?frText:enText;
  const [session,setSession]=useState<Session|null>(null),[authorized,setAuthorized]=useState(false),[checked,setChecked]=useState(false);
- const [data,setData]=useState<Data>({ads:[],partners:[],follows:[],audits:[]}),[campaigns,setCampaigns]=useState<Campaign[]>([]),[billing,setBilling]=useState<Billing>({subscriptions:[],payments:[],active_count:0,pending_count:0,paid_count:0});
+ const [data,setData]=useState<Data>({ads:[],partners:[],follows:[],audits:[]}),[campaigns,setCampaigns]=useState<Campaign[]>([]),[adSummary,setAdSummary]=useState<AdSummary>({campaign_count:0,active_count:0,impressions_count:0,clicks_count:0,ctr_percent:0}),[billing,setBilling]=useState<Billing>({subscriptions:[],payments:[],active_count:0,pending_count:0,paid_count:0});
  const [notice,setNotice]=useState(""),[busy,setBusy]=useState(false),[adsense,setAdsense]=useState(""),[paymentNumber,setPaymentNumber]=useState("");
  const [browserUrl,setBrowserUrl]=useState("https://");
  const [browserSelector,setBrowserSelector]=useState("body");
@@ -36,7 +37,7 @@ export default function AdminPanel({lang}:{lang:"fr"|"en"}){
  },[session]);
  const load=useCallback(async()=>{
   if(!session||!authorized)return;setBusy(true);setNotice("");
-  try{const [d,c,s,b]=await Promise.all([request("/api/admin/requests"),request("/api/admin/campaigns"),request("/api/admin/settings"),request("/api/admin/billing")]);setData(d);setCampaigns(c.campaigns||[]);setAdsense(s.adsense_client||"");setPaymentNumber(s.payment_number||"");setBilling(b);}
+  try{const [d,c,s,b]=await Promise.all([request("/api/admin/requests"),request("/api/admin/campaigns"),request("/api/admin/settings"),request("/api/admin/billing")]);setData(d);setCampaigns(c.campaigns||[]);setAdSummary(c.summary||{campaign_count:0,active_count:0,impressions_count:0,clicks_count:0,ctr_percent:0});setAdsense(s.adsense_client||"");setPaymentNumber(s.payment_number||"");setBilling(b);}
   catch(e){setNotice(e instanceof Error?e.message:"Erreur de chargement.");}finally{setBusy(false);}
  },[session,authorized,request]);
  useEffect(()=>{if(authorized)void load();},[authorized,load]);
@@ -106,6 +107,7 @@ export default function AdminPanel({lang}:{lang:"fr"|"en"}){
   {group("ads",data.ads)}{group("partners",data.partners)}
   <div className="account-card"><h3>{tr("Vérification des abonnements TikTok et Facebook","TikTok and Facebook follow verification")} · {data.follows.length}</h3>{data.follows.length===0&&<p>{tr("Aucune preuve reçue.","No proof submitted.")}</p>}{data.follows.map(f=><article className="admin-request-row" key={f.id}><div><strong>{f.account_name} · {f.status}</strong><p>{tr("Utilisateur :","User:")} {f.user_id}</p><p><a href={f.tiktok_proof_url} target="_blank" rel="noreferrer">{tr("Preuve TikTok","TikTok proof")}</a> · <a href={f.facebook_proof_url} target="_blank" rel="noreferrer">{tr("Preuve Facebook","Facebook proof")}</a></p><small>{new Date(f.created_at).toLocaleString(lang==="fr"?"fr-FR":"en-GB")}</small></div><div className="admin-actions"><button disabled={busy} onClick={()=>void action(`/api/admin/follows/${f.id}`,"PATCH",{status:"approved"})}>{tr("Valider","Approve")}</button><button disabled={busy} onClick={()=>void action(`/api/admin/follows/${f.id}`,"PATCH",{status:"rejected"})}>{tr("Refuser","Decline")}</button></div></article>)}</div>
   <div className="account-card"><h3>{tr("Analyses sociales","Social audits")} · {data.audits.length}</h3>{data.audits.map(a=><article className="admin-request-row" key={a.id}><div><strong>{a.platform} · {a.account_name}</strong><p><a href={a.social_url} target="_blank" rel="noreferrer">{tr("Profil","Profile")}</a> · {a.followers.toLocaleString(lang==="fr"?"fr-FR":"en-GB")} {tr("abonnés","followers")} · {a.average_views.toLocaleString(lang==="fr"?"fr-FR":"en-GB")} {tr("vues moyennes","average views")}</p><small>{a.user_id} · {new Date(a.created_at).toLocaleString(lang==="fr"?"fr-FR":"en-GB")}</small></div></article>)}</div>
+  <div className="account-card"><h3>{tr("Vue d'ensemble AQUI NET ADS","AQUI NET ADS overview")}</h3><div className="account-grid"><div className="account-card"><strong>{adSummary.campaign_count}</strong><small>{tr("Campagnes","Campaigns")}</small></div><div className="account-card"><strong>{adSummary.active_count}</strong><small>{tr("Actives","Active")}</small></div><div className="account-card"><strong>{adSummary.impressions_count.toLocaleString(lang==="fr"?"fr-FR":"en-GB")}</strong><small>Impressions</small></div><div className="account-card"><strong>{adSummary.clicks_count.toLocaleString(lang==="fr"?"fr-FR":"en-GB")} · {adSummary.ctr_percent.toFixed(2)}%</strong><small>{tr("Clics · CTR","Clicks · CTR")}</small></div></div></div>
   <div className="account-card"><h3>{tr("Publicités défilantes","Scrolling advertisements")}</h3><form className="admin-campaign-form" onSubmit={e=>void createCampaign(e)}>
    <input value={draft.title} onChange={e=>setDraft(s=>({...s,title:e.target.value}))} placeholder={tr("Titre de la publicité","Ad title")} required/>
    <textarea value={draft.description} onChange={e=>setDraft(s=>({...s,description:e.target.value}))} placeholder={tr("Description courte","Short description")} required/>
