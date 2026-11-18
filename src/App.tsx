@@ -46,7 +46,7 @@ const norm=(s:string)=>s.toLocaleLowerCase("fr").normalize("NFD").replace(/[\u03
 const intentRules:[string,string[]][]=[
   ["game_creation",["jeu video","jeux video","video game","video games","jeu 2d","jeu 3d","jeu mobile","creer un jeu","creer mon jeu","faire un jeu","fabriquer un jeu","construire un jeu","developper un jeu","generer un jeu","creation de jeu video","creer un jeu video","jeu video avec ia","game development","create a game","make a game","build a game","make my own game"]],
   ["image_generation",["generer une image","creer une image","faire une image","image ia","image avec ia","dessin ia","illustration ia","generer un dessin","creer une illustration","texte en image","text to image"]],
-  ["video_generation",["generer une video","creer une video","faire une video avec ia","video ia","video a partir d'un texte","texte en video","text to video","generer un clip","creer un clip video"]],
+  ["video_generation",["generer une video","creer une video","faire une video avec ia","video ia","video a partir d'un texte","texte en video","text to video","image to video","image en video","animer une photo","animer une image","generer un clip","creer un clip video"]],
   ["website_creation",["creer un site","creation de site","site internet","site web","faire un site","construire un site","developper un site","boutique en ligne","site e commerce","page web"]],
   ["photo_editing",["retoucher une photo","restaurer une photo","ameliorer une photo","reparer une vieille photo","coloriser une photo","augmenter la qualite d'une photo","modifier une photo"]],
   ["background_removal",["supprimer le fond","enlever le fond","retirer l'arriere plan","detourer une photo","fond transparent"]],
@@ -62,7 +62,7 @@ const intentRules:[string,string[]][]=[
   ["content_writing",["rediger un texte","ecrire un texte","ecrire un script","creer du contenu","rediger une publication","ecrire un article"]],
   ["idea_generation",["trouver des idees","generer des idees","brainstorming","idees de contenu","idees de business"]],
   ["learning",["apprendre une matiere","suivre des cours","faire des exercices","apprendre une langue","apprendre l'anglais"]],
-  ["social_audit",["analyser mon compte","analyse de compte","auditer mon compte","statistiques tiktok","statistiques facebook","statistiques instagram","statistiques youtube","augmenter mes abonnes","augmenter mes abonnés","ameliorer mon compte social","améliorer mon compte social","engagement tiktok","vues tiktok","social audit","social media analytics","mon compte tiktok","mon compte instagram","mon compte facebook"]]
+  ["social_audit",["analyser mon compte","analyse de compte","auditer mon compte","statistiques tiktok","statistiques facebook","statistiques instagram","statistiques youtube","augmenter mes abonnes","augmenter mes abonnés","ameliorer mon compte social","améliorer mon compte social","engagement tiktok","vues tiktok","social audit","social media analytics","mon compte tiktok","mon compte instagram","mon compte facebook","augmenter les vues","plus de vues","plus d abonnes","developper mon audience","développer mon audience","faire grandir mon compte","booster mon compte"]]
 ];
 function getIntent(q:string) {
   const query=norm(q).replace(/[’']/g," ");
