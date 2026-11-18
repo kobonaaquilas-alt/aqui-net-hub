@@ -456,7 +456,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       <h3>{fr?"Paiement par numéro":"Pay by number"}</h3>
       <p><strong>{selectedPaymentPlan.name}</strong> · {selectedPaymentPlan.amount_xof.toLocaleString("fr-FR")} FCFA · {selectedPaymentPlan.duration_days} {fr?"jours":"days"}</p>
       <p>{fr?"Effectue le transfert vers le numéro ci-dessous, puis joins la preuve. L'abonnement reste en attente jusqu'à validation par l'administrateur.":"Transfer to the number below, then attach your proof. The subscription remains pending until an administrator approves it."}</p>
-      <p className="payment-receiver-number"><strong>{paymentNumber|| (fr?"Numéro non configuré":"Number not configured")}</strong></p>
+      <p className="payment-receiver-number"><strong>{paymentNumber?paymentNumber.split(",").map((number,index)=><span key={number}>{index>0&&<br/>}{number}</span>):(fr?"Numéro non configuré":"Number not configured")}</strong></p>
       <label>{fr?"Référence de transaction (facultatif)":"Transaction reference (optional)"}<input value={paymentReference} onChange={e=>setPaymentReference(e.target.value)} maxLength={120}/></label>
       <label>{fr?"Preuve de paiement (obligatoire)":"Payment proof (required)"}<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={e=>setPaymentProof(e.target.files?.[0]||null)} required/></label>
       <small className="account-footnote">{fr?"JPG, PNG, WEBP ou PDF · 5 Mo maximum.":"JPG, PNG, WEBP or PDF · 5 MB maximum."}</small>
