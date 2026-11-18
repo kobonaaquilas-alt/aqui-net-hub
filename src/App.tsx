@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { createClient, type Session } from "@supabase/supabase-js";
 import AccountHub from "./AccountHub";
 import AdminPanel from "./AdminPanel";
 import { weeklyTools, competitorWatch, paymentOptions } from "./data/weekly-veille";
 
+const authClient=createClient("https://xbobkysbtvtmepqgtnbt.supabase.co","sb_publishable_AGtfBQyqyKbH5C_4f5cQgw_bm0MmusA");
 type Service = "tools" | "video" | "social" | "partners";
 type Campaign = {id:string;title:string;description:string;destination_url:string|null};
 type Tool = { name:string; category:string; description:string; url:string; keywords:string[]; how:string[]; benefits:string[]; exactIntents?:string[]; freeModel?:string; limits?:string; signup?:string; access?:string; checkedAt?:string; sourceUrl?:string };
@@ -98,9 +100,49 @@ export default function App() {
   });
   const [campaigns,setCampaigns]=useState<Campaign[]>([]);
   const [adsenseClient,setAdsenseClient]=useState("");
+  const [adminSession,setAdminSession]=useState<Session|null>(null);
+  const [isHubAdmin,setIsHubAdmin]=useState(false);
+  const [adminAlerts,setAdminAlerts]=useState(0);
   const fr=lang==="fr";
   const showAdmin=new URLSearchParams(window.location.search).get("admin")==="1";
   const recommendations=useMemo(()=>{if(!submitted)return [];const intents=getIntent(submitted);return tools.map(tool=>({tool,score:scoreTool(tool,submitted)})).filter(item=>item.score>=(intents.length?100:8)).sort((a,b)=>b.score-a.score||a.tool.name.localeCompare(b.tool.name)).slice(0,4).map(item=>item.tool);},[submitted]);
+  useEffect(()=>{
+    let alive=true;
+    const checkAdmin=async(session:Session|null)=>{
+      if(!alive)return;
+      setAdminSession(session);
+      if(!session){setIsHubAdmin(false);setAdminAlerts(0);return;}
+      try{
+        const headers={Authorization:"Bearer "+session.access_token};
+        const me=await fetch("/api/admin/me",{headers});
+        if(!alive)return;
+        if(!me.ok){setIsHubAdmin(false);setAdminAlerts(0);return;}
+        setIsHubAdmin(true);
+        const [rr,br]=await Promise.all([fetch("/api/admin/requests",{headers}),fetch("/api/admin/billing",{headers})]);
+        if(!alive||!rr.ok||!br.ok)return;
+        const [requests,billing]=await Promise.all([rr.json(),br.json()]);
+        const pending=(item:any)=>["pending","submitted","new","reviewing"].includes(String(item?.status||"").toLowerCase());
+        setAdminAlerts([...(requests.ads||[]),...(requests.partners||[]),...(requests.follows||[])].filter(pending).length+(billing.payments||[]).filter((item:any)=>item.status==="pending").length);
+      }catch{if(alive){setIsHubAdmin(false);setAdminAlerts(0);}}
+    };
+    authClient.auth.getSession().then(({data})=>void checkAdmin(data.session));
+    const {data:{subscription}}=authClient.auth.onAuthStateChange((_event,session)=>void checkAdmin(session));
+    return()=>{alive=false;subscription.unsubscribe();};
+  },[]);
+  useEffect(()=>{
+    if(!isHubAdmin||!adminSession)return;
+    const timer=window.setInterval(async()=>{
+      try{
+        const headers={Authorization:"Bearer "+adminSession.access_token};
+        const [rr,br]=await Promise.all([fetch("/api/admin/requests",{headers}),fetch("/api/admin/billing",{headers})]);
+        if(!rr.ok||!br.ok)return;
+        const [requests,billing]=await Promise.all([rr.json(),br.json()]);
+        const pending=(item:any)=>["pending","submitted","new","reviewing"].includes(String(item?.status||"").toLowerCase());
+        setAdminAlerts([...(requests.ads||[]),...(requests.partners||[]),...(requests.follows||[])].filter(pending).length+(billing.payments||[]).filter((item:any)=>item.status==="pending").length);
+      }catch{}
+    },30000);
+    return()=>window.clearInterval(timer);
+  },[isHubAdmin,adminSession]);
   useEffect(()=>{fetch("/api/public/campaigns").then(r=>r.ok?r.json():Promise.reject()).then(d=>{const list=d.campaigns||[];setCampaigns(list);for(const campaign of list)fetch(`/api/public/campaigns/${campaign.id}/impression`,{method:"POST"}).catch(()=>{});}).catch(()=>{});fetch("/api/public/settings").then(r=>r.ok?r.json():Promise.reject()).then(d=>setAdsenseClient(d.adsense_client||"")).catch(()=>{});},[]);
   useEffect(()=>{if(!adsenseClient||!/^ca-pub-[0-9]{16}$/.test(adsenseClient)||document.querySelector("script[data-aqui-adsense]"))return;const s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";s.dataset.aquiAdsense="true";s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client="+adsenseClient;document.head.appendChild(s);},[adsenseClient]);
   useEffect(()=>{if(!activeService)return;const frame=requestAnimationFrame(()=>document.getElementById(activeService==="tools"?"demande-outils":"diagnostic")?.scrollIntoView({behavior:"smooth",block:"start"}));return()=>cancelAnimationFrame(frame);},[activeService]);
@@ -109,7 +151,7 @@ export default function App() {
   return <div className="site-shell">
     <header className="topbar">
       <a className="brand" href="#accueil"><span className="brand-mark">A</span><span>AQUI NET <strong>HUB</strong></span></a>
-      <nav className="main-nav"><a href="#accueil">{fr?"Accueil":"Home"}</a><a href="#services">{fr?"Services":"Services"}</a><a href="#net-assist">NET ASSIST</a><a href="#academy">ACADEMY</a><a href="#ideas">{fr?"Idées":"Ideas"}</a><a href="#account-access">{fr?"Compte":"Account"}</a><a href="#veille-aqui">{fr?"Veille":"Watch"}</a></nav>
+      <nav className="main-nav"><a href="#accueil">{fr?"Accueil":"Home"}</a><a href="#services">{fr?"Services":"Services"}</a><a href="#net-assist">NET ASSIST</a><a href="#academy">ACADEMY</a><a href="#ideas">{fr?"Idées":"Ideas"}</a><a href="#account-access">{fr?"Compte":"Account"}</a><a href="#veille-aqui">{fr?"Veille":"Watch"}</a>{isHubAdmin&&<a className="admin-nav-link" href="/?admin=1#admin-prive">{fr?"Administration":"Administration"}{adminAlerts>0&&<span className="admin-nav-count">{adminAlerts>99?"99+":adminAlerts}</span>}</a>}</nav>
       <button className="language-button" onClick={()=>setLang(fr?"en":"fr")}>{fr?"EN":"FR"}</button>
     </header>
     <section className="promo-ticker" aria-label={fr?"Bandeau d’informations":"Information ticker"}><div className="promo-track">{[...(campaigns.length?campaigns:[{id:"hub-1",title:fr?"AQUI NET HUB · Trouve les outils adaptés à tes projets":"AQUI NET HUB · Find tools that fit your projects",description:fr?"Des solutions numériques sélectionnées selon ton besoin.":"Digital tools selected for your needs.",destination_url:null},{id:"hub-2",title:fr?"Création IA · Vidéo · Réseaux sociaux":"AI creation · Video · Social media",description:fr?"Découvre les services et les ressources disponibles.":"Explore services and available resources.",destination_url:null}]),...(campaigns.length?campaigns:[{id:"hub-1",title:fr?"AQUI NET HUB · Trouve les outils adaptés à tes projets":"AQUI NET HUB · Find tools that fit your projects",description:fr?"Des solutions numériques sélectionnées selon ton besoin.":"Digital tools selected for your needs.",destination_url:null},{id:"hub-2",title:fr?"Création IA · Vidéo · Réseaux sociaux":"AI creation · Video · Social media",description:fr?"Découvre les services et les ressources disponibles.":"Explore services and available resources.",destination_url:null}])].map((campaign,i)=><a key={campaign.id+"-"+i} href={campaign.destination_url?(campaign.id.startsWith("hub-")?campaign.destination_url:`/api/public/campaigns/${campaign.id}/click`):"#services"} target={campaign.destination_url?"_blank":undefined} rel="noreferrer"><span>✦</span> {campaign.title} <small>{campaign.description}</small> <b>{fr?"En savoir plus":"Learn more"} ↗</b></a>)}</div></section>
