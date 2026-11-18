@@ -373,7 +373,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
     }catch(error){setNotice(error instanceof Error?error.message:"Impossible d'envoyer la preuve.");}
     finally{setPaymentBusy(false);}
   }
-  const paymentAction=(plan:Plan)=><button type="button" className="filter-button" disabled={paymentBusy||!paymentNumber} onClick={()=>chooseManualPayment(plan)}>{fr?"Payer par numéro":"Pay by number"}</button>;
+  const paymentAction=(plan:Plan)=><><button type="button" className="filter-button" disabled={paymentBusy||!paymentNumber} onClick={()=>chooseManualPayment(plan)}>{fr?"Payer par numéro":"Pay by number"}</button><small className="account-footnote">{fr?"TMoney : désactivé · Flooz : désactivé · Compte bancaire : désactivé":"TMoney: disabled · Flooz: disabled · Bank account: disabled"}</small></>;
 
   async function startVideo() {
     if (!session?.access_token) {
