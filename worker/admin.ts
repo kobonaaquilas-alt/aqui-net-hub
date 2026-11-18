@@ -45,7 +45,7 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
     return json({
      subscriptions:normalizedSubscriptions,
      payments,
-     active_count:normalizedSubscriptions.filter(item=>item.status==="active"&&new Date(item.ends_at).getTime()>Date.now()).length,
+     active_count:subscriptions.filter(item=>item.status==="active"&&new Date(item.ends_at).getTime()>Date.now()).length,
      pending_count:payments.filter(item=>item.status==="pending").length,
      paid_count:payments.filter(item=>item.status==="paid").length
     });
