@@ -118,7 +118,9 @@ export async function handleSocial(request:Request,env:Env){
    const result=await saved.json() as {ok:boolean;code?:string;count:number};
    if(!result.ok){
     const messages:Record<string,string>={
-     SUBSCRIPTION_REQUIRED:"Les trois analyses gratuites sont utilisées. Un abonnement AQUI NET HUB est nécessaire pour continuer."
+      FOLLOW_PENDING:"Ta demande de vérification des profils est encore en attente.",
+      FOLLOW_REQUIRED:"Après les trois analyses gratuites, fais vérifier tes profils TikTok et Facebook avant de poursuivre.",
+      SUBSCRIPTION_REQUIRED:"Tes profils sont vérifiés. Un abonnement AQUI NET HUB actif est nécessaire pour continuer."
     };
     return json({error:messages[result.code||""]||"Accès refusé.",code:result.code,count:result.count},result.code==="SUBSCRIPTION_REQUIRED"?402:403);
    }
