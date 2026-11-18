@@ -12,6 +12,7 @@ type Campaign = { id: string; title: string; description: string; destination_ur
 type Subscription = { id: string; plan_id: string; plan_name: string; starts_at: string; ends_at: string; status: string };
 type Payment = { id: string; merchant_transaction_id: string; amount_xof: number; currency: string; status: string; created_at: string; paid_at: string | null };
 type AccountSummary = { subscriptions: Subscription[]; payments: Payment[] };
+type SocialAudit = { id:string; platform:string; account_name:string; social_url:string; followers:number; average_views:number; report:any; created_at:string };
 
 export default function AccountHub({ service, lang, authOnly = false }: Props) {
   const fr = lang === "fr";
@@ -54,6 +55,12 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
   const [socialFrequency,setSocialFrequency]=useState("3");
   const [socialCount,setSocialCount]=useState(0);
   const [socialSubscribed,setSocialSubscribed]=useState(false);
+  const [socialFollowStatus,setSocialFollowStatus]=useState("none");
+  const [socialHistory,setSocialHistory]=useState<SocialAudit[]>([]);
+  const [followAccountName,setFollowAccountName]=useState("");
+  const [followTikTokUrl,setFollowTikTokUrl]=useState("");
+  const [followFacebookUrl,setFollowFacebookUrl]=useState("");
+  const [followBusy,setFollowBusy]=useState(false);
   const [tiktokBusy,setTiktokBusy]=useState(false);
   const [tiktokNotice,setTiktokNotice]=useState("");
   const [tiktokData,setTiktokData]=useState<any>(null);
@@ -221,13 +228,29 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
   }
 
 
-  useEffect(()=>{
+  const refreshSocialData=useCallback(async()=>{
     if(!session?.access_token)return;
-    fetch("/api/social/status",{headers:{Authorization:"Bearer "+session.access_token}})
-      .then(r=>r.ok?r.json():Promise.reject())
-      .then(d=>{setSocialCount(d.count||0);setSocialSubscribed(!!d.subscribed);})
-      .catch(()=>{});
+    const headers={Authorization:"Bearer "+session.access_token};
+    const [statusResponse,historyResponse]=await Promise.all([
+      fetch("/api/social/status",{headers}),
+      fetch("/api/social/audits",{headers})
+    ]);
+    if(statusResponse.ok){const d=await statusResponse.json();setSocialCount(d.count||0);setSocialSubscribed(!!d.subscribed);setSocialFollowStatus(d.followStatus||"none");}
+    if(historyResponse.ok){const d=await historyResponse.json();setSocialHistory(d.audits||[]);}
   },[session?.access_token]);
+  useEffect(()=>{void refreshSocialData().catch(()=>{});},[refreshSocialData]);
+  async function submitFollowVerification(){
+    if(!session?.access_token)return;
+    setFollowBusy(true);setSocialResult("");
+    try{
+      const response=await fetch("/api/social/follow-verification",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({account_name:followAccountName,tiktok_proof_url:followTikTokUrl,facebook_proof_url:followFacebookUrl})});
+      const data=await response.json();
+      if(!response.ok)throw new Error(data.error||"Envoi impossible.");
+      setSocialFollowStatus("pending");
+      setSocialResult(fr?"Demande envoyée. L'équipe vérifiera les deux profils avant de débloquer l'accès complémentaire.":"Request sent. The team will review both profiles before unlocking additional access.");
+    }catch(error){setSocialResult(error instanceof Error?error.message:"Envoi impossible.");}
+    finally{setFollowBusy(false);}
+  }
   async function startSocialAudit(){
     if(!session)return;
     if(!backendReady){setSocialResult("Service temporairement indisponible : la clé privée Supabase du Worker doit être configurée.");return;}
@@ -245,7 +268,8 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
         setSocialResult("Analyse "+d.count+"/3 · Indice : "+x.health_score+"/100 · Engagement/vues : "+x.engagement_rate_by_views+"% · Vues/abonnés : "+x.views_to_followers_percent+"%\nPoints forts : "+(x.strengths.join(" ; ")||"À confirmer avec davantage de données.")+"\nÀ améliorer : "+(x.issues.join(" ; ")||"Aucun signal critique dans les chiffres déclarés.")+"\nActions : "+x.actions.join(" ; ")+"\n\n"+x.disclaimer);
       }
       const sr=await fetch("/api/social/status",{headers:{Authorization:"Bearer "+session.access_token}});
-      if(sr.ok){const s=await sr.json();setSocialCount(s.count||0);setSocialSubscribed(!!s.subscribed);}
+      if(sr.ok){const s=await sr.json();setSocialCount(s.count||0);setSocialSubscribed(!!s.subscribed);setSocialFollowStatus(s.followStatus||"none");}
+      await refreshSocialData();
     }catch(e){setSocialResult(e instanceof Error?e.message:"Erreur d'analyse.");}
     finally{setBusy(false);}
   }
@@ -545,7 +569,17 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
         <a className="filter-button" href="https://business.facebook.com/latest/insights" target="_blank" rel="noreferrer">{fr?"Ouvrir Meta Business Suite":"Open Meta Business Suite"} ↗</a>
       </div>
 
-      {(socialCount<3 || socialSubscribed) ? <>
+      {socialCount>=3 && socialFollowStatus!=="approved" && <div className="account-card follow-gate">
+        <h4>{fr?"Vérification des profils sociaux":"Social profile verification"}</h4>
+        <p>{socialFollowStatus==="pending"?(fr?"Ta demande est en attente de vérification.":"Your request is awaiting review."):socialFollowStatus==="rejected"?(fr?"La demande précédente a été refusée. Tu peux corriger les liens et renvoyer.":"The previous request was declined. Correct the links and resubmit."): (fr?"Après les 3 analyses gratuites, fais vérifier tes profils TikTok et Facebook. Un abonnement actif sera également nécessaire pour poursuivre.":"After the 3 free audits, submit your TikTok and Facebook profiles for review. An active subscription is also required to continue.")}</p>
+        {socialFollowStatus!=="pending" && <div className="social-metrics-grid">
+          <label>{fr?"Nom du compte":"Account name"}<input value={followAccountName} onChange={e=>setFollowAccountName(e.target.value)} required/></label>
+          <label>TikTok URL<input type="url" value={followTikTokUrl} onChange={e=>setFollowTikTokUrl(e.target.value)} placeholder="https://www.tiktok.com/@…" required/></label>
+          <label>Facebook URL<input type="url" value={followFacebookUrl} onChange={e=>setFollowFacebookUrl(e.target.value)} placeholder="https://www.facebook.com/…" required/></label>
+          <button type="button" className="primary-button" disabled={followBusy||!followAccountName.trim()||!followTikTokUrl.trim()||!followFacebookUrl.trim()} onClick={()=>void submitFollowVerification()}>{followBusy?"…":fr?"Envoyer pour vérification":"Submit for review"}</button>
+        </div>}
+      </div>}
+      {(socialCount<3 || (socialSubscribed && socialFollowStatus==="approved")) ? <>
         <div className="social-metrics-grid">
           <label>{fr?"Lien du profil":"Profile URL"}<input type="url" value={socialUrl} onChange={e=>setSocialUrl(e.target.value)} placeholder="https://…" required/></label>
           <label>{fr?"Réseau / nom du compte":"Network / account name"}<input value={socialName} onChange={e=>setSocialName(e.target.value)} placeholder={fr?"Nom exact du compte":"Exact account name"} required/></label>
@@ -560,14 +594,20 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       </> : <div className="account-card subscription-required">
         <span className="eyebrow">{fr?"ESSAI TERMINÉ · ACCÈS PRO":"TRIAL COMPLETED · PRO ACCESS"}</span>
         <h3>{fr?"Tes 3 analyses gratuites sont utilisées":"Your 3 free analyses have been used"}</h3>
-        <p>{fr?"Choisis un abonnement pour continuer les diagnostics sans limite pendant sa durée. Aucun abonnement n'est créé avant confirmation du paiement par le serveur.":"Choose a subscription to continue running audits during its validity period. No subscription is activated until the server confirms payment."}</p>
+        <p>{fr?"Après validation de tes profils, un abonnement actif permet de poursuivre les diagnostics pendant sa durée. Aucun abonnement n'est activé avant vérification de la preuve de paiement.":"After your profiles are approved, an active subscription lets you continue audits during its validity period. No subscription is activated until payment proof is verified."}</p>
         {plans.length ? plans.map(p=><article className="plan-row" key={p.id}>
           <div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div>
           {paymentAction(p)}
         </article>) : <p>{fr?"Les formules seront affichées dès leur activation.":"Plans will appear when activated."}</p>}
-        <small>{fr?"Le paiement actuellement configuré est en FCFA via CinetPay. Les paiements directs en USD/EUR et les cartes internationales nécessitent l'activation d'un prestataire compatible.":"The currently configured checkout is in XOF through CinetPay. Direct USD/EUR and international card payments require an enabled compatible provider."}</small>
+        <small>{fr?"Paiement par numéro : joins la preuve dans ton compte. L'abonnement sera activé après validation administrative.":"Pay by phone number and upload the proof in your account. The subscription is activated after administrative review."}</small>
       </div>}
       {socialResult&&<pre className="account-message social-report" role="status">{socialResult}</pre>}
+      <div className="manual-audit-panel">
+        <h4>{fr?"Historique de tes analyses":"Your audit history"}</h4>
+        {socialHistory.length===0?<p>{fr?"Tes analyses enregistrées apparaîtront ici.":"Your saved audits will appear here."}</p>:socialHistory.map(a=><article className="subscription-row" key={a.id}>
+          <div><strong>{a.platform} · {a.account_name}</strong><p>{Number(a.followers||0).toLocaleString()} {fr?"abonnés":"followers"} · {Number(a.average_views||0).toLocaleString()} {fr?"vues moyennes":"average views"}</p><small>{new Date(a.created_at).toLocaleString(fr?"fr-FR":"en-GB")} · {fr?"Indice":"Score"} {a.report?.health_score??"—"}/100</small></div>
+        </article>)}
+      </div>
       <small className="account-footnote">{fr?"Les captures sont contrôlées manuellement. Les statistiques saisies manuellement ne sont pas authentifiées automatiquement. Facebook connecté utilise les données autorisées par Meta.":"Screenshots are reviewed manually. TikTok or Meta do not automatically authenticate these metrics here."}</small>
     </div>}
     {session && service==="video" && <div className="account-card video-studio">
