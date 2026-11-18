@@ -66,7 +66,11 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
   }
   const paymentRejection=url.pathname.match(/^\/api\/admin\/payments\/([0-9a-f-]{36})\/reject$/i);
   if(paymentRejection&&request.method==="POST"){
-   const r=await fetch(env.SUPABASE_URL+"/rest/v1/hub_payment_orders?id=eq."+encodeURIComponent(paymentRejection[1])+"&status=eq.pending",{method:"PATCH",headers:headers(env),body:JSON.stringify({status:"failed",processed_by:user.id})});
+   let body:{reason?:string};
+   try{body=await request.json() as typeof body;}catch{return json({error:"Motif de rejet invalide."},400);}
+   const reason=String(body.reason||"").trim();
+   if(reason.length<5||reason.length>500)return json({error:"Le motif doit contenir entre 5 et 500 caractères."},400);
+   const r=await fetch(env.SUPABASE_URL+"/rest/v1/hub_payment_orders?id=eq."+encodeURIComponent(paymentRejection[1])+"&status=eq.pending",{method:"PATCH",headers:headers(env),body:JSON.stringify({status:"failed",processed_by:user.id,rejection_reason:reason})});
    if(!r.ok)return json({error:"Refus du paiement impossible."},502);
    return (await r.json() as unknown[]).length?json({ok:true}):json({error:"Commande en attente introuvable."},404);
   }
