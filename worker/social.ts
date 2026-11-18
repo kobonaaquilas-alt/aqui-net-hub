@@ -13,13 +13,19 @@ async function countAudits(env:Env,userId:string){
  if(!r.ok)throw new Error("quota"); const range=r.headers.get("content-range")||"*/0"; return Number(range.split("/")[1]||0);
 }
 async function entitlement(env:Env,userId:string){
- const response=await fetch(
-  `${env.SUPABASE_URL}/rest/v1/hub_subscriptions?user_id=eq.${encodeURIComponent(userId)}&status=eq.active&ends_at=gt.${encodeURIComponent(new Date().toISOString())}&select=id&limit=1`,
-  {headers:headers(env)}
- );
- if(!response.ok)throw new Error("subscription");
- const rows=await response.json() as unknown[];
- return {followStatus:"not_required",subscribed:rows.length>0};
+ const [subscriptionResponse,followResponse]=await Promise.all([
+  fetch(`${env.SUPABASE_URL}/rest/v1/hub_subscriptions?user_id=eq.${encodeURIComponent(userId)}&status=eq.active&ends_at=gt.${encodeURIComponent(new Date().toISOString())}&select=id&limit=1`,{headers:headers(env)}),
+  fetch(`${env.SUPABASE_URL}/rest/v1/hub_follow_verifications?user_id=eq.${encodeURIComponent(userId)}&select=status&limit=1`,{headers:headers(env)})
+ ]);
+ if(!subscriptionResponse.ok||!followResponse.ok)throw new Error("entitlement");
+ const subscriptions=await subscriptionResponse.json() as unknown[];
+ const follows=await followResponse.json() as Array<{status:string}>;
+ return {followStatus:follows[0]?.status||"none",subscribed:subscriptions.length>0};
+}
+async function listAudits(env:Env,userId:string){
+ const response=await fetch(`${env.SUPABASE_URL}/rest/v1/hub_social_audits?user_id=eq.${encodeURIComponent(userId)}&select=id,platform,account_name,social_url,followers,average_views,average_likes,average_comments,posts_per_week,goal,report,created_at&order=created_at.desc&limit=10`,{headers:headers(env)});
+ if(!response.ok)throw new Error("audit_history");
+ return response.json();
 }
 
 function analyze(body:any, platform:string){
@@ -69,6 +75,20 @@ export async function handleSocial(request:Request,env:Env){
   if(request.method==="GET"&&url.pathname==="/api/social/status"){
    const [count,access]=await Promise.all([countAudits(env,user.id),entitlement(env,user.id)]);
    return json({count,free_remaining:Math.max(0,3-count),...access});
+  }
+  if(request.method==="GET"&&url.pathname==="/api/social/audits"){
+   return json({audits:await listAudits(env,user.id)});
+  }
+  if(request.method==="POST"&&url.pathname==="/api/social/follow-verification"){
+   const b=await request.json() as any;
+   const account=String(b.account_name||"").trim();
+   const valid=(value:string,hosts:string[])=>{try{const u=new URL(value);const host=u.hostname.toLowerCase();return u.protocol==="https:"&&!u.username&&!u.password&&hosts.some(domain=>host===domain||host.endsWith("."+domain))?u.toString():null;}catch{return null;}};
+   const tiktok=valid(String(b.tiktok_proof_url||""),["tiktok.com"]);
+   const facebook=valid(String(b.facebook_proof_url||""),["facebook.com","fb.com"]);
+   if(account.length<2||account.length>120||!tiktok||!facebook)return json({error:"Indique le nom du compte et les liens HTTPS valides de tes profils TikTok et Facebook."},400);
+   const saved=await fetch(`${env.SUPABASE_URL}/rest/v1/hub_follow_verifications?on_conflict=user_id`,{method:"POST",headers:{...headers(env),Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({user_id:user.id,account_name:account,tiktok_proof_url:tiktok,facebook_proof_url:facebook,status:"pending",admin_note:null,reviewed_at:null})});
+   if(!saved.ok)return json({error:"Envoi de la demande de vérification impossible."},502);
+   return json({ok:true,status:"pending"});
   }
   if(request.method==="POST"&&url.pathname==="/api/social/audits"){
    const b=await request.json() as any;
