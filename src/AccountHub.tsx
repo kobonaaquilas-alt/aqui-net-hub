@@ -65,7 +65,6 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
   const [paymentBusy,setPaymentBusy]=useState(false);
   const [backendReady,setBackendReady]=useState(false);
   const [videoReady,setVideoReady]=useState(false);
-  const [cinetpayReady,setCinetpayReady]=useState(false);
   const [paymentNumber,setPaymentNumber]=useState("");
   const [selectedPaymentPlan,setSelectedPaymentPlan]=useState<Plan|null>(null);
   const [paymentProof,setPaymentProof]=useState<File|null>(null);
@@ -94,7 +93,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
 
   useEffect(() => {
     db.auth.getSession().then(({data}) => setSession(data.session));
-    fetch("/api/health").then(r=>r.ok?r.json():Promise.reject()).then(d=>{setBackendReady(!!d.supabase);setVideoReady(!!d.supabase&&!!d.video_provider_available);setCinetpayReady(!!d.cinetpay);}).catch(()=>{setBackendReady(false);setVideoReady(false);setCinetpayReady(false);});
+    fetch("/api/health").then(r=>r.ok?r.json():Promise.reject()).then(d=>{setBackendReady(!!d.supabase);setVideoReady(!!d.supabase&&!!d.video_provider_available);}).catch(()=>{setBackendReady(false);setVideoReady(false);});
     const {data:{subscription}} = db.auth.onAuthStateChange((event,next) => {
       if (event === "PASSWORD_RECOVERY") setRecoveryMode(true);
       setSession(next);
