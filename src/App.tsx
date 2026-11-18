@@ -34,7 +34,13 @@ const baseTools:Tool[] = [
   {name:"Google Vids",category:"Création vidéo IA",exactIntents:["video_generation"],description:"Créer des clips vidéo assistés par IA et assembler des vidéos explicatives ou de présentation.",url:"https://vids.google.com/",keywords:["video","vidéo","clip","texte en vidéo","image en vidéo","présentation vidéo","presentation video","animation","google vids"],how:["Ouvre Google Vids avec ton compte Google.","Vérifie dans ton compte si la génération de clips IA est disponible.","Crée un clip ou une présentation, puis vérifie les limites avant l'export."],benefits:["Les comptes Google personnels disposent d'un quota mensuel limité de clips IA selon la documentation Google.","Utile pour les vidéos explicatives et de présentation."],freeModel:"Quota limité de clips IA pour certains comptes Google personnels ; disponibilité selon compte et pays.",limits:"Quota mensuel limité ; certaines fonctions et modifications exigent un abonnement Workspace ou Google AI éligible.",signup:"Compte Google requis.",access:"Web ; disponibilité des fonctions IA à vérifier dans le compte au Togo.",checkedAt:"15 novembre 2026",sourceUrl:"https://support.google.com/docs/answer/15609411"}
 
 ];
-const tools:Tool[] = [...baseTools, ...weeklyTools];
+const tools:Tool[] = [...baseTools, ...weeklyTools, {
+  name:"AQUI NET HUB · SOCIAL AUDIT",category:"Analyse des réseaux sociaux",
+  description:"Diagnostiquer un compte TikTok, Facebook, Instagram ou YouTube à partir des statistiques disponibles et obtenir des recommandations concrètes.",
+  url:"internal://social-audit",keywords:["tiktok","facebook","instagram","youtube","abonnés","abonne","vues","engagement","statistiques","analyse","auditer","audience"],
+  exactIntents:["social_audit"],how:["Ouvre SOCIAL AUDIT dans AQUI NET HUB.","Connecte TikTok ou une Page Facebook lorsque l'accès officiel est disponible, ou saisis les statistiques visibles dans l'application.","Lance l'analyse et consulte les points forts, les problèmes et les actions recommandées."],
+  benefits:["Diagnostic chiffré et score indicatif.","Historique personnel des analyses.","Trois analyses gratuites par compte, puis accès selon les conditions d'abonnement."]
+}];
 
 const norm=(s:string)=>s.toLocaleLowerCase("fr").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 const intentRules:[string,string[]][]=[
@@ -64,16 +70,21 @@ function getIntent(q:string) {
     return query.includes(phrase);
   })).map(([id])=>id);
 }
-function matchesTool(t:Tool,q:string) {
+function scoreTool(t:Tool,q:string) {
   const query=norm(q);
   const intents=getIntent(q);
-  if(intents.length) return !!t.exactIntents?.some(intent=>intents.includes(intent));
-  const words=[...new Set(query.split(/[^a-z0-9]+/).filter(w=>w.length>2))];
-  const toolWords=new Set(norm([t.name,t.category,...t.keywords].join(" ")).split(/[^a-z0-9]+/).filter(w=>w.length>2));
-  if(words.some(w=>norm(t.name).split(/[^a-z0-9]+/).includes(w))) return true;
-  const hits=words.filter(w=>toolWords.has(w));
-  // En l'absence d'intention reconnue, exiger plusieurs indices concordants.
-  return hits.length>=2;
+  const intentMatch=!!t.exactIntents?.some(intent=>intents.includes(intent));
+  const stop=new Set(["je","tu","il","elle","nous","vous","ils","elles","le","la","les","un","une","des","du","de","pour","avec","sur","dans","mon","ma","mes","ton","ta","tes","the","and","for","with","from","want","need","faire","veux","voudrais","comment","est","que"]);
+  const words=[...new Set(query.split(/[^a-z0-9]+/).filter(w=>w.length>2&&!stop.has(w)))];
+  const corpus=norm([t.name,t.category,t.description,...t.keywords,...t.benefits].join(" "));
+  const tokens=new Set(corpus.split(/[^a-z0-9]+/).filter(w=>w.length>2));
+  let score=intentMatch?100:0;
+  for(const word of words){
+    if(tokens.has(word))score+=5;
+    else if([...tokens].some(token=>token.length>=4&&(token.startsWith(word)||word.startsWith(token))))score+=2;
+  }
+  if(query.length>5&&norm(t.name).includes(query))score+=20;
+  return score;
 }
 export default function App() {
   const [lang,setLang]=useState<"fr"|"en">("fr");
@@ -88,7 +99,7 @@ export default function App() {
   const [adsenseClient,setAdsenseClient]=useState("");
   const fr=lang==="fr";
   const showAdmin=new URLSearchParams(window.location.search).get("admin")==="1";
-  const recommendations=useMemo(()=>{if(!submitted)return [];const matches=tools.filter(t=>matchesTool(t,submitted));const intents=getIntent(submitted);return intents.length?matches:matches.slice(0,4);},[submitted]);
+  const recommendations=useMemo(()=>{if(!submitted)return [];const intents=getIntent(submitted);return tools.map(tool=>({tool,score:scoreTool(tool,submitted)})).filter(item=>item.score>=(intents.length?100:8)).sort((a,b)=>b.score-a.score||a.tool.name.localeCompare(b.tool.name)).slice(0,4).map(item=>item.tool);},[submitted]);
   useEffect(()=>{fetch("/api/public/campaigns").then(r=>r.ok?r.json():Promise.reject()).then(d=>{const list=d.campaigns||[];setCampaigns(list);for(const campaign of list)fetch(`/api/public/campaigns/${campaign.id}/impression`,{method:"POST"}).catch(()=>{});}).catch(()=>{});fetch("/api/public/settings").then(r=>r.ok?r.json():Promise.reject()).then(d=>setAdsenseClient(d.adsense_client||"")).catch(()=>{});},[]);
   useEffect(()=>{if(!adsenseClient||!/^ca-pub-[0-9]{16}$/.test(adsenseClient)||document.querySelector("script[data-aqui-adsense]"))return;const s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";s.dataset.aquiAdsense="true";s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client="+adsenseClient;document.head.appendChild(s);},[adsenseClient]);
   useEffect(()=>{if(!activeService)return;const frame=requestAnimationFrame(()=>document.getElementById(activeService==="tools"?"demande-outils":"compte")?.scrollIntoView({behavior:"smooth",block:"start"}));return()=>cancelAnimationFrame(frame);},[activeService]);
@@ -164,7 +175,7 @@ export default function App() {
         {selectedTool && <article className="tool-detail-page" id="outil-detail-selectionne">
           <button className="text-button" onClick={()=>setSelectedTool(null)}>← {fr?"Retour aux résultats":"Back to results"}</button>
           <span className="eyebrow">{selectedTool.category}</span><h3>{selectedTool.name}</h3><p>{selectedTool.description}</p>
-          <a className="primary-button" href={selectedTool.url} target="_blank" rel="noopener noreferrer">{fr?"Ouvrir le site officiel":"Open official website"} ↗</a>
+          {selectedTool.url==="internal://social-audit" ? <button type="button" className="primary-button" onClick={()=>{setActiveService("social");setSelectedTool(null);}}>{fr?"Ouvrir SOCIAL AUDIT":"Open SOCIAL AUDIT"} ↗</button> : <a className="primary-button" href={selectedTool.url} target="_blank" rel="noopener noreferrer">{fr?"Ouvrir le site officiel":"Open official website"} ↗</a>}
           <small className="free-disclaimer">{fr?"Les services indiqués proposent une formule ou un usage gratuit ; des limites, crédits ou options payantes peuvent s'appliquer selon l'outil. Vérifie les conditions sur le site officiel.":"These services offer a free tier or free usage; limits, credits or paid options may apply. Check the official terms."}</small>
           {selectedTool.freeModel&&<div className="tool-free-conditions"><h4>{fr?"Conditions de gratuité":"Free-plan conditions"}</h4><p><strong>{fr?"Modèle : ":"Model: "}</strong>{selectedTool.freeModel}</p>{selectedTool.limits&&<p><strong>{fr?"Limites : ":"Limits: "}</strong>{selectedTool.limits}</p>}{selectedTool.signup&&<p><strong>{fr?"Inscription : ":"Sign-up: "}</strong>{selectedTool.signup}</p>}{selectedTool.access&&<p><strong>{fr?"Accès : ":"Access: "}</strong>{selectedTool.access}</p>}<p><strong>{fr?"Vérifié le : ":"Checked: "}</strong>{selectedTool.checkedAt||"13 novembre 2026"}</p><a href={selectedTool.sourceUrl||selectedTool.url} target="_blank" rel="noopener noreferrer">{fr?"Vérifier les conditions officielles":"Verify official terms"} ↗</a></div>}
         </article>}
