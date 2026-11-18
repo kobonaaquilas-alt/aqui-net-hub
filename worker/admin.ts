@@ -28,7 +28,7 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
   if(request.method==="GET"&&url.pathname==="/api/admin/billing"){
     const [subscriptionResponse,paymentResponse]=await Promise.all([
      fetch(env.SUPABASE_URL+"/rest/v1/hub_subscriptions?select=id,user_id,plan_id,starts_at,ends_at,status,created_at&order=created_at.desc&limit=100",{headers:headers(env)}),
-     fetch(env.SUPABASE_URL+"/rest/v1/hub_payment_orders?select=id,user_id,plan_id,plan_name,amount_xof,currency,status,created_at,paid_at,payment_method,manual_reference,merchant_transaction_id,proof_path&order=created_at.desc&limit=100",{headers:headers(env)})
+     fetch(env.SUPABASE_URL+"/rest/v1/hub_payment_orders?select=id,user_id,plan_id,plan_name,amount_xof,currency,status,created_at,paid_at,payment_method,manual_reference,merchant_transaction_id,proof_path,rejection_reason&order=created_at.desc&limit=100",{headers:headers(env)})
     ]);
     if(!subscriptionResponse.ok||!paymentResponse.ok)return json({error:"Lecture des abonnements et paiements impossible."},502);
     const [subscriptions,payments]=await Promise.all([subscriptionResponse.json(),paymentResponse.json()]) as [Array<Record<string,any>>,Array<Record<string,any>>];
