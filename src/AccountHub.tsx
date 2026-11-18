@@ -74,6 +74,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
   const [videoReady,setVideoReady]=useState(false);
   const [paymentNumber,setPaymentNumber]=useState("");
   const [selectedPaymentPlan,setSelectedPaymentPlan]=useState<Plan|null>(null);
+  const [paymentChooserPlan,setPaymentChooserPlan]=useState<Plan|null>(null);
   const [paymentProof,setPaymentProof]=useState<File|null>(null);
   const [paymentReference,setPaymentReference]=useState("");
 
@@ -358,7 +359,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
     finally{setFacebookBusy(false);}
   }
 
-  function chooseManualPayment(plan:Plan){setSelectedPaymentPlan(plan);setPaymentProof(null);setPaymentReference("");}
+  function chooseManualPayment(plan:Plan){setPaymentChooserPlan(null);setSelectedPaymentPlan(plan);setPaymentProof(null);setPaymentReference("");}
   async function submitManualPayment(){
     if(!session?.access_token||!selectedPaymentPlan)return;
     if(!paymentNumber){setNotice(fr?"Le numéro de réception doit d'abord être configuré par l'administrateur.":"The receiving number must first be configured by the administrator.");return;}
@@ -379,7 +380,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
     }catch(error){setNotice(error instanceof Error?error.message:"Impossible d'envoyer la preuve.");}
     finally{setPaymentBusy(false);}
   }
-  const paymentAction=(plan:Plan)=><><button type="button" className="filter-button" disabled={paymentBusy||!paymentNumber} onClick={()=>chooseManualPayment(plan)}>{fr?"Payer par numéro":"Pay by number"}</button><small className="account-footnote">{fr?"TMoney : désactivé · Flooz : désactivé · Compte bancaire : désactivé":"TMoney: disabled · Flooz: disabled · Bank account: disabled"}</small></>;
+  const paymentAction=(plan:Plan)=><button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>{setPaymentChooserPlan(plan);setSelectedPaymentPlan(null);}}>{fr?"Payer":"Pay"}</button>;
 
   async function startVideo() {
     if (!session?.access_token) {
@@ -477,16 +478,16 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       {mode==="login" && <button type="button" className="text-button account-reset-link" disabled={busy} onClick={()=>void sendPasswordReset()}>{fr?"Mot de passe oublié ?":"Forgot password?"}</button>}
     </div> : profileCard}
     {notice && <p className="account-message" role="status">{notice}</p>}
-    {selectedPaymentPlan&&session&&<div className="account-card payment-proof-panel">
-      <h3>{fr?"Paiement par numéro":"Pay by number"}</h3>
+    {paymentChooserPlan&&session&&<div className="account-card payment-proof-panel payment-method-chooser">\n      <h3>{fr?"Choisir un moyen de paiement":"Choose a payment method"}</h3>\n      <p><strong>{paymentChooserPlan.name}</strong> · {paymentChooserPlan.amount_xof.toLocaleString("fr-FR")} FCFA</p>\n      <div className="payment-method-grid">\n        <button type="button" className="filter-button" disabled>{fr?"TMoney / Flooz · Bientôt disponible":"TMoney / Flooz · Coming soon"}</button>\n        <button type="button" className="primary-button" disabled={!paymentNumber} onClick={()=>chooseManualPayment(paymentChooserPlan)}>{fr?"Numéro direct · Disponible":"Direct phone number · Available"}</button>\n        <button type="button" className="filter-button" disabled>{fr?"Carte bancaire · Bientôt disponible":"Bank card · Coming soon"}</button>\n        <button type="button" className="filter-button" disabled>{fr?"Orange Money · Bientôt disponible":"Orange Money · Coming soon"}</button>\n        <button type="button" className="filter-button" disabled>{fr?"Wave · Bientôt disponible":"Wave · Coming soon"}</button>\n      </div>\n      <small className="account-footnote">{fr?"Seul le paiement par numéro direct est actuellement activé. Les autres moyens sont affichés mais indisponibles.":"Only direct phone-number payment is currently enabled. Other methods are displayed but unavailable."}</small>\n      <button type="button" className="filter-button" onClick={()=>setPaymentChooserPlan(null)}>{fr?"Annuler":"Cancel"}</button>\n    </div>}\n    {selectedPaymentPlan&&session&&<div className="account-card payment-proof-panel">
+      <h3>{fr?"Paiement par numéro direct":"Direct phone-number payment"}</h3>
       <p><strong>{selectedPaymentPlan.name}</strong> · {selectedPaymentPlan.amount_xof.toLocaleString("fr-FR")} FCFA · {selectedPaymentPlan.duration_days} {fr?"jours":"days"}</p>
       <p>{fr?"Effectue le transfert vers le numéro ci-dessous, puis joins la preuve. L'abonnement reste en attente jusqu'à validation par l'administrateur.":"Transfer to the number below, then attach your proof. The subscription remains pending until an administrator approves it."}</p>
-      <p className="payment-receiver-number"><strong>{paymentNumber?paymentNumber.split(",").map((number,index)=><span key={number}>{index>0&&<br/>}{number}</span>):(fr?"Numéro non configuré":"Number not configured")}</strong></p>
+      <div className="payment-receiver-number"><strong>{paymentNumber?paymentNumber.split(",").map((number,index)=><span key={number}>{index>0&&<br/>}{number.trim()}</span>):(fr?"Numéro non configuré":"Number not configured")}</strong></div>
       <label>{fr?"Référence de transaction (facultatif)":"Transaction reference (optional)"}<input value={paymentReference} onChange={e=>setPaymentReference(e.target.value)} maxLength={120}/></label>
       <label>{fr?"Preuve de paiement (obligatoire)":"Payment proof (required)"}<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={e=>setPaymentProof(e.target.files?.[0]||null)} required/></label>
       <small className="account-footnote">{fr?"JPG, PNG, WEBP ou PDF · 5 Mo maximum.":"JPG, PNG, WEBP or PDF · 5 MB maximum."}</small>
       <button type="button" className="primary-button" disabled={paymentBusy||!paymentProof||!paymentNumber} onClick={()=>void submitManualPayment()}>{paymentBusy?"…":fr?"Envoyer la preuve":"Submit proof"}</button>
-      <button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>setSelectedPaymentPlan(null)}>{fr?"Annuler":"Cancel"}</button>
+      <button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>{setSelectedPaymentPlan(null);setPaymentChooserPlan(paymentChooserPlan);}}>{fr?"Retour":"Back"}</button>
     </div>}
 
   </section>;
