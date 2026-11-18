@@ -447,3 +447,16 @@ button.service-card{
 .payment-proof-panel input[type=file]{display:block;width:100%;margin-top:8px}
 .payment-admin-notification{padding:16px 18px;margin:12px 0;border:1px solid rgba(255,190,75,.55);border-radius:14px;background:rgba(160,104,20,.12)}
 .payment-admin-notification p{margin:8px 0 0}
+
+
+/* AQUI NET HUB — payment method chooser and admin notifications */
+.payment-method-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:16px 0}
+.payment-method-grid button{min-height:54px;white-space:normal}
+.payment-method-grid button:disabled{opacity:.48;cursor:not-allowed;filter:saturate(.35)}
+.payment-method-grid button.primary-button:not(:disabled){border:1px solid rgba(88,220,170,.55)}
+.payment-receiver-number{display:block;padding:16px 18px;margin:14px 0;border:1px solid rgba(88,220,170,.4);border-radius:14px;background:rgba(17,111,81,.13);font-size:clamp(20px,4vw,27px);letter-spacing:.04em;text-align:center}
+.payment-receiver-number span{display:inline-block;padding:5px 0}
+.payment-proof-panel label{display:block;margin:14px 0}
+.payment-proof-panel input[type=file]{display:block;width:100%;margin-top:8px}
+.payment-admin-notification{padding:16px 18px;margin:12px 0;border:1px solid rgba(255,190,75,.55);border-radius:14px;background:rgba(160,104,20,.12)}
+.payment-admin-notification p{margin:8px 0 0}
