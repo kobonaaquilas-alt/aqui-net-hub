@@ -545,3 +545,6 @@ button.service-card{
  #account-access .account-profile p{width:100%;flex-basis:100%}
  #account-access .account-profile .filter-button{margin-left:0}
 }
+
+/* La recherche d'outils reste entièrement accessible sans compte. */
+.site-shell:has(#demande-outils) #account-access{display:none}
