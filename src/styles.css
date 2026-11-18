@@ -460,3 +460,12 @@ button.service-card{
 .payment-proof-panel input[type=file]{display:block;width:100%;margin-top:8px}
 .payment-admin-notification{padding:16px 18px;margin:12px 0;border:1px solid rgba(255,190,75,.55);border-radius:14px;background:rgba(160,104,20,.12)}
 .payment-admin-notification p{margin:8px 0 0}
+
+.payment-review-row{align-items:flex-start;gap:18px}
+.payment-proof-preview{margin:12px 0;max-width:420px}
+.payment-proof-preview img{display:block;width:100%;max-width:420px;max-height:360px;object-fit:contain;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(0,0,0,.15)}
+.payment-review-actions{min-width:min(100%,260px);display:flex;flex-direction:column;gap:12px}
+.payment-rejection-form{display:grid;gap:10px;padding:14px;border:1px solid rgba(255,110,110,.3);border-radius:12px;background:rgba(150,35,35,.08)}
+.payment-rejection-form label{display:grid;gap:8px}
+.payment-rejection-form textarea{width:100%;min-height:96px;resize:vertical}
+@media(max-width:640px){.payment-review-row{display:flex;flex-direction:column}.payment-review-actions{width:100%}}
