@@ -469,3 +469,7 @@ button.service-card{
 .payment-rejection-form label{display:grid;gap:8px}
 .payment-rejection-form textarea{width:100%;min-height:96px;resize:vertical}
 @media(max-width:640px){.payment-review-row{display:flex;flex-direction:column}.payment-review-actions{width:100%}}
+
+.admin-nav-link{display:inline-flex;align-items:center;gap:7px;color:#f5c66b!important;font-weight:700}
+.admin-nav-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#e24b4b;color:#fff;font-size:11px;font-weight:800;line-height:1}
+@media(max-width:760px){.admin-nav-link{padding:7px 10px;border-radius:10px;background:rgba(245,198,107,.09)}}
