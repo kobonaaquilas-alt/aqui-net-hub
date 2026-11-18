@@ -140,7 +140,7 @@ async function manualPaymentConfig(env: Env) {
   const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_site_settings?setting_key=eq.payment_number&select=setting_value&limit=1`, { headers: headers(env) });
   if (!response.ok) return json({ error: "Impossible de lire les paramètres de paiement." }, 502);
   const rows = await response.json() as Array<{ setting_value: string }>;
-  return json({ payment_number: rows[0]?.setting_value || "", methods: { number: true, tmoney: false, flooz: false, bank: false } });
+  return json({ payment_number: rows[0]?.setting_value || "", methods: { number: true, tmoney: false, flooz: false, bank: false, card: false, orange_money: false, wave: false } });
 }
 async function createManualPaymentOrder(request: Request, env: Env) {
   if (!env.SUPABASE_URL || !serviceKey(env)) return json({ error: "Backend non configuré." }, 503);
