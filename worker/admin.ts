@@ -25,6 +25,31 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
    if(!r.ok)return json({error:"Lecture des formules impossible."},502);
    return json({plans:await r.json()});
   }
+  if(request.method==="GET"&&url.pathname==="/api/admin/billing"){
+    const [subscriptionResponse,paymentResponse]=await Promise.all([
+     fetch(env.SUPABASE_URL+"/rest/v1/hub_subscriptions?select=id,user_id,plan_id,starts_at,ends_at,status,created_at&order=created_at.desc&limit=100",{headers:headers(env)}),
+     fetch(env.SUPABASE_URL+"/rest/v1/hub_payment_orders?select=id,user_id,plan_id,plan_name,amount_xof,currency,status,created_at,paid_at,payment_method,manual_reference,merchant_transaction_id&order=created_at.desc&limit=100",{headers:headers(env)})
+    ]);
+    if(!subscriptionResponse.ok||!paymentResponse.ok)return json({error:"Lecture des abonnements et paiements impossible."},502);
+    const [subscriptions,payments]=await Promise.all([subscriptionResponse.json(),paymentResponse.json()]) as [Array<Record<string,any>>,Array<Record<string,any>>];
+    const planIds=[...new Set(subscriptions.map(item=>item.plan_id))];
+    let names:Record<string,string>={};
+    if(planIds.length){
+     const filter=planIds.map(id=>'"'+id+'"').join(",");
+     const planResponse=await fetch(env.SUPABASE_URL+"/rest/v1/hub_plans?select=id,name&id=in.("+encodeURIComponent(filter)+")",{headers:headers(env)});
+     if(!planResponse.ok)return json({error:"Lecture des noms de formules impossible."},502);
+     const plans=await planResponse.json() as Array<{id:string;name:string}>;
+     names=Object.fromEntries(plans.map(plan=>[plan.id,plan.name]));
+    }
+    const normalizedSubscriptions=subscriptions.map(item=>({...item,plan_name:names[item.plan_id]||"Formule AQUI NET HUB"}));
+    return json({
+     subscriptions:normalizedSubscriptions,
+     payments,
+     active_count:normalizedSubscriptions.filter(item=>item.status==="active"&&new Date(item.ends_at).getTime()>Date.now()).length,
+     pending_count:payments.filter(item=>item.status==="pending").length,
+     paid_count:payments.filter(item=>item.status==="paid").length
+    });
+   }
   if(request.method==="POST"&&url.pathname==="/api/admin/subscriptions/manual"){
    const b=await request.json() as {email?:string;plan_id?:string;payment_method?:string;manual_reference?:string};
    const email=String(b.email||"").trim().toLowerCase();
