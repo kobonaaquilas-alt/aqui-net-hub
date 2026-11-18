@@ -487,7 +487,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       <label>{fr?"Preuve de paiement (obligatoire)":"Payment proof (required)"}<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={e=>setPaymentProof(e.target.files?.[0]||null)} required/></label>
       <small className="account-footnote">{fr?"JPG, PNG, WEBP ou PDF · 5 Mo maximum.":"JPG, PNG, WEBP or PDF · 5 MB maximum."}</small>
       <button type="button" className="primary-button" disabled={paymentBusy||!paymentProof||!paymentNumber} onClick={()=>void submitManualPayment()}>{paymentBusy?"…":fr?"Envoyer la preuve":"Submit proof"}</button>
-      <button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>{setSelectedPaymentPlan(null);setPaymentChooserPlan(paymentChooserPlan);}}>{fr?"Retour":"Back"}</button>
+      <button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>{setPaymentChooserPlan(selectedPaymentPlan);setSelectedPaymentPlan(null);}}>{fr?"Retour":"Back"}</button>
     </div>}
 
   </section>;
