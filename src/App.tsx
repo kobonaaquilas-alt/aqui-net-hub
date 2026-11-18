@@ -61,7 +61,8 @@ const intentRules:[string,string[]][]=[
   ["web_research",["rechercher des informations","faire une recherche web","trouver des sources","verifier une information","faire une veille"]],
   ["content_writing",["rediger un texte","ecrire un texte","ecrire un script","creer du contenu","rediger une publication","ecrire un article"]],
   ["idea_generation",["trouver des idees","generer des idees","brainstorming","idees de contenu","idees de business"]],
-  ["learning",["apprendre une matiere","suivre des cours","faire des exercices","apprendre une langue","apprendre l'anglais"]]
+  ["learning",["apprendre une matiere","suivre des cours","faire des exercices","apprendre une langue","apprendre l'anglais"]],
+  ["social_audit",["analyser mon compte","analyse de compte","auditer mon compte","statistiques tiktok","statistiques facebook","statistiques instagram","statistiques youtube","augmenter mes abonnes","augmenter mes abonnés","ameliorer mon compte social","améliorer mon compte social","engagement tiktok","vues tiktok","social audit","social media analytics","mon compte tiktok","mon compte instagram","mon compte facebook"]]
 ];
 function getIntent(q:string) {
   const query=norm(q).replace(/[’']/g," ");
