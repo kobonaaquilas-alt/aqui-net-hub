@@ -502,6 +502,30 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       {mode==="login" && <button type="button" className="text-button account-reset-link" disabled={busy} onClick={()=>void sendPasswordReset()}>{fr?"Mot de passe oublié ?":"Forgot password?"}</button>}
     </div> : <>{profileCard}<div className="account-card"><p className="sync-status">{fr?"Ton profil est enregistré sur ton compte.":"Your profile is saved to your account."}</p></div></>}
     {notice && <p className="account-message" role="status">{notice}</p>}
+    {paymentChooserPlan&&session&&<div className="account-card payment-proof-panel payment-method-chooser">
+      <h3>{fr?"Choisir un moyen de paiement":"Choose a payment method"}</h3>
+      <p><strong>{paymentChooserPlan.name}</strong> · {paymentChooserPlan.amount_xof.toLocaleString("fr-FR")} FCFA</p>
+      <div className="payment-method-grid">
+        <button type="button" className="filter-button" disabled>{fr?"TMoney / Flooz · Bientôt disponible":"TMoney / Flooz · Coming soon"}</button>
+        <button type="button" className="primary-button" disabled={!paymentNumber} onClick={()=>chooseManualPayment(paymentChooserPlan)}>{fr?"Numéro direct · Disponible":"Direct phone number · Available"}</button>
+        <button type="button" className="filter-button" disabled>{fr?"Carte bancaire · Bientôt disponible":"Bank card · Coming soon"}</button>
+        <button type="button" className="filter-button" disabled>{fr?"Orange Money · Bientôt disponible":"Orange Money · Coming soon"}</button>
+        <button type="button" className="filter-button" disabled>{fr?"Wave · Bientôt disponible":"Wave · Coming soon"}</button>
+      </div>
+      <small className="account-footnote">{fr?"Seul le paiement par numéro direct est actuellement activé. Les autres moyens sont affichés mais indisponibles.":"Only direct phone-number payment is currently enabled. Other methods are displayed but unavailable."}</small>
+      <button type="button" className="filter-button" onClick={()=>setPaymentChooserPlan(null)}>{fr?"Annuler":"Cancel"}</button>
+    </div>}
+    {selectedPaymentPlan&&session&&<div className="account-card payment-proof-panel">
+      <h3>{fr?"Paiement par numéro direct":"Direct phone-number payment"}</h3>
+      <p><strong>{selectedPaymentPlan.name}</strong> · {selectedPaymentPlan.amount_xof.toLocaleString("fr-FR")} FCFA · {selectedPaymentPlan.duration_days} {fr?"jours":"days"}</p>
+      <p>{fr?"Effectue le transfert vers l'un des numéros ci-dessous, puis joins la capture d'écran de la preuve. L'abonnement reste en attente jusqu'à ta validation dans l'administration.":"Transfer to one of the numbers below, then upload a screenshot of the receipt. Your subscription stays pending until administrator approval."}</p>
+      <div className="payment-receiver-number"><strong>{paymentNumber?paymentNumber.split(",").map((number,index)=><span key={number}>{index>0&&<br/>}{number.trim()}</span>):(fr?"Numéro non configuré":"Number not configured")}</strong></div>
+      <label>{fr?"Référence de transaction (facultatif)":"Transaction reference (optional)"}<input value={paymentReference} onChange={e=>setPaymentReference(e.target.value)} maxLength={120}/></label>
+      <label>{fr?"Capture d'écran de la preuve de paiement (obligatoire)":"Payment receipt screenshot (required)"}<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={e=>setPaymentProof(e.target.files?.[0]||null)} required/></label>
+      <small className="account-footnote">{fr?"JPG, PNG, WEBP ou PDF · 5 Mo maximum.":"JPG, PNG, WEBP or PDF · 5 MB maximum."}</small>
+      <button type="button" className="primary-button" disabled={paymentBusy||!paymentProof||!paymentNumber} onClick={()=>void submitManualPayment()}>{paymentBusy?"…":fr?"Envoyer la preuve":"Submit proof"}</button>
+      <button type="button" className="filter-button" disabled={paymentBusy} onClick={()=>{setPaymentChooserPlan(selectedPaymentPlan);setSelectedPaymentPlan(null);}}>{fr?"Retour aux moyens de paiement":"Back to payment methods"}</button>
+    </div>}
     {session && !hasActiveSubscription && service==="partners" && <div className="account-card subscription-required"><span className="eyebrow">AQUI NET HUB · ABONNEMENT</span><h3>{fr?"Abonnement requis":"Subscription required"}</h3><p>{fr?"Pour prolonger la diffusion après l’essai publicitaire gratuit de 3 jours ou débloquer les fonctions payantes, choisis une formule ci-dessous.":"Choose a plan to continue campaigns after the 3-day free ad trial or unlock paid features."}</p>{plans.length?plans.map(p=><article className="plan-row" key={p.id}><div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div>{paymentAction(p)}</article>):<p>{fr?"Les formules d’abonnement seront affichées ici dès leur activation.":"Subscription plans will appear here when activated."}</p>}</div>}
 
     {session && recoveryMode && <div className="account-card password-recovery-card"><h3>{fr?"Définir un nouveau mot de passe":"Set a new password"}</h3>{input(newPassword,setNewPassword,fr?"Nouveau mot de passe (8 caractères minimum)":"New password (at least 8 characters)","password")}<button type="button" className="primary-button" disabled={busy||newPassword.length<8} onClick={()=>void updatePassword()}>{busy?"…":fr?"Mettre à jour le mot de passe":"Update password"}</button></div>}
