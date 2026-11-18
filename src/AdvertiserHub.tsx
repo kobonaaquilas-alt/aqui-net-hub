@@ -16,6 +16,7 @@ type Campaign = {
   ctr_percent?: number;
 };
 type Trial = { started_at: string; ends_at: string };
+type Summary = { campaign_count:number; active_count:number; impressions_count:number; clicks_count:number; ctr_percent:number };
 type Props = { accessToken: string; lang: "fr" | "en" };
 
 export default function AdvertiserHub({ accessToken, lang }: Props) {
@@ -23,6 +24,7 @@ export default function AdvertiserHub({ accessToken, lang }: Props) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [trial, setTrial] = useState<Trial | null>(null);
   const [subscriptionActive, setSubscriptionActive] = useState(false);
+  const [summary,setSummary]=useState<Summary>({campaign_count:0,active_count:0,impressions_count:0,clicks_count:0,ctr_percent:0});
   const [draft, setDraft] = useState({ title: "", description: "", destination_url: "", image_url: "" });
   const [acceptedRules, setAcceptedRules] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -33,12 +35,13 @@ export default function AdvertiserHub({ accessToken, lang }: Props) {
       headers: { Authorization: "Bearer " + accessToken },
     });
     const data = await response.json() as {
-      campaigns?: Campaign[]; trial?: Trial | null; subscription_active?: boolean; error?: string;
+      campaigns?: Campaign[]; trial?: Trial | null; subscription_active?: boolean; summary?:Summary; error?: string;
     };
     if (!response.ok) throw new Error(data.error || "Campaign list unavailable.");
     setCampaigns(data.campaigns || []);
     setTrial(data.trial || null);
     setSubscriptionActive(!!data.subscription_active);
+    setSummary(data.summary||{campaign_count:0,active_count:0,impressions_count:0,clicks_count:0,ctr_percent:0});
   }, [accessToken]);
 
   useEffect(() => {
@@ -131,6 +134,16 @@ export default function AdvertiserHub({ accessToken, lang }: Props) {
           ? (fr ? "Essai terminé. Un abonnement est nécessaire pour publier ou réactiver une campagne." : "Trial ended. A subscription is required to publish or reactivate a campaign.")
           : (fr ? "Essai en cours jusqu'au " + date(trial.ends_at) : "Trial active until " + date(trial.ends_at)))
         : (fr ? "Ton essai de 3 jours commencera à la publication de ta première campagne." : "Your 3-day trial starts when you publish your first campaign.")}</p>
+
+    <div className="account-summary-heading">
+      <div><h4>{fr?"Performances publicitaires":"Advertising performance"}</h4><small>{fr?"Vue d'ensemble de tes campagnes":"Overview of your campaigns"}</small></div>
+    </div>
+    <div className="account-grid">
+      <div className="account-card"><strong>{summary.campaign_count}</strong><small>{fr?"Campagnes":"Campaigns"}</small></div>
+      <div className="account-card"><strong>{summary.active_count}</strong><small>{fr?"En diffusion":"Running"}</small></div>
+      <div className="account-card"><strong>{summary.impressions_count.toLocaleString(fr?"fr-FR":"en-GB")}</strong><small>Impressions</small></div>
+      <div className="account-card"><strong>{summary.clicks_count.toLocaleString(fr?"fr-FR":"en-GB")} · {summary.ctr_percent.toFixed(2)}%</strong><small>{fr?"Clics · taux de clic":"Clicks · CTR"}</small></div>
+    </div>
 
     <form className="admin-campaign-form" onSubmit={createCampaign}>
       <input value={draft.title} onChange={e => setDraft(s => ({ ...s, title: e.target.value }))} minLength={4} maxLength={80} placeholder={fr ? "Titre de la publicité" : "Advertisement title"} required />
