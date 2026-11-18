@@ -136,6 +136,36 @@ async function createPayment(request: Request, env: Env) {
     return json({ error: "CinetPay n'a pas pu initialiser le paiement." }, 502);
   }
 }
+async function manualPaymentConfig(env: Env) {
+  const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_site_settings?setting_key=eq.payment_number&select=setting_value&limit=1`, { headers: headers(env) });
+  if (!response.ok) return json({ error: "Impossible de lire les paramètres de paiement." }, 502);
+  const rows = await response.json() as Array<{ setting_value: string }>;
+  return json({ payment_number: rows[0]?.setting_value || "", methods: { number: true, tmoney: false, flooz: false, bank: false } });
+}
+async function createManualPaymentOrder(request: Request, env: Env) {
+  if (!env.SUPABASE_URL || !serviceKey(env)) return json({ error: "Backend non configuré." }, 503);
+  const user = await authUser(request, env);
+  if (!user) return json({ error: "Connexion requise." }, 401);
+  let body: { plan_id?: string; proof_path?: string; reference?: string };
+  try { body = await request.json() as typeof body; } catch { return json({ error: "Requête invalide." }, 400); }
+  const proofPath = String(body.proof_path || "");
+  if (!body.plan_id || !proofPath.startsWith(user.id + "/") || proofPath.length > 300)
+    return json({ error: "Formule ou preuve de paiement invalide." }, 400);
+  const proofCheck = await fetch(`${env.SUPABASE_URL}/storage/v1/object/hub-payment-proofs/${proofPath.split("/").map(encodeURIComponent).join("/")}`, { method: "HEAD", headers: { apikey: serviceKey(env), Authorization: `Bearer ${serviceKey(env)}` } });
+  if (!proofCheck.ok) return json({ error: "Preuve introuvable dans le stockage sécurisé." }, 400);
+  const planResponse = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_plans?id=eq.${encodeURIComponent(body.plan_id)}&is_active=eq.true&select=id,name,amount_xof,duration_days`, { headers: headers(env) });
+  if (!planResponse.ok) return json({ error: "Lecture de la formule impossible." }, 502);
+  const plans = await planResponse.json() as Array<{id:string;name:string;amount_xof:number;duration_days:number}>;
+  const plan = plans[0];
+  if (!plan) return json({ error: "Formule indisponible." }, 404);
+  const merchantId = `MAN-${crypto.randomUUID().replace(/-/g,"").slice(0,20)}`;
+  const response = await fetch(`${env.SUPABASE_URL}/rest/v1/hub_payment_orders`, {
+    method: "POST", headers: headers(env),
+    body: JSON.stringify({ user_id:user.id, plan_id:plan.id, plan_name:plan.name, duration_days:plan.duration_days, amount_xof:plan.amount_xof, currency:"XOF", merchant_transaction_id:merchantId, payment_method:"Paiement par numéro", manual_reference:String(body.reference||"").slice(0,120)||null, proof_path:proofPath, status:"pending" })
+  });
+  if (!response.ok) return json({ error: "Enregistrement de la demande de paiement impossible." }, 500);
+  return json({ ok:true, status:"pending", merchant_transaction_id:merchantId }, 201);
+}
 async function accountSummary(request: Request, env: Env) {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !serviceKey(env))
     return json({ error: "Backend Supabase non configuré." }, 503);
@@ -388,7 +418,7 @@ export default {
         return handleVideo(request, env);
       if (url.pathname.startsWith("/api/video/jobs/") && request.method === "GET")
         return handleVideo(request, env);
-      if (request.method === "POST" && url.pathname === "/api/payments/create")
+      if (request.method === "GET" && url.pathname === "/api/payments/config") return manualPaymentConfig(env);\n      if (request.method === "POST" && url.pathname === "/api/payments/manual-order") return createManualPaymentOrder(request, env);\n      if (request.method === "POST" && url.pathname === "/api/payments/create")
         return createPayment(request, env);
       if (request.method === "GET" && url.pathname === "/api/payments/return") {
         const status = url.searchParams.get("status") === "failed" ? "failed" : "return";
