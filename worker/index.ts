@@ -418,7 +418,9 @@ export default {
         return handleVideo(request, env);
       if (url.pathname.startsWith("/api/video/jobs/") && request.method === "GET")
         return handleVideo(request, env);
-      if (request.method === "GET" && url.pathname === "/api/payments/config") return manualPaymentConfig(env);\n      if (request.method === "POST" && url.pathname === "/api/payments/manual-order") return createManualPaymentOrder(request, env);\n      if (request.method === "POST" && url.pathname === "/api/payments/create")
+      if (request.method === "GET" && url.pathname === "/api/payments/config") return manualPaymentConfig(env);
+      if (request.method === "POST" && url.pathname === "/api/payments/manual-order") return createManualPaymentOrder(request, env);
+      if (request.method === "POST" && url.pathname === "/api/payments/create")
         return createPayment(request, env);
       if (request.method === "GET" && url.pathname === "/api/payments/return") {
         const status = url.searchParams.get("status") === "failed" ? "failed" : "return";
