@@ -334,24 +334,6 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
     finally{setFacebookBusy(false);}
   }
 
-  async function startPayment(plan:Plan){
-    if(!session?.access_token){setNotice("Connecte-toi pour payer.");return;}
-    if(!cinetpayReady){setNotice("Paiement indisponible : les clés API CinetPay ne sont pas encore configurées.");return;}
-    const savedName=profileName.trim()||fullName.trim()||String(session.user.user_metadata?.full_name||"");
-    const parts=savedName.split(/\s+/).filter(Boolean);const first_name=parts[0]||"Client";const last_name=parts.slice(1).join(" ")||"AQUI";
-    const savedPhone=profilePhone.trim()||phone.trim()||String(session.user.user_metadata?.phone||"");
-    setPaymentBusy(true);setNotice("");
-    try{
-      const r=await fetch("/api/payments/create",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({plan_id:plan.id,first_name,last_name,phone:savedPhone,native:Capacitor.isNativePlatform()})});
-      const d=await r.json();if(!r.ok||!d.payment_url)throw new Error(d.error||"Initialisation du paiement impossible.");
-      if(Capacitor.isNativePlatform()) await Browser.open({url:d.payment_url,toolbarColor:"#101C32"}); else window.location.assign(d.payment_url);
-    }catch(e){setNotice(e instanceof Error?e.message:"Paiement indisponible.");}finally{setPaymentBusy(false);}
-  }
-
-  function manualPaymentUrl(plan:Plan){
-    const message=(fr?"Bonjour, je souhaite souscrire à ":"Hello, I would like to subscribe to ")+plan.name+" ("+plan.amount_xof+" FCFA / "+plan.duration_days+" jours).";
-    return "https://wa.me/22892244653?text="+encodeURIComponent(message);
-  }
   function chooseManualPayment(plan:Plan){setSelectedPaymentPlan(plan);setPaymentProof(null);setPaymentReference("");}
   async function submitManualPayment(){
     if(!session?.access_token||!selectedPaymentPlan)return;
