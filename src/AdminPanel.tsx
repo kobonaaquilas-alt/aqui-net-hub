@@ -7,12 +7,15 @@ type Campaign={id:string;title:string;description:string;destination_url:string|
 type Follow={id:string;user_id:string;account_name:string;tiktok_proof_url:string;facebook_proof_url:string;status:string;created_at:string;admin_note:string|null};
 type Audit={id:string;user_id:string;platform:string;account_name:string;social_url:string;followers:number;average_views:number;average_likes:number;average_comments:number;posts_per_week:number;goal:string;created_at:string};
 type AdminPlan={id:string;name:string;amount_xof:number;duration_days:number};
+type AdminSubscription={id:string;user_id:string;plan_name:string;starts_at:string;ends_at:string;status:string};
+type AdminPayment={id:string;user_id:string;plan_name:string;amount_xof:number;currency:string;status:string;created_at:string;paid_at:string|null;payment_method:string|null;manual_reference:string|null;merchant_transaction_id:string};
+type Billing={subscriptions:AdminSubscription[];payments:AdminPayment[];active_count:number;pending_count:number;paid_count:number};
 type BrowserJob={request_id:string;status:string;error_message?:string|null;result?:{title?:string;final_url?:string;body_text?:string;steps?:unknown[]}|null};
 type Data={ads:RequestItem[];partners:RequestItem[];follows:Follow[];audits:Audit[]};
 export default function AdminPanel({lang}:{lang:"fr"|"en"}){
  const tr=(frText:string,enText:string)=>lang==="fr"?frText:enText;
  const [session,setSession]=useState<Session|null>(null),[authorized,setAuthorized]=useState(false),[checked,setChecked]=useState(false);
- const [data,setData]=useState<Data>({ads:[],partners:[],follows:[],audits:[]}),[campaigns,setCampaigns]=useState<Campaign[]>([]),[adminPlans,setAdminPlans]=useState<AdminPlan[]>([]);
+ const [data,setData]=useState<Data>({ads:[],partners:[],follows:[],audits:[]}),[campaigns,setCampaigns]=useState<Campaign[]>([]),[adminPlans,setAdminPlans]=useState<AdminPlan[]>([]),[billing,setBilling]=useState<Billing>({subscriptions:[],payments:[],active_count:0,pending_count:0,paid_count:0});
  const [manualEmail,setManualEmail]=useState(""),[manualPlan,setManualPlan]=useState(""),[manualMethod,setManualMethod]=useState("TMoney"),[manualReference,setManualReference]=useState("");
  const [notice,setNotice]=useState(""),[busy,setBusy]=useState(false),[adsense,setAdsense]=useState("");
  const [browserUrl,setBrowserUrl]=useState("https://");
@@ -35,7 +38,7 @@ export default function AdminPanel({lang}:{lang:"fr"|"en"}){
  },[session]);
  const load=useCallback(async()=>{
   if(!session||!authorized)return;setBusy(true);setNotice("");
-  try{const [d,c,s,p]=await Promise.all([request("/api/admin/requests"),request("/api/admin/campaigns"),request("/api/admin/settings"),request("/api/admin/plans")]);setData(d);setCampaigns(c.campaigns||[]);setAdsense(s.adsense_client||"");setAdminPlans(p.plans||[]);setManualPlan(current=>current||(p.plans?.[0]?.id||""));}
+  try{const [d,c,s,p,b]=await Promise.all([request("/api/admin/requests"),request("/api/admin/campaigns"),request("/api/admin/settings"),request("/api/admin/plans"),request("/api/admin/billing")]);setData(d);setCampaigns(c.campaigns||[]);setAdsense(s.adsense_client||"");setAdminPlans(p.plans||[]);setManualPlan(current=>current||(p.plans?.[0]?.id||""));setBilling(b);}
   catch(e){setNotice(e instanceof Error?e.message:"Erreur de chargement.");}finally{setBusy(false);}
  },[session,authorized,request]);
  useEffect(()=>{if(authorized)void load();},[authorized,load]);
@@ -118,6 +121,14 @@ export default function AdminPanel({lang}:{lang:"fr"|"en"}){
     <input value={manualReference} onChange={e=>setManualReference(e.target.value)} placeholder={tr("Référence unique de transaction / reçu","Unique transaction / receipt reference")} minLength={3} maxLength={120} required/>
     <button className="primary-button" disabled={busy||!adminPlans.length||!manualPlan}>{tr("Confirmer le paiement et activer","Confirm payment and activate")}</button>
    </form>
+  </div>
+  <div className="account-card">
+   <h3>{tr("Suivi des abonnements et paiements","Subscription and payment tracking")}</h3>
+   <p>{tr("Abonnements actifs : ","Active subscriptions: ")}<strong>{billing.active_count}</strong> · {tr("Paiements en attente : ","Pending payments: ")}<strong>{billing.pending_count}</strong> · {tr("Paiements confirmés : ","Confirmed payments: ")}<strong>{billing.paid_count}</strong></p>
+   <h4>{tr("Abonnements récents","Recent subscriptions")}</h4>
+   {billing.subscriptions.length?billing.subscriptions.map(s=><article className="admin-request-row" key={s.id}><div><strong>{s.plan_name}</strong><p>{tr("Compte utilisateur : ","User account: ")}{s.user_id}</p><small>{new Date(s.starts_at).toLocaleDateString(lang==="fr"?"fr-FR":"en-GB")} → {new Date(s.ends_at).toLocaleDateString(lang==="fr"?"fr-FR":"en-GB")} · {s.status}</small></div></article>):<p>{tr("Aucun abonnement enregistré.","No subscriptions recorded.")}</p>}
+   <h4>{tr("Commandes de paiement récentes","Recent payment orders")}</h4>
+   {billing.payments.length?billing.payments.map(p=><article className="admin-request-row" key={p.id}><div><strong>{p.plan_name} · {Number(p.amount_xof).toLocaleString("fr-FR")} FCFA</strong><p>{tr("Compte utilisateur : ","User account: ")}{p.user_id}</p><small>{new Date(p.created_at).toLocaleString(lang==="fr"?"fr-FR":"en-GB")} · {p.status} · {p.payment_method||"CinetPay"} · {p.manual_reference||p.merchant_transaction_id}</small></div></article>):<p>{tr("Aucune commande de paiement enregistrée.","No payment orders recorded.")}</p>}
   </div>
   {group("ads",data.ads)}{group("partners",data.partners)}
   <div className="account-card"><h3>{tr("Vérification des abonnements TikTok et Facebook","TikTok and Facebook follow verification")} · {data.follows.length}</h3>{data.follows.length===0&&<p>{tr("Aucune preuve reçue.","No proof submitted.")}</p>}{data.follows.map(f=><article className="admin-request-row" key={f.id}><div><strong>{f.account_name} · {f.status}</strong><p>{tr("Utilisateur :","User:")} {f.user_id}</p><p><a href={f.tiktok_proof_url} target="_blank" rel="noreferrer">{tr("Preuve TikTok","TikTok proof")}</a> · <a href={f.facebook_proof_url} target="_blank" rel="noreferrer">{tr("Preuve Facebook","Facebook proof")}</a></p><small>{new Date(f.created_at).toLocaleString(lang==="fr"?"fr-FR":"en-GB")}</small></div><div className="admin-actions"><button disabled={busy} onClick={()=>void action(`/api/admin/follows/${f.id}`,"PATCH",{status:"approved"})}>{tr("Valider","Approve")}</button><button disabled={busy} onClick={()=>void action(`/api/admin/follows/${f.id}`,"PATCH",{status:"rejected"})}>{tr("Refuser","Decline")}</button></div></article>)}</div>
