@@ -150,6 +150,29 @@ async function listCampaigns(env: Env, userId: string): Promise<Response> {
   });
 }
 
+async function uploadCampaignImage(request: Request, env: Env, user: User): Promise<Response> {
+  let form: FormData;
+  try { form = await request.formData(); } catch { return json({ error: "Fichier image invalide." }, 400); }
+  const file = form.get("image");
+  if (!(file instanceof File)) return json({ error: "Sélectionne une image." }, 400);
+  const allowed = ["image/jpeg", "image/png", "image/webp"];
+  if (!allowed.includes(file.type) || file.size <= 0 || file.size > 5 * 1024 * 1024) return json({ error: "Image invalide : JPG, PNG ou WEBP, 5 Mo maximum." }, 400);
+  const key = serviceKey(env);
+  const bucket = "hub-ad-images";
+  const authHeaders = { apikey: key, Authorization: "Bearer " + key, "Content-Type": "application/json" };
+  const bucketCheck = await fetch(env.SUPABASE_URL + "/storage/v1/bucket/" + bucket, { headers: authHeaders });
+  if (!bucketCheck.ok && bucketCheck.status === 404) {
+    const created = await fetch(env.SUPABASE_URL + "/storage/v1/bucket", { method: "POST", headers: authHeaders, body: JSON.stringify({ id: bucket, name: bucket, public: true, file_size_limit: 5242880, allowed_mime_types: allowed }) });
+    if (!created.ok && created.status !== 409) return json({ error: "Impossible de préparer le stockage des images." }, 502);
+  } else if (!bucketCheck.ok) return json({ error: "Vérification du stockage des images impossible." }, 502);
+  const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const path = user.id + "/" + crypto.randomUUID() + "." + extension;
+  const upload = await fetch(env.SUPABASE_URL + "/storage/v1/object/" + bucket + "/" + path.split("/").map(encodeURIComponent).join("/"), { method: "POST", headers: { apikey: key, Authorization: "Bearer " + key, "Content-Type": file.type, "x-upsert": "false" }, body: file });
+  if (!upload.ok) return json({ error: "Téléversement de l'image impossible." }, 502);
+  const imageUrl = env.SUPABASE_URL + "/storage/v1/object/public/" + bucket + "/" + path.split("/").map(encodeURIComponent).join("/");
+  return json({ image_url: imageUrl }, 201);
+}
+
 async function createCampaign(request: Request, env: Env, user: User): Promise<Response> {
   let body: { title?: string; description?: string; destination_url?: string; image_url?: string };
   try { body = await request.json() as typeof body; }
@@ -242,6 +265,7 @@ export async function handleAds(request: Request, env: Env): Promise<Response> {
   if (!user) return json({ error: "Connexion requise." }, 401);
   try {
     const url = new URL(request.url);
+    if (request.method === "POST" && url.pathname === "/api/ads/upload-image") return await uploadCampaignImage(request, env, user);
     if (request.method === "GET" && url.pathname === "/api/ads/campaigns")
       return await listCampaigns(env, user.id);
     if (request.method === "POST" && url.pathname === "/api/ads/campaigns")
