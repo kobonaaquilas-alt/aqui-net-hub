@@ -124,7 +124,7 @@ async function listCampaigns(env: Env, userId: string): Promise<Response> {
     if (event.event_type === "click") current.clicks_count++;
     stats.set(event.campaign_id, current);
   }
-  const enriched: Array<Record<string, any> & { id:string; is_active:boolean; ends_at:string|null; impressions_count:number; clicks_count:number; ctr_percent:number }> = campaigns.map(campaign => {
+  const enriched = campaigns.map(campaign => {
     const counts = stats.get(campaign.id) || { impressions_count: 0, clicks_count: 0 };
     return {
       ...campaign,
@@ -132,7 +132,7 @@ async function listCampaigns(env: Env, userId: string): Promise<Response> {
       ctr_percent: counts.impressions_count
         ? Number((counts.clicks_count / counts.impressions_count * 100).toFixed(2))
         : 0,
-    };
+    } as typeof campaign & { is_active:boolean; ends_at:string|null; impressions_count:number; clicks_count:number; ctr_percent:number };
   });
   const totalImpressions=enriched.reduce((sum,item)=>sum+item.impressions_count,0);
   const totalClicks=enriched.reduce((sum,item)=>sum+item.clicks_count,0);
