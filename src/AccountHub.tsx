@@ -265,7 +265,8 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       else{
         setSocialCount(d.count||socialCount+1);
         const x=d.report;
-        setSocialResult("Analyse "+d.count+"/3 · Indice : "+x.health_score+"/100 · Engagement/vues : "+x.engagement_rate_by_views+"% · Vues/abonnés : "+x.views_to_followers_percent+"%\nPoints forts : "+(x.strengths.join(" ; ")||"À confirmer avec davantage de données.")+"\nÀ améliorer : "+(x.issues.join(" ; ")||"Aucun signal critique dans les chiffres déclarés.")+"\nActions : "+x.actions.join(" ; ")+"\n\n"+x.disclaimer);
+        const quotaLabel=d.count<=3?d.count+"/3":d.count+" · PRO";
+        setSocialResult("Analyse "+quotaLabel+" · Indice : "+x.health_score+"/100 · Engagement/vues : "+x.engagement_rate_by_views+"% · Vues/abonnés : "+x.views_to_followers_percent+"%\nPoints forts : "+(x.strengths.join(" ; ")||"À confirmer avec davantage de données.")+"\nÀ améliorer : "+(x.issues.join(" ; ")||"Aucun signal critique dans les chiffres déclarés.")+"\nActions : "+x.actions.join(" ; ")+"\n\n"+x.disclaimer);
       }
       const sr=await fetch("/api/social/status",{headers:{Authorization:"Bearer "+session.access_token}});
       if(sr.ok){const s=await sr.json();setSocialCount(s.count||0);setSocialSubscribed(!!s.subscribed);setSocialFollowStatus(s.followStatus||"none");}
