@@ -28,7 +28,7 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
   if(request.method==="GET"&&url.pathname==="/api/admin/billing"){
     const [subscriptionResponse,paymentResponse]=await Promise.all([
      fetch(env.SUPABASE_URL+"/rest/v1/hub_subscriptions?select=id,user_id,plan_id,starts_at,ends_at,status,created_at&order=created_at.desc&limit=100",{headers:headers(env)}),
-     fetch(env.SUPABASE_URL+"/rest/v1/hub_payment_orders?select=id,user_id,plan_id,plan_name,amount_xof,currency,status,created_at,paid_at,payment_method,manual_reference,merchant_transaction_id&order=created_at.desc&limit=100",{headers:headers(env)})
+     fetch(env.SUPABASE_URL+"/rest/v1/hub_payment_orders?select=id,user_id,plan_id,plan_name,amount_xof,currency,status,created_at,paid_at,payment_method,manual_reference,merchant_transaction_id,proof_path&order=created_at.desc&limit=100",{headers:headers(env)})
     ]);
     if(!subscriptionResponse.ok||!paymentResponse.ok)return json({error:"Lecture des abonnements et paiements impossible."},502);
     const [subscriptions,payments]=await Promise.all([subscriptionResponse.json(),paymentResponse.json()]) as [Array<Record<string,any>>,Array<Record<string,any>>];
@@ -42,14 +42,34 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
      names=Object.fromEntries(plans.map(plan=>[plan.id,plan.name]));
     }
     const normalizedSubscriptions=subscriptions.map(item=>({...item,plan_name:names[item.plan_id]||"Formule AQUI NET HUB"}));
+    const paymentsWithProof=await Promise.all(payments.map(async item=>{
+     if(!item.proof_path)return {...item,proof_url:null};
+     const signed=await fetch(env.SUPABASE_URL+"/storage/v1/object/sign/hub-payment-proofs/"+item.proof_path.split("/").map(encodeURIComponent).join("/"),{method:"POST",headers:headers(env),body:JSON.stringify({expiresIn:3600})});
+     if(!signed.ok)return {...item,proof_url:null};
+     const data=await signed.json() as {signedURL?:string};
+     return {...item,proof_url:data.signedURL?(data.signedURL.startsWith("http")?data.signedURL:env.SUPABASE_URL+"/storage/v1"+data.signedURL):null};
+    }));
     return json({
      subscriptions:normalizedSubscriptions,
-     payments,
+     payments:paymentsWithProof,
      active_count:subscriptions.filter(item=>item.status==="active"&&new Date(item.ends_at).getTime()>Date.now()).length,
      pending_count:payments.filter(item=>item.status==="pending").length,
      paid_count:payments.filter(item=>item.status==="paid").length
     });
    }
+  const paymentApproval=url.pathname.match(/^\\/api\\/admin\\/payments\\/([0-9a-f-]{36})\\/approve$/i);
+  if(paymentApproval&&request.method==="POST"){
+   const r=await fetch(env.SUPABASE_URL+"/rest/v1/rpc/confirm_uploaded_hub_payment",{method:"POST",headers:headers(env),body:JSON.stringify({p_order_id:paymentApproval[1],p_admin_user_id:user.id})});
+   const raw=await r.text();
+   if(!r.ok)return json({error:raw.includes("ORDER_NOT_FOUND")?"Commande introuvable.":raw.includes("ORDER_NOT_PENDING_OR_PROOF_MISSING")?"Cette commande n'est plus en attente ou sa preuve est absente.":"Validation du paiement impossible."},400);
+   return json(JSON.parse(raw));
+  }
+  const paymentRejection=url.pathname.match(/^\\/api\\/admin\\/payments\\/([0-9a-f-]{36})\\/reject$/i);
+  if(paymentRejection&&request.method==="POST"){
+   const r=await fetch(env.SUPABASE_URL+"/rest/v1/hub_payment_orders?id=eq."+encodeURIComponent(paymentRejection[1])+"&status=eq.pending",{method:"PATCH",headers:headers(env),body:JSON.stringify({status:"failed",processed_by:user.id})});
+   if(!r.ok)return json({error:"Refus du paiement impossible."},502);
+   return (await r.json() as unknown[]).length?json({ok:true}):json({error:"Commande en attente introuvable."},404);
+  }
   if(request.method==="POST"&&url.pathname==="/api/admin/subscriptions/manual"){
    const b=await request.json() as {email?:string;plan_id?:string;payment_method?:string;manual_reference?:string};
    const email=String(b.email||"").trim().toLowerCase();
@@ -122,13 +142,16 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
    const r=await fetch(`${env.SUPABASE_URL}/rest/v1/hub_site_settings?select=setting_key,setting_value`,{headers:headers(env)});
    if(!r.ok)return json({error:"Lecture des paramètres impossible."},502);
    const rows=await r.json() as Array<{setting_key:string;setting_value:string}>;
-   return json({adsense_client:rows.find(x=>x.setting_key==="adsense_client")?.setting_value||""});
+   return json({adsense_client:rows.find(x=>x.setting_key==="adsense_client")?.setting_value||"",payment_number:rows.find(x=>x.setting_key==="payment_number")?.setting_value||""});
   }
   if(request.method==="PATCH"&&url.pathname==="/api/admin/settings"){
-   const b=await request.json() as {adsense_client?:string};const client=(b.adsense_client||"").trim();
+   const b=await request.json() as {adsense_client?:string;payment_number?:string};const client=(b.adsense_client||"").trim();const paymentNumber=(b.payment_number||"").trim().replace(/\\s+/g,"");
+   if(paymentNumber&&!/^\\+?[0-9]{8,15}$/.test(paymentNumber))return json({error:"Numéro de paiement invalide (8 à 15 chiffres, indicatif facultatif)."},400);
    if(client&&!/^ca-pub-[0-9]{16}$/.test(client))return json({error:"Identifiant AdSense invalide (ca-pub- suivi de 16 chiffres)."},400);
    const r=await fetch(`${env.SUPABASE_URL}/rest/v1/hub_site_settings?on_conflict=setting_key`,{method:"POST",headers:{...headers(env),Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({setting_key:"adsense_client",setting_value:client,updated_at:new Date().toISOString()})});
-   return r.ok?json({ok:true,adsense_client:client}):json({error:"Enregistrement AdSense impossible."},502);
+   if(!r.ok)return json({error:"Enregistrement AdSense impossible."},502);
+   const paymentSave=await fetch(env.SUPABASE_URL+"/rest/v1/hub_site_settings?on_conflict=setting_key",{method:"POST",headers:{...headers(env),Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({setting_key:"payment_number",setting_value:paymentNumber,updated_at:new Date().toISOString()})});
+   return paymentSave.ok?json({ok:true,adsense_client:client,payment_number:paymentNumber}):json({error:"Enregistrement du numéro de paiement impossible."},502);
   }
   const follow=url.pathname.match(/^\/api\/admin\/follows\/([0-9a-f-]{36})$/i);
   if(follow&&request.method==="PATCH"){
