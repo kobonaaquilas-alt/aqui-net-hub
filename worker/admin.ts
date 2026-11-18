@@ -14,7 +14,7 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
   const url=new URL(request.url);
   if(request.method==="GET"&&url.pathname==="/api/admin/me")return json({isAdmin:true});
   if(request.method==="GET"&&url.pathname==="/api/admin/requests"){
-   const paths=["hub_ad_requests?select=id,user_id,company_name,contact_name,email,phone,website,budget,message,status,created_at&order=created_at.desc&limit=200","hub_partner_applications?select=id,user_id,organization,contact_name,email,phone,website,proposal,status,created_at&order=created_at.desc&limit=200","hub_follow_verifications?select=*&order=created_at.desc&limit=200","hub_social_audits?select=id,user_id,platform,account_name,social_url,followers,average_views,average_likes,average_comments,posts_per_week,goal,created_at&order=created_at.desc&limit=200"];
+   const paths=["hub_ad_requests?select=id,user_id,company_name,contact_name,email,phone,website,budget,message,status,created_at&order=created_at.desc&limit=200","hub_partner_applications?select=id,user_id,organization,contact_name,email,phone,website,proposal,status,created_at&order=created_at.desc&limit=200","hub_follow_verifications?select=*&order=created_at.desc&limit=200","hub_social_audits?select=id,user_id,platform,account_name,social_url,followers,average_views,average_likes,average_comments,posts_per_week,goal,report,created_at&order=created_at.desc&limit=200"];
    const rs=await Promise.all(paths.map(p=>fetch(`${env.SUPABASE_URL}/rest/v1/${p}`,{headers:headers(env)})));
    if(!rs.every(r=>r.ok))return json({error:"Impossible de charger les demandes."},502);
    const [ads,partners,follows,audits]=await Promise.all(rs.map(r=>r.json()));
