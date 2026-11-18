@@ -120,8 +120,8 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
    return json({adsense_client:rows.find(x=>x.setting_key==="adsense_client")?.setting_value||"",payment_number:rows.find(x=>x.setting_key==="payment_number")?.setting_value||""});
   }
   if(request.method==="PATCH"&&url.pathname==="/api/admin/settings"){
-   const b=await request.json() as {adsense_client?:string;payment_number?:string};const client=(b.adsense_client||"").trim();const paymentNumber=(b.payment_number||"").trim().replace(/\s+/g,"");
-   if(paymentNumber&&!/^\+?[0-9]{8,15}$/.test(paymentNumber))return json({error:"Numéro de paiement invalide (8 à 15 chiffres, indicatif facultatif)."},400);
+    const b=await request.json() as {adsense_client?:string;payment_number?:string};const client=(b.adsense_client||"").trim();const paymentNumber=(b.payment_number||"").split(/[;,\n]+/).map(x=>x.trim().replace(/\s+/g,"")).filter(Boolean).join(",");
+    if(paymentNumber&&paymentNumber.split(",").some(number=>!/^\+?[0-9]{8,15}$/.test(number)))return json({error:"Chaque numéro doit contenir 8 à 15 chiffres, avec indicatif facultatif."},400);
    if(client&&!/^ca-pub-[0-9]{16}$/.test(client))return json({error:"Identifiant AdSense invalide (ca-pub- suivi de 16 chiffres)."},400);
    const r=await fetch(`${env.SUPABASE_URL}/rest/v1/hub_site_settings?on_conflict=setting_key`,{method:"POST",headers:{...headers(env),Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({setting_key:"adsense_client",setting_value:client,updated_at:new Date().toISOString()})});
    if(!r.ok)return json({error:"Enregistrement AdSense impossible."},502);
