@@ -134,7 +134,20 @@ async function listCampaigns(env: Env, userId: string): Promise<Response> {
         : 0,
     };
   });
-  return json({ campaigns: enriched, trial, subscription_active: !!subscription });
+  const totalImpressions=enriched.reduce((sum,item)=>sum+item.impressions_count,0);
+  const totalClicks=enriched.reduce((sum,item)=>sum+item.clicks_count,0);
+  return json({
+    campaigns: enriched,
+    trial,
+    subscription_active: !!subscription,
+    summary: {
+      campaign_count: enriched.length,
+      active_count: enriched.filter(item=>item.is_active&&(!item.ends_at||new Date(item.ends_at).getTime()>Date.now())).length,
+      impressions_count: totalImpressions,
+      clicks_count: totalClicks,
+      ctr_percent: totalImpressions?Number((totalClicks/totalImpressions*100).toFixed(2)):0
+    }
+  });
 }
 
 async function createCampaign(request: Request, env: Env, user: User): Promise<Response> {
