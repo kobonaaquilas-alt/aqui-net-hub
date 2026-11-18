@@ -473,3 +473,75 @@ button.service-card{
 .admin-nav-link{display:inline-flex;align-items:center;gap:7px;color:#f5c66b!important;font-weight:700}
 .admin-nav-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#e24b4b;color:#fff;font-size:11px;font-weight:800;line-height:1}
 @media(max-width:760px){.admin-nav-link{padding:7px 10px;border-radius:10px;background:rgba(245,198,107,.09)}}
+
+
+/* AQUI NET HUB — interface simplifiée : les détails apparaissent à la demande */
+.promo-ticker{display:none!important}
+.topbar{min-height:68px;padding:12px 5%;justify-content:space-between}
+.main-nav{display:none}
+.main-nav:has(.admin-nav-link){display:flex;gap:0}
+.main-nav a:not(.admin-nav-link){display:none}
+.hub-hero{padding:38px 5% 28px}
+.hub-hero .eyebrow{display:none}
+.hub-hero h1{font-size:clamp(27px,4vw,42px);line-height:1.15}
+.hub-hero p{max-width:620px;margin:12px auto 0;font-size:14px}
+.hub-hero .primary-button{display:none}
+.hub-services{padding:28px 5% 24px}
+.hub-services .section-heading{margin-bottom:20px;text-align:center;align-items:center}
+.hub-services .section-heading .eyebrow{margin-bottom:7px}
+.hub-services .section-heading h2{font-size:clamp(22px,3vw,30px)}
+.hub-services .section-heading p{margin:7px 0 0;font-size:13px}
+.hub-services .service-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.hub-services .service-card{min-height:178px;padding:19px 16px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;text-align:left;border-radius:15px}
+.hub-services .service-card:nth-child(3){order:1}
+.hub-services .service-card:nth-child(1){order:2}
+.hub-services .service-card:nth-child(2){order:3}
+.hub-services .service-card:nth-child(4){order:4}
+.hub-services .service-card h3{font-size:16px;line-height:1.35;margin:14px 0 10px}
+.hub-services .service-number{font-size:11px}
+.hub-services .service-symbol{font-size:23px}
+.hub-services .service-action{margin-top:auto;font-size:12px}
+#net-assist,#academy,#veille-aqui,#ideas{display:none!important}
+#account-access{padding:14px 5% 30px}
+#account-access .section-heading{margin-bottom:12px}
+#account-access .section-heading .eyebrow{margin-bottom:5px}
+#account-access .section-heading h2{font-size:18px}
+#account-access .section-heading p{font-size:12px;margin-top:5px}
+#account-access .account-card{max-width:560px;margin:0 auto;padding:18px}
+#account-access .account-profile input,
+#account-access .account-profile .primary-button{display:none}
+#account-access .account-profile{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+#account-access .account-profile h3{width:100%;margin:0}
+#account-access .account-profile p{flex:1;min-width:180px;margin:0;font-size:13px}
+#account-access .account-profile .filter-button{margin-left:auto}
+.site-footer{padding:18px 5%;justify-content:center;gap:10px}
+.site-footer>p,.site-footer .footer-links,.site-footer .footer-contact{display:none}
+.site-footer small{font-size:11px}
+.site-shell:has(#diagnostic) #account-access{display:none}
+#demande-outils{padding:34px 5% 55px;scroll-margin-top:18px}
+#demande-outils .section-heading{margin-bottom:16px}
+#demande-outils .section-heading h2{font-size:clamp(23px,3vw,30px)}
+#demande-outils .section-heading p{font-size:13px}
+#demande-outils .tool-request-form{max-width:760px;margin:0 auto}
+#demande-outils .tool-request-form textarea{width:100%;min-height:112px}
+#diagnostic{padding:34px 5% 55px;scroll-margin-top:18px}
+#diagnostic>.section-heading{margin-bottom:18px}
+#diagnostic>.section-heading h2{font-size:clamp(23px,3vw,30px)}
+@media(max-width:850px){
+ .hub-services .service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .hub-services .service-card{min-height:160px}
+}
+@media(max-width:520px){
+ .topbar{min-height:60px}
+ .hub-hero{padding:28px 5% 18px}
+ .hub-hero h1{font-size:27px}
+ .hub-hero p{font-size:13px;line-height:1.55}
+ .hub-services{padding-top:22px}
+ .hub-services .service-grid{gap:10px}
+ .hub-services .service-card{min-height:150px;padding:14px}
+ .hub-services .service-card h3{font-size:14px}
+ #account-access{padding-top:8px}
+ #account-access .account-profile{align-items:flex-start}
+ #account-access .account-profile p{width:100%;flex-basis:100%}
+ #account-access .account-profile .filter-button{margin-left:0}
+}
