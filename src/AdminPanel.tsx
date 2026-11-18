@@ -15,7 +15,6 @@ export default function AdminPanel({lang}:{lang:"fr"|"en"}){
  const tr=(frText:string,enText:string)=>lang==="fr"?frText:enText;
  const [session,setSession]=useState<Session|null>(null),[authorized,setAuthorized]=useState(false),[checked,setChecked]=useState(false);
  const [data,setData]=useState<Data>({ads:[],partners:[],follows:[],audits:[]}),[campaigns,setCampaigns]=useState<Campaign[]>([]),[billing,setBilling]=useState<Billing>({subscriptions:[],payments:[],active_count:0,pending_count:0,paid_count:0});
- const [manualEmail,setManualEmail]=useState(""),[manualPlan,setManualPlan]=useState(""),[manualMethod,setManualMethod]=useState("TMoney"),[manualReference,setManualReference]=useState("");
  const [notice,setNotice]=useState(""),[busy,setBusy]=useState(false),[adsense,setAdsense]=useState(""),[paymentNumber,setPaymentNumber]=useState("");
  const [browserUrl,setBrowserUrl]=useState("https://");
  const [browserSelector,setBrowserSelector]=useState("body");
@@ -50,16 +49,6 @@ export default function AdminPanel({lang}:{lang:"fr"|"en"}){
   e.preventDefault();setBusy(true);setNotice("");
   try{await request("/api/admin/campaigns",{method:"POST",body:JSON.stringify({...draft,starts_at:draft.starts_at?new Date(draft.starts_at).toISOString():null,ends_at:draft.ends_at?new Date(draft.ends_at).toISOString():null})});setDraft({title:"",description:"",destination_url:"",image_url:"",starts_at:"",ends_at:"",is_active:true});await load();setNotice(tr("Publicité créée et enregistrée.","Ad campaign created and saved."));}
   catch(e){setNotice(e instanceof Error?e.message:"Création impossible.");}finally{setBusy(false);}
- }
- async function grantManualSubscription(e:FormEvent){
-  e.preventDefault();setBusy(true);setNotice("");
-  try{
-   const result=await request("/api/admin/subscriptions/manual",{method:"POST",body:JSON.stringify({email:manualEmail,plan_id:manualPlan,payment_method:manualMethod,manual_reference:manualReference})});
-   setManualEmail("");setManualReference("");
-   await load();
-   setNotice(tr("Abonnement activé après validation manuelle du paiement : ","Subscription activated after manual payment verification: ")+result.plan_name+" · "+Number(result.amount_xof).toLocaleString("fr-FR")+" FCFA");
-  }catch(error){setNotice(error instanceof Error?error.message:"Activation impossible.");}
-  finally{setBusy(false);}
  }
  async function saveAdsense(){await action("/api/admin/settings","PATCH",{adsense_client:adsense,payment_number:paymentNumber});}
  async function startBrowserTask(e:FormEvent){
