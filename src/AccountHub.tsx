@@ -596,7 +596,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
         <span className="eyebrow">{fr?"ESSAI TERMINÉ · ACCÈS PRO":"TRIAL COMPLETED · PRO ACCESS"}</span>
         <h3>{fr?"Tes 3 analyses gratuites sont utilisées":"Your 3 free analyses have been used"}</h3>
         <p>{fr?"Après validation de tes profils, un abonnement actif permet de poursuivre les diagnostics pendant sa durée. Aucun abonnement n'est activé avant vérification de la preuve de paiement.":"After your profiles are approved, an active subscription lets you continue audits during its validity period. No subscription is activated until payment proof is verified."}</p>
-        {plans.length ? plans.map(p=><article className="plan-row" key={p.id}>
+        {socialFollowStatus!=="approved" ? <p>{fr?"Attends la validation des deux profils avant de souscrire.":"Wait until both profiles are approved before subscribing."}</p> : plans.length ? plans.map(p=><article className="plan-row" key={p.id}>
           <div><strong>{p.name}</strong><p>{p.description} · {p.duration_days} {fr?"jours":"days"}</p><strong>{p.amount_xof.toLocaleString("fr-FR")} FCFA</strong></div>
           {paymentAction(p)}
         </article>) : <p>{fr?"Les formules seront affichées dès leur activation.":"Plans will appear when activated."}</p>}
