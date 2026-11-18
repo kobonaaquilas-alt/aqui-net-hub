@@ -96,6 +96,7 @@ export default function AdminPanel({lang}:{lang:"fr"|"en"}){
     {browserJob.result&&<><strong>{browserJob.result.title||tr("Résultat","Result")}</strong>{browserJob.result.final_url&&<p><a href={browserJob.result.final_url} target="_blank" rel="noreferrer">{browserJob.result.final_url}</a></p>}<pre>{browserJob.result.body_text||JSON.stringify(browserJob.result.steps||[],null,2)}</pre></>}
    </div>}
   </div>
+  {billing.pending_count>0&&<div className="account-message payment-admin-notification" role="alert"><strong>🔔 {tr("Nouvelle notification de paiement","New payment notification")} · {billing.pending_count}</strong><p>{tr("Une ou plusieurs preuves attendent ta vérification. Contrôle d’abord la réception de l’argent sur ton compte mobile money, puis ouvre la preuve et valide ou refuse la demande ici. Actualisation automatique toutes les 30 secondes.","One or more payment proofs need review. First verify that the money arrived in your mobile-money account, then open the proof and approve or reject the request here. Automatically refreshes every 30 seconds.")}</p></div>}
   <div className="account-card">
    <h3>{tr("Suivi des abonnements et paiements","Subscription and payment tracking")}</h3>
    <p>{tr("Abonnements actifs : ","Active subscriptions: ")}<strong>{billing.active_count}</strong> · {tr("Paiements en attente : ","Pending payments: ")}<strong>{billing.pending_count}</strong> · {tr("Paiements confirmés : ","Confirmed payments: ")}<strong>{billing.paid_count}</strong></p>
