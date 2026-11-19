@@ -26,6 +26,12 @@ interface Env {
   ADS_USER_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
   ADS_IP_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
   BROWSER_TASK_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
+  SECURITY_ALERT_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
+  WHATSAPP_ACCESS_TOKEN?: string;
+  WHATSAPP_PHONE_NUMBER_ID?: string;
+  WHATSAPP_ALERT_TO?: string;
+  WHATSAPP_TEMPLATE_NAME?: string;
+  WHATSAPP_GRAPH_VERSION?: string;
   FACEBOOK_APP_ID?: string;
   FACEBOOK_APP_SECRET?: string;
   FACEBOOK_GRAPH_VERSION?: string;
@@ -53,6 +59,48 @@ async function authUser(request: Request, env: Env): Promise<AuthUser | null> {
   if (!response.ok) return null;
   const user = await response.json() as AuthUser;
   return user?.id ? user : null;
+}
+async function notifySecurityIncident(env: Env, incident: { ip: string; path: string; reason: string }): Promise<void> {
+  if (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID ||
+      !env.WHATSAPP_ALERT_TO || !env.WHATSAPP_TEMPLATE_NAME) return;
+  try {
+    const allowed = await env.SECURITY_ALERT_LIMITER.limit({ key: incident.ip });
+    if (!allowed.success) return;
+    const version = env.WHATSAPP_GRAPH_VERSION || "v26.0";
+    const response = await fetch(`https://graph.facebook.com/${version}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: env.WHATSAPP_ALERT_TO,
+        type: "template",
+        template: {
+          name: env.WHATSAPP_TEMPLATE_NAME,
+          language: { code: "fr" },
+          components: [{
+            type: "body",
+            parameters: [
+              { type: "text", text: "ÉLEVÉE" },
+              { type: "text", text: incident.reason.slice(0, 80) },
+              { type: "text", text: incident.path.slice(0, 100) },
+              { type: "text", text: new Date().toISOString() },
+            ],
+          }],
+        },
+      }),
+    });
+    if (!response.ok) {
+      console.error("WhatsApp security notification failed.", { status: response.status });
+    }
+  } catch (error) {
+    console.error("WhatsApp security notification error.", {
+      message: error instanceof Error ? error.message : "unknown",
+    });
+  }
 }
 async function createPayment(request: Request, env: Env) {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !serviceKey(env))
@@ -345,12 +393,18 @@ export default {
         (eventType === "click" && request.method === "GET")
       )) {
         const rate = await env.AD_EVENT_LIMITER.limit({ key: clientIp });
-        if (!rate.success) return json({ error: "Trop de sollicitations. Réessaie dans une minute." }, 429);
+        if (!rate.success) {
+          await notifySecurityIncident(env, { ip: clientIp, path: url.pathname, reason: "Limite de sollicitations dépassée" });
+          return json({ error: "Trop de sollicitations. Réessaie dans une minute." }, 429);
+        }
       }
       if ((request.method === "GET" && url.pathname === "/api/public/campaigns") ||
           (request.method === "GET" && url.pathname === "/api/public/settings")) {
         const rate = await env.PUBLIC_AD_LIMITER.limit({ key: clientIp });
-        if (!rate.success) return json({ error: "Trop de requêtes. Réessaie dans une minute." }, 429);
+        if (!rate.success) {
+          await notifySecurityIncident(env, { ip: clientIp, path: url.pathname, reason: "Limite de requêtes publiques dépassée" });
+          return json({ error: "Trop de requêtes. Réessaie dans une minute." }, 429);
+        }
       }
       if (campaignEvent && (
         (eventType === "impression" && request.method === "POST") ||
