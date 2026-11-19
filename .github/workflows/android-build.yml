@@ -97,11 +97,18 @@ jobs:
           echo "ANDROID_KEYSTORE_PATH=$ANDROID_KEYSTORE_PATH" >> "$GITHUB_ENV"
           python3 scripts/configure-android-signing.py
 
-      - name: Build Android APK and App Bundle
+      - name: Build Android APK and signed App Bundle when signing is configured
         working-directory: android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ env.ANDROID_KEYSTORE_PATH }}
         run: |
           chmod +x ./gradlew
-          ./gradlew --no-daemon assembleDebug bundleRelease
+          ./gradlew --no-daemon assembleDebug
+          if [ -n "$ANDROID_KEYSTORE_PATH" ]; then
+            ./gradlew --no-daemon bundleRelease
+          else
+            echo "AAB skipped: release signing secrets are not configured. Debug APK will still be produced."
+          fi
 
       - name: Upload Android deliverables
         uses: actions/upload-artifact@v4
