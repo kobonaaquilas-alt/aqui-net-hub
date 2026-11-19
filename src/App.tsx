@@ -160,7 +160,7 @@ export default function App() {
         <span className="eyebrow">AQUI NET HUB · DIGITAL ACTION CENTER</span>
         <h1>{fr?"Ton idée. Les bons outils. Des résultats concrets.":"Your idea. The right tools. Practical results."}</h1>
         <p>{fr?"Un seul espace pour trouver des outils gratuits, créer des vidéos, améliorer tes réseaux sociaux et proposer des partenariats.":"One place to find free tools, create videos, improve your social accounts and propose partnerships."}</p>
-        <a className="primary-button" href="#services">{fr?"Commencer maintenant":"Get started"}</a>
+        <div className="hero-actions"><a className="primary-button" href="#services">{fr?"Commencer maintenant":"Get started"}</a><a className="primary-button app-download-button" href="https://github.com/kobonaaquilas-alt/aqui-net-hub/releases/download/android-test/aqui-net-hub-android.apk">{fr?"Télécharger l’application Android":"Download the Android app"} ↓</a></div>
       </section>
 
       <section className="hub-services section" id="services">
