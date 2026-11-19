@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient, type Session } from "@supabase/supabase-js";
-import { Capacitor } from "@capacitor/core";
-import { Browser } from "@capacitor/browser";
 import AdvertiserHub from "./AdvertiserHub";
 
 const db = createClient("https://xbobkysbtvtmepqgtnbt.supabase.co", "sb_publishable_AGtfBQyqyKbH5C_4f5cQgw_bm0MmusA");
@@ -77,14 +75,6 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
   const [followTikTokUrl,setFollowTikTokUrl]=useState("");
   const [followFacebookUrl,setFollowFacebookUrl]=useState("");
   const [followBusy,setFollowBusy]=useState(false);
-  const [tiktokBusy,setTiktokBusy]=useState(false);
-  const [tiktokNotice,setTiktokNotice]=useState("");
-  const [tiktokData,setTiktokData]=useState<any>(null);
-  const [facebookBusy,setFacebookBusy]=useState(false);
-  const [facebookNotice,setFacebookNotice]=useState("");
-  const [facebookPages,setFacebookPages]=useState<Array<{page_id:string;page_name:string}>>([]);
-  const [facebookPageId,setFacebookPageId]=useState("");
-  const [facebookAudit,setFacebookAudit]=useState<any>(null);
   const [paymentBusy,setPaymentBusy]=useState(false);
   const [backendReady,setBackendReady]=useState(false);
   const [videoReady,setVideoReady]=useState(false);
@@ -149,29 +139,6 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
     if (new URLSearchParams(window.location.search).get("password") === "recovery") setRecoveryMode(true);
   }, []);
 
-  useEffect(() => {
-    if(!session?.access_token||service!=="social")return;
-    const state=new URLSearchParams(window.location.search).get("tiktok");
-    if(state){const messages:Record<string,string>={connected:fr?"TikTok connecté. Chargement des statistiques…":"TikTok connected. Loading statistics…",denied:fr?"Autorisation TikTok refusée.":"TikTok authorization denied.",expired:fr?"Session TikTok expirée. Recommence la connexion.":"TikTok session expired. Reconnect.",save_error:fr?"Impossible d'enregistrer la connexion TikTok.":"Could not save TikTok connection.",invalid:fr?"Réponse TikTok invalide.":"Invalid TikTok response."};setTiktokNotice(messages[state]||"");const clean=new URL(window.location.href);clean.searchParams.delete("tiktok");window.history.replaceState({}, "", clean.toString());}
-    void loadTikTok();
-  },[session?.access_token,service,fr]);
-  useEffect(() => {
-    if(!session?.access_token||service!=="social")return;
-    const state=new URLSearchParams(window.location.search).get("facebook");
-    if(state){
-      const messages:Record<string,string>={
-        connected:fr?"Facebook connecté. Chargement des Pages…":"Facebook connected. Loading Pages…",
-        denied:fr?"Autorisation Facebook refusée.":"Facebook authorization denied.",
-        expired:fr?"Session Facebook expirée. Recommence la connexion.":"Facebook session expired. Reconnect.",
-        no_pages:fr?"Aucune Page Facebook administrée n'a été trouvée.":"No managed Facebook Page was found.",
-        save_error:fr?"Impossible d'enregistrer la connexion Facebook.":"Could not save Facebook connection.",
-        invalid:fr?"Réponse Facebook invalide.":"Invalid Facebook response."
-      };
-      setFacebookNotice(messages[state]||"");
-      const clean=new URL(window.location.href);clean.searchParams.delete("facebook");window.history.replaceState({}, "", clean.toString());
-    }
-    void loadFacebookPages();
-  },[session?.access_token,service,fr]);
   useEffect(() => {
     const paymentState = new URLSearchParams(window.location.search).get("payment");
     if (paymentState === "return")
@@ -292,90 +259,6 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
     }catch(e){setSocialResult(e instanceof Error?e.message:"Erreur d'analyse.");}
     finally{setBusy(false);}
   }
-  async function loadTikTok(){
-    if(!session?.access_token)return;
-    setTiktokBusy(true);setTiktokNotice("");
-    try{const r=await fetch("/api/tiktok/me",{headers:{Authorization:"Bearer "+session.access_token}});const d=await r.json();if(!r.ok)throw new Error(d.error||"Lecture TikTok impossible.");setTiktokData(d.connected?d:null);}
-    catch(e){setTiktokNotice(e instanceof Error?e.message:"Erreur TikTok.");}finally{setTiktokBusy(false);}
-  }
-  function applyTikTokStats(){
-    if(!tiktokData?.profile)return;
-    const videos=Array.isArray(tiktokData.videos)?tiktokData.videos:[];
-    const average=(field:string)=>videos.length
-      ?Math.round(videos.reduce((sum:number,item:any)=>sum+Number(item[field]||0),0)/videos.length)
-      :0;
-    const profile=tiktokData.profile;
-    setSocialName(profile.display_name||profile.username||"TikTok");
-    if(profile.profile_deep_link)setSocialUrl(profile.profile_deep_link);
-    setSocialFollowers(String(profile.follower_count||0));
-    setSocialViews(String(average("view_count")));
-    setSocialLikes(String(average("like_count")));
-    setSocialComments(String(average("comment_count")));
-    setTiktokNotice(fr?"Statistiques transférées dans le formulaire AQUI NET HUB · SOCIAL AUDIT. Vérifie le lien du profil puis lance l'analyse.":"Metrics copied into the AQUI NET HUB · SOCIAL AUDIT form. Check the profile link, then run the audit.");
-  }
-  async function connectTikTok(){
-    if(!session?.access_token){setTiktokNotice(fr?"Connecte-toi d'abord à AQUI NET HUB.":"Sign in to AQUI NET HUB first.");return;}
-    setTiktokBusy(true);setTiktokNotice("");
-    try{const r=await fetch("/api/tiktok/connect",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({native:Capacitor.isNativePlatform()})});const d=await r.json();if(!r.ok||!d.authorization_url)throw new Error(d.error||"Connexion TikTok indisponible.");if(Capacitor.isNativePlatform()){await Browser.open({url:d.authorization_url,toolbarColor:"#101C32"});setTiktokBusy(false);}else window.location.assign(d.authorization_url);}
-    catch(e){setTiktokNotice(e instanceof Error?e.message:"Connexion TikTok impossible.");setTiktokBusy(false);}
-  }
-  async function disconnectTikTok(){
-    if(!session?.access_token)return;setTiktokBusy(true);
-    try{const r=await fetch("/api/tiktok/disconnect",{method:"DELETE",headers:{Authorization:"Bearer "+session.access_token}});const d=await r.json();if(!r.ok)throw new Error(d.error||"Déconnexion impossible.");setTiktokData(null);setTiktokNotice(fr?"Compte TikTok déconnecté.":"TikTok account disconnected.");}
-    catch(e){setTiktokNotice(e instanceof Error?e.message:"Erreur.");}finally{setTiktokBusy(false);}
-  }
-  async function loadFacebookPages(){
-    if(!session?.access_token)return;
-    setFacebookBusy(true);
-    try{
-      const r=await fetch("/api/facebook/pages",{headers:{Authorization:"Bearer "+session.access_token}});
-      const d=await r.json();
-      if(!r.ok)throw new Error(d.error||"Lecture des Pages Facebook impossible.");
-      const pages=d.pages||[];
-      setFacebookPages(pages);
-      setFacebookPageId(current=>pages.some((p:{page_id:string})=>p.page_id===current)?current:pages[0]?.page_id||"");
-    }catch(e){setFacebookNotice(e instanceof Error?e.message:"Erreur Facebook.");}
-    finally{setFacebookBusy(false);}
-  }
-  async function connectFacebook(){
-    if(!session?.access_token){setFacebookNotice(fr?"Connecte-toi d'abord à AQUI NET HUB.":"Sign in to AQUI NET HUB first.");return;}
-    setFacebookBusy(true);setFacebookNotice("");
-    try{
-      const r=await fetch("/api/facebook/connect",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({native:Capacitor.isNativePlatform()})});
-      const d=await r.json();
-      if(!r.ok||!d.authorization_url)throw new Error(d.error||"Connexion Facebook indisponible.");
-      if(Capacitor.isNativePlatform()){await Browser.open({url:d.authorization_url,toolbarColor:"#101C32"});setFacebookBusy(false);}
-      else window.location.assign(d.authorization_url);
-    }catch(e){setFacebookNotice(e instanceof Error?e.message:"Connexion Facebook impossible.");setFacebookBusy(false);}
-  }
-  async function disconnectFacebook(){
-    if(!session?.access_token)return;
-    setFacebookBusy(true);
-    try{
-      const r=await fetch("/api/facebook/disconnect",{method:"DELETE",headers:{Authorization:"Bearer "+session.access_token}});
-      const d=await r.json();if(!r.ok)throw new Error(d.error||"Déconnexion impossible.");
-      setFacebookPages([]);setFacebookPageId("");setFacebookAudit(null);
-      setFacebookNotice(fr?"Compte Facebook déconnecté.":"Facebook account disconnected.");
-    }catch(e){setFacebookNotice(e instanceof Error?e.message:"Erreur Facebook.");}
-    finally{setFacebookBusy(false);}
-  }
-  async function syncFacebookStats(){
-    if(!session?.access_token||!facebookPageId)return;
-    setFacebookBusy(true);setFacebookNotice("");
-    try{
-      const r=await fetch("/api/facebook/audit",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({page_id:facebookPageId})});
-      const d=await r.json();if(!r.ok||!d.report)throw new Error(d.error||"Analyse Facebook impossible.");
-      const report=d.report;setFacebookAudit(report);
-      setSocialName(report.page_name||"Facebook");
-      setSocialUrl("https://www.facebook.com/"+report.page_id);
-      setSocialFollowers(String(report.followers||0));
-      setSocialLikes(String(report.average_likes||0));
-      setSocialComments(String(report.average_comments||0));
-      setFacebookNotice(fr?"Statistiques récupérées depuis Meta. Tu peux maintenant lancer l'analyse AQUI NET HUB · SOCIAL AUDIT.":"Statistics retrieved from Meta. You can now run the AQUI NET HUB · SOCIAL AUDIT analysis.");
-    }catch(e){setFacebookNotice(e instanceof Error?e.message:"Erreur pendant la lecture des statistiques Facebook.");}
-    finally{setFacebookBusy(false);}
-  }
-
   function chooseManualPayment(plan:Plan){setPaymentChooserPlan(null);setSelectedPaymentPlan(plan);setPaymentProof(null);setPaymentReference("");}
   async function submitManualPayment(){
     if(!session?.access_token||!selectedPaymentPlan)return;
