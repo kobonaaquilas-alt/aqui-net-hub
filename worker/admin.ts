@@ -1,4 +1,11 @@
-type Env = { SUPABASE_URL: string; SUPABASE_SERVICE_ROLE_KEY?: string; SUPABASE_SECRET_KEY?: string };
+type Env = {
+ SUPABASE_URL: string;
+ SUPABASE_SERVICE_ROLE_KEY?: string;
+ SUPABASE_SECRET_KEY?: string;
+ TELEGRAM_BOT_TOKEN?: string;
+ TELEGRAM_CHAT_ID?: string;
+ SECURITY_ALERT_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
+};
 type AuthUser = { id: string };
 const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff","Referrer-Policy":"strict-origin-when-cross-origin","X-Frame-Options":"DENY","Permissions-Policy":"camera=(),microphone=(),geolocation=()"}});
 const headers=(env:Env)=>({apikey:env.SUPABASE_SERVICE_ROLE_KEY||env.SUPABASE_SECRET_KEY||"",Authorization:"Bearer "+(env.SUPABASE_SERVICE_ROLE_KEY||env.SUPABASE_SECRET_KEY||""),"Content-Type":"application/json",Prefer:"return=representation"});
@@ -13,6 +20,19 @@ export async function handleAdmin(request:Request,env:Env,user:AuthUser):Promise
   if(!await isAdmin(env,user.id))return json({error:"Accès administrateur refusé."},403);
   const url=new URL(request.url);
   if(request.method==="GET"&&url.pathname==="/api/admin/me")return json({isAdmin:true});
+  if(request.method==="POST"&&url.pathname==="/api/admin/telegram/test"){
+   if(!env.TELEGRAM_BOT_TOKEN||!env.TELEGRAM_CHAT_ID)return json({error:"Configuration Telegram incomplète : ajoute les deux secrets dans Cloudflare."},503);
+   const limit=await env.SECURITY_ALERT_LIMITER.limit({key:"telegram-test:"+user.id});
+   if(!limit.success)return json({error:"Un test vient déjà d'être effectué. Réessaie dans une minute."},429);
+   const telegram=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/sendMessage",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({chat_id:env.TELEGRAM_CHAT_ID,text:"✅ TEST DE NOTIFICATION — AQUI NET HUB\\nLe canal Telegram de sécurité fonctionne correctement.\\nHeure UTC : "+new Date().toISOString(),disable_web_page_preview:true})
+   });
+   const result=await telegram.json() as {ok?:boolean;description?:string};
+   if(!telegram.ok||!result.ok)return json({error:"Telegram a refusé l'envoi. Vérifie le jeton, le Chat ID et que tu as démarré le bot."},502);
+   return json({ok:true,message:"Notification de test envoyée."});
+  }
   if(request.method==="GET"&&url.pathname==="/api/admin/requests"){
    const paths=["hub_ad_requests?select=id,user_id,company_name,contact_name,email,phone,website,budget,message,status,created_at&order=created_at.desc&limit=200","hub_partner_applications?select=id,user_id,organization,contact_name,email,phone,website,proposal,status,created_at&order=created_at.desc&limit=200","hub_follow_verifications?select=*&order=created_at.desc&limit=200","hub_social_audits?select=id,user_id,platform,account_name,social_url,followers,average_views,average_likes,average_comments,posts_per_week,goal,report,created_at&order=created_at.desc&limit=200"];
    const rs=await Promise.all(paths.map(p=>fetch(`${env.SUPABASE_URL}/rest/v1/${p}`,{headers:headers(env)})));
