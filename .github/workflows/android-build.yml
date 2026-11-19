@@ -89,22 +89,22 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
-            echo "Release signing secrets are not configured; the release bundle will be unsigned."
+            echo "Release signing secrets are not configured; only the debug APK will be built."
+            echo "ANDROID_RELEASE_SIGNING_CONFIGURED=false" >> "$GITHUB_ENV"
             exit 0
           fi
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/aqui-release.keystore
           export ANDROID_KEYSTORE_PATH="$GITHUB_WORKSPACE/android/app/aqui-release.keystore"
           echo "ANDROID_KEYSTORE_PATH=$ANDROID_KEYSTORE_PATH" >> "$GITHUB_ENV"
           python3 scripts/configure-android-signing.py
+          echo "ANDROID_RELEASE_SIGNING_CONFIGURED=true" >> "$GITHUB_ENV"
 
       - name: Build Android APK and signed App Bundle when signing is configured
         working-directory: android
-        env:
-          ANDROID_KEYSTORE_PATH: ${{ env.ANDROID_KEYSTORE_PATH }}
         run: |
           chmod +x ./gradlew
           ./gradlew --no-daemon assembleDebug
-          if [ -n "$ANDROID_KEYSTORE_PATH" ]; then
+          if [ "$ANDROID_RELEASE_SIGNING_CONFIGURED" = "true" ]; then
             ./gradlew --no-daemon bundleRelease
           else
             echo "AAB skipped: release signing secrets are not configured. Debug APK will still be produced."
