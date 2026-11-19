@@ -27,11 +27,8 @@ interface Env {
   ADS_IP_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
   BROWSER_TASK_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
   SECURITY_ALERT_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
-  WHATSAPP_ACCESS_TOKEN?: string;
-  WHATSAPP_PHONE_NUMBER_ID?: string;
-  WHATSAPP_ALERT_TO?: string;
-  WHATSAPP_TEMPLATE_NAME?: string;
-  WHATSAPP_GRAPH_VERSION?: string;
+  TELEGRAM_BOT_TOKEN?: string;
+  TELEGRAM_CHAT_ID?: string;
   FACEBOOK_APP_ID?: string;
   FACEBOOK_APP_SECRET?: string;
   FACEBOOK_GRAPH_VERSION?: string;
@@ -61,44 +58,35 @@ async function authUser(request: Request, env: Env): Promise<AuthUser | null> {
   return user?.id ? user : null;
 }
 async function notifySecurityIncident(env: Env, incident: { ip: string; path: string; reason: string }): Promise<void> {
-  if (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID ||
-      !env.WHATSAPP_ALERT_TO || !env.WHATSAPP_TEMPLATE_NAME) return;
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return;
   try {
     const allowed = await env.SECURITY_ALERT_LIMITER.limit({ key: incident.ip });
     if (!allowed.success) return;
-    const version = env.WHATSAPP_GRAPH_VERSION || "v26.0";
-    const response = await fetch(`https://graph.facebook.com/${version}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+    const message = [
+      "🚨 ALERTE DE SÉCURITÉ — AQUI NET HUB",
+      "Niveau : ÉLEVÉ",
+      `Événement : ${incident.reason.slice(0, 160)}`,
+      `Route : ${incident.path.slice(0, 160)}`,
+      `IP source : ${incident.ip.slice(0, 80)}`,
+      `Heure UTC : ${new Date().toISOString()}`,
+      "",
+      "Protection automatique : limitation de la requête."
+    ].join("\\n");
+    const response = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        messaging_product: "whatsapp",
-        recipient_type: "individual",
-        to: env.WHATSAPP_ALERT_TO,
-        type: "template",
-        template: {
-          name: env.WHATSAPP_TEMPLATE_NAME,
-          language: { code: "fr" },
-          components: [{
-            type: "body",
-            parameters: [
-              { type: "text", text: "ÉLEVÉE" },
-              { type: "text", text: incident.reason.slice(0, 80) },
-              { type: "text", text: incident.path.slice(0, 100) },
-              { type: "text", text: new Date().toISOString() },
-            ],
-          }],
-        },
-      }),
+        chat_id: env.TELEGRAM_CHAT_ID,
+        text: message,
+        disable_web_page_preview: true
+      })
     });
     if (!response.ok) {
-      console.error("WhatsApp security notification failed.", { status: response.status });
+      console.error("Telegram security notification failed.", { status: response.status });
     }
   } catch (error) {
-    console.error("WhatsApp security notification error.", {
-      message: error instanceof Error ? error.message : "unknown",
+    console.error("Telegram security notification error.", {
+      message: error instanceof Error ? error.message : "unknown"
     });
   }
 }
