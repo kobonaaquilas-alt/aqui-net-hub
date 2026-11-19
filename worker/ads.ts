@@ -4,6 +4,7 @@ type Env = {
   SUPABASE_SERVICE_ROLE_KEY?: string;
   SUPABASE_SECRET_KEY?: string;
   ADS_USER_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
+  ADS_IP_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
 };
 
 type User = { id: string };
@@ -262,6 +263,9 @@ async function deleteCampaign(env: Env, user: User, campaignId: string): Promise
 export async function handleAds(request: Request, env: Env): Promise<Response> {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !serviceKey(env))
     return json({ error: "Service publicitaire non configuré." }, 503);
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const ipRate = await env.ADS_IP_LIMITER.limit({ key: ip });
+  if (!ipRate.success) return json({ error: "Trop de tentatives depuis cette connexion. Réessaie dans une minute." }, 429);
   const user = await currentUser(request, env);
   if (!user) return json({ error: "Connexion requise." }, 401);
   const rate = await env.ADS_USER_LIMITER.limit({ key: user.id });
