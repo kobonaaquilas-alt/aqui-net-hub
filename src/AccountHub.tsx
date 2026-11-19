@@ -547,11 +547,11 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
     {session && service==="social" && <div className="account-card social-audit">
       <span className="eyebrow">AQUI NET HUB · SOCIAL AUDIT · {socialCount}/3 {fr?"analyses gratuites":"free reviews"}</span>
       <h3>{fr?"Diagnostic de ton compte":"Your account review"}</h3>
-      <p>{fr?"Connecte une Page Facebook que tu administres pour récupérer les données autorisées par Meta. Pour Instagram et YouTube, saisis les statistiques natives ; TikTok peut aussi être connecté officiellement lorsque les autorisations sont accordées.":"Analyze Facebook without Meta permissions: get the figures from Meta Business Suite, then AQUI NET HUB calculates indicators and recommendations. Enter available metrics for other networks."}</p>
+      <p>{fr?"Si la connexion officielle TikTok ou Facebook n’est pas encore disponible, tu peux tout de même analyser ces comptes manuellement : relève les chiffres dans TikTok Studio ou Meta Business Suite, puis reporte-les dans le formulaire ci-dessous. Le diagnostic fonctionne aussi pour Instagram et YouTube.":"If official TikTok or Facebook connection is not available yet, you can still analyze these accounts manually: collect the figures in TikTok Studio or Meta Business Suite, then enter them in the form below. The audit also supports Instagram and YouTube."}</p>
       <div className="social-connect-grid">
         <article className="follow-gate">
           <h4>{fr?"Connexion officielle TikTok":"Official TikTok connection"}</h4>
-          <p>{fr?"Autorise l'accès aux statistiques et vidéos que l'API TikTok permet de consulter.":"Authorize access to the profile statistics and videos made available by TikTok's API."}</p>
+          <p>{fr?"Connexion automatique si les autorisations officielles sont accordées. Sinon, utilise l’analyse manuelle juste en dessous.":"Automatic connection when official permissions are granted. Otherwise, use the manual audit below."}</p>
           <button type="button" className="primary-button" disabled={tiktokBusy||!backendReady} onClick={()=>void connectTikTok()}>{tiktokBusy?"…":tiktokData?(fr?"Reconnecter TikTok":"Reconnect TikTok"):(fr?"Connecter TikTok":"Connect TikTok")}</button>
           {tiktokData&&<button type="button" className="filter-button" disabled={tiktokBusy} onClick={()=>void loadTikTok()}>{fr?"Actualiser les statistiques":"Refresh statistics"}</button>}
           {tiktokNotice&&<p className="account-message" role="status">{tiktokNotice}</p>}
@@ -566,7 +566,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
         </article>
         <article className="follow-gate">
           <h4>{fr?"Connexion officielle Facebook":"Official Facebook connection"}</h4>
-          <p>{fr?"Connecte une Page que tu administres pour récupérer les statistiques autorisées par Meta.":"Connect a Page you manage to retrieve the statistics authorized by Meta."}</p>
+          <p>{fr?"Connexion automatique d’une Page administrée si Meta l’autorise. En attendant, relève les chiffres dans Meta Business Suite et lance l’analyse manuelle ci-dessous.":"Automatic connection for a Page you manage, subject to Meta permissions. Meanwhile, collect figures in Meta Business Suite and run the manual audit below."}</p>
           <button type="button" className="primary-button" disabled={facebookBusy||!backendReady} onClick={()=>void connectFacebook()}>{facebookBusy?"…":facebookPages.length?(fr?"Reconnecter Facebook":"Reconnect Facebook"):(fr?"Connecter Facebook":"Connect Facebook")}</button>
           {facebookPages.length>0&&<>
             <label>{fr?"Page Facebook":"Facebook Page"}
@@ -590,9 +590,14 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       </div>
 
       <div className="manual-audit-panel">
-        <h4>{fr?"Analyse assistée Instagram, YouTube et autres comptes":"Assisted audit for Instagram, YouTube and other accounts"}</h4>
-        <p>{fr?"Pour Instagram et YouTube, saisis les chiffres visibles dans les statistiques natives de la plateforme. Pour Facebook, tu peux aussi utiliser Meta Business Suite. AQUI NET HUB calcule les ratios et construit les recommandations à partir de ces données.":"For Instagram and YouTube, enter the figures shown in the platform's native analytics. For Facebook, you can also use Meta Business Suite. AQUI NET HUB calculates ratios and builds recommendations from those metrics."}</p>
-        <a className="filter-button" href="https://business.facebook.com/latest/insights" target="_blank" rel="noreferrer">{fr?"Ouvrir Meta Business Suite":"Open Meta Business Suite"} ↗</a>
+        <h4>{fr?"Analyse manuelle disponible pour TikTok, Facebook, Instagram et YouTube":"Manual audit available for TikTok, Facebook, Instagram and YouTube"}</h4>
+        <p>{fr?"1. Ouvre les statistiques de ton compte. 2. Choisis la même période pour comparer les chiffres. 3. Reporte le nombre d’abonnés, les vues moyennes par publication, les J’aime moyens, les commentaires moyens et la fréquence de publication dans le formulaire ci-dessous. 4. Ajoute ton objectif puis lance l’analyse. Les résultats sont calculés à partir des chiffres que tu fournis, ils ne sont pas vérifiés par les plateformes.":"1. Open your account analytics. 2. Use the same reporting period when comparing figures. 3. Enter followers, average views per post, average likes, average comments and posting frequency in the form below. 4. Add your goal and run the audit. Results are calculated from the figures you provide and are not platform-verified."}</p>
+        <div className="manual-audit-links">
+          <a className="filter-button" href="https://www.tiktok.com/tiktokstudio/analytics" target="_blank" rel="noreferrer">{fr?"Statistiques TikTok Studio":"TikTok Studio analytics"} ↗</a>
+          <a className="filter-button" href="https://business.facebook.com/latest/insights" target="_blank" rel="noreferrer">{fr?"Statistiques Meta / Facebook":"Meta / Facebook analytics"} ↗</a>
+          <a className="filter-button" href="https://studio.youtube.com/" target="_blank" rel="noreferrer">{fr?"YouTube Studio":"YouTube Studio"} ↗</a>
+        </div>
+        <p>{fr?"Les données Instagram se consultent dans le tableau de bord professionnel de l’application Instagram. Les chiffres saisis manuellement restent déclaratifs.":"Instagram insights are available in the Instagram professional dashboard. Manually entered figures remain self-reported."}</p>
       </div>
 
       {socialCount>=3 && socialFollowStatus!=="approved" && <div className="account-card follow-gate">
@@ -606,7 +611,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
         </div>}
       </div>}
       {(socialCount<3 || (socialSubscribed && socialFollowStatus==="approved")) ? <>
-        <div className="social-metrics-grid">
+        <div className="social-metrics-grid" id="social-manual-metrics">
           <label>{fr?"Lien du profil":"Profile URL"}<input type="url" value={socialUrl} onChange={e=>setSocialUrl(e.target.value)} placeholder="https://…" required/></label>
           <label>{fr?"Réseau / nom du compte":"Network / account name"}<input value={socialName} onChange={e=>setSocialName(e.target.value)} placeholder={fr?"Nom exact du compte":"Exact account name"} required/></label>
           <label>{fr?"Abonnés":"Followers"}<input type="number" min="0" value={socialFollowers} onChange={e=>setSocialFollowers(e.target.value)}/></label>
