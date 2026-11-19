@@ -149,6 +149,7 @@ export default function App() {
   useEffect(()=>{if(!selectedTool)return;const frame=requestAnimationFrame(()=>document.getElementById("outil-detail-selectionne")?.scrollIntoView({behavior:"smooth",block:"start"}));return()=>cancelAnimationFrame(frame);},[selectedTool]);
 
   return <div className="site-shell">
+    <a className="app-download-floating" href="https://github.com/kobonaaquilas-alt/aqui-net-hub/releases/download/android-test/aqui-net-hub-android.apk" aria-label={fr?"Télécharger l’application Android":"Download Android app"}><span aria-hidden="true">↓</span> {fr?"Télécharger l’application":"Download the app"}</a>
     <header className="topbar">
       <a className="brand" href="#accueil"><span className="brand-mark">A</span><span>AQUI NET <strong>HUB</strong></span></a>
       <nav className="main-nav"><a href="#accueil">{fr?"Accueil":"Home"}</a><a href="#services">{fr?"Services":"Services"}</a><a href="#net-assist">NET ASSIST</a><a href="#academy">ACADEMY</a><a href="#ideas">{fr?"Idées":"Ideas"}</a><a href="#account-access">{fr?"Compte":"Account"}</a><a href="#veille-aqui">{fr?"Veille":"Watch"}</a>{isHubAdmin&&<a className="admin-nav-link" href="/?admin=1#admin-prive">{fr?"Administration":"Administration"}{adminAlerts>0&&<span className="admin-nav-count">{adminAlerts>99?"99+":adminAlerts}</span>}</a>}</nav>
