@@ -3,6 +3,7 @@ type Env = {
   SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
   SUPABASE_SECRET_KEY?: string;
+  ADS_USER_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
 };
 
 type User = { id: string };
@@ -263,6 +264,8 @@ export async function handleAds(request: Request, env: Env): Promise<Response> {
     return json({ error: "Service publicitaire non configuré." }, 503);
   const user = await currentUser(request, env);
   if (!user) return json({ error: "Connexion requise." }, 401);
+  const rate = await env.ADS_USER_LIMITER.limit({ key: user.id });
+  if (!rate.success) return json({ error: "Limite de requêtes publicitaires atteinte. Réessaie dans une minute." }, 429);
   try {
     const url = new URL(request.url);
     if (request.method === "POST" && url.pathname === "/api/ads/upload-image") return await uploadCampaignImage(request, env, user);
