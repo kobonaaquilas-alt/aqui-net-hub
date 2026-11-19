@@ -102,6 +102,21 @@ async function notifySecurityIncident(env: Env, incident: { ip: string; path: st
     });
   }
 }
+async function monitoredResponse(
+  request: Request,
+  env: Env,
+  handler: (request: Request, env: Env) => Promise<Response>,
+): Promise<Response> {
+  const response = await handler(request, env);
+  if (response.status === 429) {
+    await notifySecurityIncident(env, {
+      ip: request.headers.get("CF-Connecting-IP") || "unknown",
+      path: new URL(request.url).pathname,
+      reason: "Limitation automatique déclenchée sur une API",
+    });
+  }
+  return response;
+}
 async function createPayment(request: Request, env: Env) {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !serviceKey(env))
     return json({ error: "Backend Supabase non configuré." }, 503);
@@ -472,11 +487,11 @@ export default {
       if (tiktokVerification) return new Response(`tiktok-developers-site-verification=${tiktokVerification[1]}`, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "strict-origin-when-cross-origin", "X-Frame-Options": "DENY" } });
       if (request.method === "GET" && url.pathname === "/terms") return legalPage("Conditions d'utilisation", termsBody);
       if (request.method === "GET" && url.pathname === "/privacy") return legalPage("Politique de confidentialité", privacyBody);
-      if (url.pathname.startsWith("/api/browser/")) return handleBrowser(request, env);
-      if (url.pathname.startsWith("/api/facebook/")) return handleFacebook(request, env);
-      if (url.pathname.startsWith("/api/tiktok/")) return handleTikTok(request, env);
-      if (url.pathname.startsWith("/api/social/")) return handleSocial(request, env);
-      if (url.pathname.startsWith("/api/ads/")) return handleAds(request, env);
+      if (url.pathname.startsWith("/api/browser/")) return monitoredResponse(request, env, handleBrowser);
+      if (url.pathname.startsWith("/api/facebook/")) return monitoredResponse(request, env, handleFacebook);
+      if (url.pathname.startsWith("/api/tiktok/")) return monitoredResponse(request, env, handleTikTok);
+      if (url.pathname.startsWith("/api/social/")) return monitoredResponse(request, env, handleSocial);
+      if (url.pathname.startsWith("/api/ads/")) return monitoredResponse(request, env, handleAds);
       if (request.method === "GET" && url.pathname === "/api/health")
         return json({
           ok: true,
@@ -487,7 +502,7 @@ export default {
           facebook_oauth_configured: !!env.FACEBOOK_APP_ID?.trim() && !!env.FACEBOOK_APP_SECRET?.trim(),
         });
       if (url.pathname === "/api/video/jobs" && request.method === "POST")
-        return handleVideo(request, env);
+        return monitoredResponse(request, env, handleVideo);
       if (url.pathname.startsWith("/api/video/jobs/") && request.method === "GET")
         return handleVideo(request, env);
       if (request.method === "GET" && url.pathname === "/api/payments/config") return manualPaymentConfig(env);
