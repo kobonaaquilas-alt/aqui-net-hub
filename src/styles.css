@@ -585,3 +585,7 @@ nav{gap:clamp(12px,2.2vw,28px);font-weight:600}nav a{position:relative;padding:8
 
 /* Direct Android test-app download CTA */
 .hero-actions{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap}.app-download-button{background:linear-gradient(110deg,#168a75,#2876bd);box-shadow:0 10px 30px rgba(28,151,132,.22)}.app-download-button:hover{box-shadow:0 14px 36px rgba(28,151,132,.34)}@media(max-width:520px){.hero-actions{flex-direction:column;align-items:stretch;padding-inline:10px}.hero-actions .primary-button{text-align:center}}
+
+
+/* Always-visible Android app download shortcut */
+.app-download-floating{position:fixed;z-index:9999;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:9px;padding:14px 20px;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:linear-gradient(115deg,#087f68,#176fc1);color:#fff!important;font-weight:800;font-size:14px;text-decoration:none!important;box-shadow:0 12px 34px rgba(0,0,0,.35);transition:transform .2s,box-shadow .2s}.app-download-floating span{font-size:21px;line-height:1}.app-download-floating:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.42)}@media(max-width:520px){.app-download-floating{right:12px;bottom:calc(12px + env(safe-area-inset-bottom));left:12px;justify-content:center;padding:14px 12px;font-size:14px}}
