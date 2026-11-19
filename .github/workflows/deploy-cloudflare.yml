@@ -66,6 +66,12 @@ jobs:
               if jq -e '.ok == true and .supabase == true' /tmp/aqui-health.json >/dev/null; then
                 cat /tmp/aqui-health.json
                 curl -fsS "$WORKER_URL/api/public/campaigns" | jq -e '.campaigns | type == "array"'
+                ads_status=$(curl -sS -o /dev/null -w '%{http_code}' "$WORKER_URL/api/ads/campaigns")
+                admin_status=$(curl -sS -o /dev/null -w '%{http_code}' "$WORKER_URL/api/admin/users")
+                test "$ads_status" = "401" || { echo "::error::Unauthenticated ads API did not reject access (HTTP $ads_status)."; exit 1; }
+                test "$admin_status" = "401" || { echo "::error::Unauthenticated admin API did not reject access (HTTP $admin_status)."; exit 1; }
+                curl -fsS "$WORKER_URL/" -D /tmp/aqui-headers -o /dev/null
+                grep -qi '^x-content-type-options: nosniff' /tmp/aqui-headers || { echo "::error::Security response header missing."; exit 1; }
                 exit 0
               fi
             fi
