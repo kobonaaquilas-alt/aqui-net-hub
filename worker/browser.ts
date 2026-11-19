@@ -6,6 +6,7 @@ type Env = {
   SUPABASE_SERVICE_ROLE_KEY?: string;
   SUPABASE_SECRET_KEY?: string;
   GITHUB_TOKEN: string;
+  BROWSER_TASK_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
 };
 type User = { id: string };
 type Step =
@@ -216,8 +217,11 @@ export async function handleBrowser(request: Request, env: Env): Promise<Respons
   try {
     if (!await isAdmin(env, user.id)) return reply({ error: "Accès administrateur réservé." }, 403);
     const url = new URL(request.url);
-    if (request.method === "POST" && url.pathname === "/api/browser/jobs")
+    if (request.method === "POST" && url.pathname === "/api/browser/jobs") {
+      const rate = await env.BROWSER_TASK_LIMITER.limit({ key: user.id });
+      if (!rate.success) return reply({ error: "Limite de tâches navigateur atteinte. Réessaie dans une minute." }, 429);
       return await createJob(request, env, user);
+    }
     const match = url.pathname.match(/^\/api\/browser\/jobs\/([0-9a-f-]{36})$/i);
     if (request.method === "GET" && match) return await getJob(request, env, user, match[1]);
     return reply({ error: "Route navigateur introuvable." }, 404);
