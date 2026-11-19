@@ -56,7 +56,7 @@ jobs:
           node scripts/patch-android-manifest.mjs
           node scripts/generate-app-icons.mjs
 
-      - name: Validate and prepare permanent signing key
+      - name: Configure and build permanently signed release APK
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -70,18 +70,9 @@ jobs:
           KEYSTORE_PATH="$RUNNER_TEMP/aqui-net-hub-release.jks"
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
           keytool -list -keystore "$KEYSTORE_PATH" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
-          {
-            echo "ANDROID_KEYSTORE_PATH=$KEYSTORE_PATH"
-            echo "ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD"
-            echo "ANDROID_KEY_ALIAS=$ANDROID_KEY_ALIAS"
-            echo "ANDROID_KEY_PASSWORD=$ANDROID_KEY_PASSWORD"
-          } >> "$GITHUB_ENV"
           export ANDROID_KEYSTORE_PATH="$KEYSTORE_PATH"
           python3 scripts/configure-android-signing.py
-
-      - name: Build permanently signed release APK
-        working-directory: android
-        run: |
+          cd android
           chmod +x ./gradlew
           ./gradlew --no-daemon assembleRelease
           mkdir -p ../release
