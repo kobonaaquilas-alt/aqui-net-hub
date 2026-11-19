@@ -57,7 +57,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
   const [socialUrl, setSocialUrl] = useState("");
   const [socialGoal, setSocialGoal] = useState("");
   const [socialResult, setSocialResult] = useState("");
-  const [socialMode,setSocialMode]=useState<"manual"|"external">("manual");
+  const [socialMode,setSocialMode]=useState<"choose"|"manual"|"external">("choose");
   const [externalNetwork,setExternalNetwork]=useState("TikTok");
   const [returnedFromExternal,setReturnedFromExternal]=useState(false);
   const [socialAnalysisComplete,setSocialAnalysisComplete]=useState(false);
@@ -448,11 +448,12 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       <span className="eyebrow">AQUI NET HUB · SOCIAL AUDIT · {socialCount}/3 {fr?"analyses gratuites":"free reviews"}</span>
       <h3>{fr?"Diagnostic de ton compte":"Your account review"}</h3>
       <p>{fr?"Choisis comment tu souhaites analyser ton compte. Tu peux utiliser notre diagnostic à partir de tes statistiques, ou ouvrir une plateforme spécialisée. Après une analyse externe, reviens ici : AQUI NET HUB pourra examiner les chiffres que tu lui communiqueras et te proposer des améliorations.":"Choose how you want to analyze your account. Use our own review based on your statistics, or open a specialist platform. After an external review, return here: AQUI NET HUB can examine the figures you share and recommend improvements."}</p>
-      <div className="account-tabs social-analysis-tabs">
-        <button type="button" className={socialMode==="manual"?"active":""} onClick={()=>{setSocialMode("manual");setReturnedFromExternal(false);}}>{fr?"1. Analyse avec AQUI NET HUB":"1. Analyze with AQUI NET HUB"}</button>
-        <button type="button" className={socialMode==="external"?"active":""} onClick={()=>{setSocialMode("external");setReturnedFromExternal(false);}}>{fr?"2. Utiliser une autre plateforme":"2. Use another platform"}</button>
-      </div>
+      {socialMode==="choose" && <div className="social-analysis-tabs">
+        <button type="button" className="primary-button" onClick={()=>{setSocialMode("manual");setReturnedFromExternal(false);}}>{fr?"Analyser avec AQUI NET HUB":"Analyze with AQUI NET HUB"}</button>
+        <button type="button" className="filter-button" onClick={()=>{setSocialMode("external");setReturnedFromExternal(false);}}>{fr?"Analyser sur les plateformes":"Analyze on other platforms"}</button>
+      </div>}
       {socialMode==="manual" && <>
+      <button type="button" className="filter-button" onClick={()=>setSocialMode("choose")}>{fr?"← Retour aux choix":"← Back to options"}</button>
       <div className="manual-audit-panel">
         <h4>{fr?"Saisis les statistiques de ton compte pour obtenir ton diagnostic":"Enter your account statistics to get your review"}</h4>
         <p>{fr?"1. Ouvre les statistiques de ton compte. 2. Choisis la même période pour comparer les chiffres. 3. Reporte le nombre d’abonnés, les vues moyennes par publication, les J’aime moyens, les commentaires moyens et la fréquence de publication dans le formulaire ci-dessous. 4. Ajoute ton objectif puis lance l’analyse. Les résultats sont calculés à partir des chiffres que tu fournis, ils ne sont pas vérifiés par les plateformes.":"1. Open your account analytics. 2. Use the same reporting period when comparing figures. 3. Enter followers, average views per post, average likes, average comments and posting frequency in the form below. 4. Add your goal and run the audit. Results are calculated from the figures you provide and are not platform-verified."}</p>
@@ -497,12 +498,6 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
         <small>{fr?"Paiement par numéro : joins la preuve dans ton compte. L'abonnement sera activé après validation administrative.":"Pay by phone number and upload the proof in your account. The subscription is activated after administrative review."}</small>
       </div>}
       {socialResult&&<pre className="account-message social-report" role="status">{socialResult}</pre>}
-      <div className="manual-audit-panel">
-        <h4>{fr?"Historique de tes analyses":"Your audit history"}</h4>
-        {socialHistory.length===0?<p>{fr?"Tes analyses enregistrées apparaîtront ici.":"Your saved audits will appear here."}</p>:socialHistory.map(a=><article className="subscription-row" key={a.id}>
-          <div><strong>{a.platform} · {a.account_name}</strong><p>{Number(a.followers||0).toLocaleString()} {fr?"abonnés":"followers"} · {Number(a.average_views||0).toLocaleString()} {fr?"vues moyennes":"average views"}</p><small>{new Date(a.created_at).toLocaleString(fr?"fr-FR":"en-GB")} · {fr?"Indice":"Score"} {a.report?.health_score??"—"}/100</small></div>
-        </article>)}
-      </div>
       <small className="account-footnote">{fr?"Les captures sont contrôlées manuellement. Les statistiques saisies manuellement ne sont pas authentifiées automatiquement. Facebook connecté utilise les données autorisées par Meta.":"Screenshots are reviewed manually. TikTok or Meta do not automatically authenticate these metrics here."}</small>
       {socialAnalysisComplete&&<div className="manual-audit-panel">
         <h4>{fr?"Outils recommandés pour améliorer ton compte":"Recommended tools to improve your account"}</h4>
@@ -511,6 +506,7 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
       </div>}
       </>}
       {socialMode==="external"&&<div className="manual-audit-panel external-audit-directory">
+        <button type="button" className="filter-button" onClick={()=>setSocialMode("choose")}>{fr?"← Retour aux choix":"← Back to options"}</button>
         <h4>{fr?"Choisis le réseau à analyser":"Choose the network to analyze"}</h4>
         <div className="social-metrics-grid"><label>{fr?"Réseau social":"Social network"}<select value={externalNetwork} onChange={e=>setExternalNetwork(e.target.value)}>{["TikTok","Facebook","Instagram","YouTube","LinkedIn","Pinterest","Twitch"].map(network=><option key={network} value={network}>{network}</option>)}</select></label></div>
         <div className="recommended-grid">{SOCIAL_ANALYSIS_TOOLS.filter(tool=>tool.networks.includes(externalNetwork)).slice(0,2).map(tool=><article className="recommended-tool external-audit-tool" key={tool.id}>
@@ -528,6 +524,13 @@ export default function AccountHub({ service, lang, authOnly = false }: Props) {
         </div>
       </div>}
       {returnedFromExternal&&socialMode==="manual"&&<div className="account-message" role="status">{fr?"Bienvenue. Reporte maintenant les chiffres obtenus sur la plateforme externe dans le formulaire ci-dessous, puis lance l’analyse AQUI NET HUB.":"Welcome back. Enter the figures from the external platform in the form below, then run your AQUI NET HUB review."}</div>}
+      <div className="manual-audit-panel">
+        <h4>{fr?"Historique de tes analyses":"Your audit history"}</h4>
+        {socialHistory.length===0?<p>{fr?"Tes analyses enregistrées apparaîtront ici.":"Your saved audits will appear here."}</p>:socialHistory.map(a=><article className="subscription-row" key={a.id}>
+          <div><strong>{a.platform} · {a.account_name}</strong><p>{Number(a.followers||0).toLocaleString()} {fr?"abonnés":"followers"} · {Number(a.average_views||0).toLocaleString()} {fr?"vues moyennes":"average views"}</p><small>{new Date(a.created_at).toLocaleString(fr?"fr-FR":"en-GB")} · {fr?"Indice":"Score"} {a.report?.health_score??"—"}/100</small></div>
+        </article>)}
+      </div>
+
     </div>}
     {session && service==="video" && <div className="account-card video-studio">
       <span className="eyebrow">AQUI VIDEO AI · MULTI-MOTEUR</span>
