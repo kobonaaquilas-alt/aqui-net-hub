@@ -21,6 +21,8 @@ interface Env {
   FAL_KEY?: string;
   MAGIC_HOUR_API_KEY?: string;
   VIDEO_ALLOW_PAID_FALLBACK?: string;
+  PUBLIC_AD_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
+  AD_EVENT_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
   FACEBOOK_APP_ID?: string;
   FACEBOOK_APP_SECRET?: string;
   FACEBOOK_GRAPH_VERSION?: string;
@@ -332,8 +334,21 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     try {
+      const clientIp = request.headers.get("CF-Connecting-IP") || "unknown";
       const campaignEvent = url.pathname.match(/^\/api\/public\/campaigns\/([0-9a-f-]{36})\/(impression|click)$/i);
       const eventType = campaignEvent?.[2].toLowerCase();
+      if (campaignEvent && (
+        (eventType === "impression" && request.method === "POST") ||
+        (eventType === "click" && request.method === "GET")
+      )) {
+        const rate = await env.AD_EVENT_LIMITER.limit({ key: clientIp });
+        if (!rate.success) return json({ error: "Trop de sollicitations. Réessaie dans une minute." }, 429);
+      }
+      if ((request.method === "GET" && url.pathname === "/api/public/campaigns") ||
+          (request.method === "GET" && url.pathname === "/api/public/settings")) {
+        const rate = await env.PUBLIC_AD_LIMITER.limit({ key: clientIp });
+        if (!rate.success) return json({ error: "Trop de requêtes. Réessaie dans une minute." }, 429);
+      }
       if (campaignEvent && (
         (eventType === "impression" && request.method === "POST") ||
         (eventType === "click" && request.method === "GET")
