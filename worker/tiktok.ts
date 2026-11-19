@@ -6,7 +6,7 @@ type Env = {
 type User = { id: string };
 const tiktokKey=(e:Env)=>e.TIKTOK_CLIENT_KEY?.trim()||"";
 const tiktokSecret=(e:Env)=>e.TIKTOK_CLIENT_SECRET?.trim()||"";
-const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
+const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff","Referrer-Policy":"strict-origin-when-cross-origin","X-Frame-Options":"DENY","Permissions-Policy":"camera=(),microphone=(),geolocation=()"}});
 const key=(e:Env)=>e.SUPABASE_SERVICE_ROLE_KEY||e.SUPABASE_SECRET_KEY||"";
 const dbh=(e:Env)=>({apikey:key(e),Authorization:"Bearer "+key(e),"Content-Type":"application/json",Prefer:"return=representation"});
 const base=(r:Request,e:Env)=>(e.APP_BASE_URL||new URL(r.url).origin).replace(/\/$/,"");
