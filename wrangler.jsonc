@@ -21,6 +21,34 @@
     "FACEBOOK_GRAPH_VERSION": "v26.0"
   },
   "triggers": {
-    "crons": ["0 * * * *"]
-  }
+    "crons": [
+      "0 * * * *"
+    ]
+  },
+  "ratelimits": [
+    {
+      "name": "PUBLIC_AD_LIMITER",
+      "namespace_id": "823741",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    },
+    {
+      "name": "AD_EVENT_LIMITER",
+      "namespace_id": "823742",
+      "simple": {
+        "limit": 30,
+        "period": 60
+      }
+    },
+    {
+      "name": "ADS_USER_LIMITER",
+      "namespace_id": "823743",
+      "simple": {
+        "limit": 30,
+        "period": 60
+      }
+    }
+  ]
 }
