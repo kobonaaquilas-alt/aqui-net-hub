@@ -61,6 +61,7 @@ export default function AdminPanel({lang}:{lang:"fr"|"en"}){
   finally{setBusy(false);}
  }
  async function saveAdsense(){await action("/api/admin/settings","PATCH",{adsense_client:adsense,payment_number:paymentNumber});}
+ async function testTelegram(){setBusy(true);setNotice("");try{await request("/api/admin/telegram/test",{method:"POST"});setNotice(tr("Notification Telegram envoyée. Vérifie ton bot Telegram.","Telegram notification sent. Check your Telegram bot."));}catch(error){setNotice(error instanceof Error?error.message:"Test Telegram impossible.");}finally{setBusy(false);}}
  async function startBrowserTask(e:FormEvent){
   e.preventDefault();setBrowserBusy(true);setNotice("");
   try{
@@ -83,7 +84,7 @@ export default function AdminPanel({lang}:{lang:"fr"|"en"}){
  if(!checked||!authorized)return null;
  const group=(kind:"ads"|"partners",items:RequestItem[])=> <div className="account-card"><h3>{tr(kind==="ads"?"Demandes publicitaires":"Demandes de partenariat",kind==="ads"?"Advertising requests":"Partnership requests")} · {items.length}</h3>{items.length===0&&<p>{tr("Aucune demande.","No requests.")}</p>}{items.map(x=><article className="admin-request-row" key={x.id}><div><strong>{kind==="ads"?x.company_name:x.organization}</strong><p>{x.contact_name} · {x.email} · {x.phone||""}</p>{x.website&&<p><a href={x.website} target="_blank" rel="noreferrer">{x.website}</a></p>}<p>{x.message||x.proposal}</p><small>{new Date(x.created_at).toLocaleString(lang==="fr"?"fr-FR":"en-GB")} · {x.status}</small></div><div className="admin-actions"><button disabled={busy} onClick={()=>void action(`/api/admin/requests/${kind}/${x.id}`,"PATCH",{status:"reviewing"})}>{tr("En cours","In progress")}</button><button disabled={busy} onClick={()=>void action(`/api/admin/requests/${kind}/${x.id}`,"PATCH",{status:"accepted"})}>{tr("Valider","Approve")}</button><button disabled={busy} onClick={()=>void action(`/api/admin/requests/${kind}/${x.id}`,"PATCH",{status:"declined"})}>{tr("Refuser","Decline")}</button></div></article>)}</div>;
  return <section className="section account-hub admin-private" id="admin-prive">
-  <div className="section-heading"><span className="eyebrow">{tr("ESPACE PRIVÉ","PRIVATE AREA")}</span><h2>{tr("Administration AQUI NET HUB","AQUI NET HUB administration")}</h2><p>{tr("Connecté en tant que","Signed in as")} {session?.user.email}</p><button className="filter-button" disabled={busy} onClick={()=>void load()}>{busy?"…":tr("Actualiser","Refresh")}</button></div>
+  <div className="section-heading"><span className="eyebrow">{tr("ESPACE PRIVÉ","PRIVATE AREA")}</span><h2>{tr("Administration AQUI NET HUB","AQUI NET HUB administration")}</h2><p>{tr("Connecté en tant que","Signed in as")} {session?.user.email}</p><button className="filter-button" disabled={busy} onClick={()=>void load()}>{busy?"…":tr("Actualiser","Refresh")}</button><button className="filter-button" disabled={busy} onClick={()=>void testTelegram()}>{tr("Tester les alertes Telegram","Test Telegram alerts")}</button></div>
   {notice&&<p className="account-message" role="status">{notice}</p>}
   <div className="account-card browser-automation-card">
    <h3>{tr("Automatisation navigateur (Playwright)","Browser automation (Playwright)")}</h3>
