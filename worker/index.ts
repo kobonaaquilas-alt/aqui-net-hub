@@ -24,6 +24,7 @@ interface Env {
   PUBLIC_AD_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
   AD_EVENT_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
   ADS_USER_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
+  ADS_IP_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
   FACEBOOK_APP_ID?: string;
   FACEBOOK_APP_SECRET?: string;
   FACEBOOK_GRAPH_VERSION?: string;
