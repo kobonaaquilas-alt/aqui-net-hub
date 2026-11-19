@@ -28,7 +28,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: android-build-${{ github.ref }}
@@ -121,3 +121,24 @@ jobs:
             android/app/build/outputs/apk/debug/*.apk
             android/app/build/outputs/bundle/release/*.aab
 
+
+      - name: Prepare public Android test download
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk aqui-net-hub-android.apk
+
+      - name: Publish Android test APK on GitHub Releases
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-test
+          name: AQUI NET HUB Android — version de test
+          body: |
+            Application Android de test AQUI NET HUB.
+            Cette version est distribuée directement depuis le site officiel pour les tests.
+            La signature de publication Google Play reste en attente.
+          prerelease: true
+          make_latest: false
+          overwrite_files: true
+          files: aqui-net-hub-android.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
