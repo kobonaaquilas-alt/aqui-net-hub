@@ -65,6 +65,14 @@
         "limit": 5,
         "period": 60
       }
+    },
+    {
+      "name": "SECURITY_ALERT_LIMITER",
+      "namespace_id": "823746",
+      "simple": {
+        "limit": 1,
+        "period": 60
+      }
     }
   ]
 }
