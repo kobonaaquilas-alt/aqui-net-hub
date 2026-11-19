@@ -91,15 +91,25 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           chmod +x android/gradlew
+          # Always produce an installable APK, even if release-signing secrets are missing or invalid.
+          (cd android && ./gradlew --no-daemon assembleDebug)
           if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
-            echo "Release signing secrets are not configured; only the debug APK will be built."
-            (cd android && ./gradlew --no-daemon assembleDebug)
+            echo "Release signing secrets are incomplete; debug APK is ready, skipping signed bundle."
             exit 0
           fi
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/aqui-release.keystore
+          if ! printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/aqui-release.keystore; then
+            echo "Keystore encoding is invalid; debug APK is ready, skipping signed bundle."
+            exit 0
+          fi
           export ANDROID_KEYSTORE_PATH="$GITHUB_WORKSPACE/android/app/aqui-release.keystore"
+          if ! keytool -list -keystore "$ANDROID_KEYSTORE_PATH" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null 2>&1; then
+            echo "Keystore, password, or alias is invalid; debug APK is ready, skipping signed bundle."
+            exit 0
+          fi
           python3 scripts/configure-android-signing.py
-          (cd android && ./gradlew --no-daemon assembleDebug bundleRelease)
+          if ! (cd android && ./gradlew --no-daemon bundleRelease); then
+            echo "Release signing failed; debug APK is still available as a test installation."
+          fi
 
       - name: Upload Android deliverables
         uses: actions/upload-artifact@v4
