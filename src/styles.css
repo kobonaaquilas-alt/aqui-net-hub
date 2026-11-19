@@ -593,3 +593,6 @@ nav{gap:clamp(12px,2.2vw,28px);font-weight:600}nav a{position:relative;padding:8
 
 /* Manual social analytics links */
 .manual-audit-links{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}.manual-audit-links a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;text-decoration:none}@media(max-width:560px){.manual-audit-links{display:grid;grid-template-columns:1fr}.manual-audit-links a{width:100%}}
+
+
+.social-analysis-tabs{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 22px}.social-analysis-tabs button{flex:1;min-width:220px}.external-audit-directory{margin-top:18px}.external-audit-tool{display:flex;flex-direction:column;gap:10px;align-items:flex-start}.external-audit-tool h5{margin:8px 0 0}.external-audit-tool ol{padding-left:22px;margin:0}.external-audit-tool li{margin:5px 0}.external-audit-tool .primary-button{display:inline-flex;align-items:center;justify-content:center;margin-top:auto}.external-return-gate{margin-top:22px}.external-audit-tool p{margin:0}
