@@ -12,7 +12,7 @@ function safePublicUrl(value) {
     host.endsWith(".local") || host === "0.0.0.0" || host === "::1" ||
     /^(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host) ||
     /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.includes(":");
-  if (!["https:", "http:"].includes(url.protocol) || url.username || url.password || blocked || !host.includes(".")) {
+  if (url.protocol !== "https:" || (url.port && url.port !== "443") || url.username || url.password || blocked || !host.includes(".")) {
     throw new Error("Navigation vers une adresse non publique bloquée.");
   }
   return url;
