@@ -11,6 +11,8 @@
       "/terms",
       "/privacy",
       "/about",
+      "/guides",
+      "/guides/*",
       "/tiktok*"
     ]
   },
