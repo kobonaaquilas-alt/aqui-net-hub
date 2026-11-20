@@ -20,4 +20,34 @@
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
+  <url>
+    <loc>https://aqui-net-hub.kobonaaquilas.workers.dev/guides</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aqui-net-hub.kobonaaquilas.workers.dev/guides/choisir-outil-gratuit</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aqui-net-hub.kobonaaquilas.workers.dev/guides/video-courte-telephone</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aqui-net-hub.kobonaaquilas.workers.dev/guides/ameliorer-photo</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aqui-net-hub.kobonaaquilas.workers.dev/guides/presence-en-ligne</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aqui-net-hub.kobonaaquilas.workers.dev/guides/securite-outils-ia</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 </urlset>
